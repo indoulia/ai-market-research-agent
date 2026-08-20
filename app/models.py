@@ -378,3 +378,20 @@ class WatchlistEvaluation(Base):
     outcome: Mapped[str] = mapped_column(String(32))
     backlog_reason: Mapped[str | None] = mapped_column(String(64))
     prediction_id: Mapped[int | None] = mapped_column(ForeignKey("predictions.id"))
+
+
+class ModelPromotionDecision(Base):
+    __tablename__ = "model_promotion_decisions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    dataset_version: Mapped[str] = mapped_column(String(32))
+    candidate_model_name: Mapped[str] = mapped_column(String(64))
+    comparison_version: Mapped[str] = mapped_column(String(32))
+    calibration_error_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    decision: Mapped[str] = mapped_column(String(16))
+    decision_reason: Mapped[str] = mapped_column(String(64))
+    regressed_segment_dimension: Mapped[str | None] = mapped_column(String(32))
+    regressed_segment_key: Mapped[str | None] = mapped_column(String(128))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    approver: Mapped[str] = mapped_column(String(128))
+    promotion_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
