@@ -1,7 +1,7 @@
 """add horizon_selection_version to predictions
 
 Revision ID: 0010_horizon_selection_version
-Revises: 0009_opportunity_score
+Revises: 0008_consensus_contract_version
 
 EPIC-M1.10: persists which versioned horizon-selection rule (app/horizon.py
 SELECTION_VERSION) chose this recommendation's horizon_days, so the decision stays
@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "0010_horizon_selection_version"
-down_revision = "0009_opportunity_score"
+down_revision = "0008_consensus_contract_version"
 branch_labels = None
 depends_on = None
 
