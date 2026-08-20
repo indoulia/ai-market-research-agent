@@ -1,6 +1,6 @@
 # EPIC-M1.7 — Watchlist Positive-Sensus Evaluation
 
-**Status:** APPROVED
+**Status:** DONE
 **Priority:** P1
 
 ## Objective
