@@ -12,8 +12,10 @@ def test_fetch_daily_candles_parses_success(monkeypatch):
 
     def fake_get(url):
         captured["url"] = url
+        request = httpx.Request("GET", url)
         return httpx.Response(
             200,
+            request=request,
             json={"status": "success", "data": {"candles": [["2026-08-19T00:00:00+05:30", 10, 11, 9, 10.5, 1000, 0]]}},
         )
 
