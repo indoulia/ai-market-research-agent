@@ -14,6 +14,7 @@ import psycopg
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
@@ -64,7 +65,7 @@ def test_fresh_database_upgrades_to_head_without_stamping(admin_dsn):
         with engine.connect() as conn:
             current_head = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         engine.dispose()
-        assert current_head == "0007_outcome_actual_return"
+        assert current_head == ScriptDirectory.from_config(cfg).get_current_head()
     finally:
         settings.database_url = original_url
         _drop_scratch_db(admin_dsn, db_name)
@@ -124,7 +125,7 @@ def test_downgrade_then_upgrade_round_trip_is_clean(admin_dsn):
         with engine.connect() as conn:
             current_head = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
         engine.dispose()
-        assert current_head == "0007_outcome_actual_return"
+        assert current_head == ScriptDirectory.from_config(cfg).get_current_head()
     finally:
         settings.database_url = original_url
         _drop_scratch_db(admin_dsn, db_name)
