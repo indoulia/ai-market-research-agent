@@ -249,6 +249,21 @@ class MarketRegime(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ModelPromotion(Base):
+    __tablename__ = "model_promotions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    candidate_model_version: Mapped[str] = mapped_column(String(64))
+    baseline_model_version: Mapped[str | None] = mapped_column(String(64))
+    evidence_report_version: Mapped[str] = mapped_column(String(32))
+    success_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    decision: Mapped[str] = mapped_column(String(16))
+    decision_reason: Mapped[str] = mapped_column(String(64))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    approver: Mapped[str] = mapped_column(String(128))
+    promotion_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
