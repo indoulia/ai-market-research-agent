@@ -556,3 +556,22 @@ class EvidenceRevalidationCheck(Base):
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revalidation_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationRevision(Base):
+    __tablename__ = "recommendation_revisions"
+    __table_args__ = (
+        UniqueConstraint("previous_prediction_id", name="uq_revision_previous_prediction"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    original_prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    previous_prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    revised_prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    version_number: Mapped[int] = mapped_column(Integer)
+    revision_reason: Mapped[str] = mapped_column(String(32))
+    triggering_evidence_revalidation_check_id: Mapped[int | None] = mapped_column(
+        ForeignKey("evidence_revalidation_checks.id")
+    )
+    revised_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revision_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
