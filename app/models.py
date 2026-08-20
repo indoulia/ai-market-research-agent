@@ -31,6 +31,18 @@ class MarketPrice(Base):
     source: Mapped[str] = mapped_column(String(64))
 
 
+class DatasetValidationRun(Base):
+    __tablename__ = "dataset_validation_runs"
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    from_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    to_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(16))
+    record_count: Mapped[int] = mapped_column(BigInteger)
+    issue_count: Mapped[int] = mapped_column(BigInteger)
+    report_json: Mapped[dict] = mapped_column(JSON)
+
+
 class Prediction(Base):
     __tablename__ = "predictions"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)

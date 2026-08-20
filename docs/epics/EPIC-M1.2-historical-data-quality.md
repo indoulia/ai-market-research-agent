@@ -42,3 +42,22 @@ Implemented and merged through the autonomous engineering flow. The implementati
 - Autonomous trading.
 - Portfolio execution.
 - Changing the 1–7 day prediction objective.
+
+## Implementation evidence
+
+- Added the `m1.2-v1` deterministic rule engine for OHLC relationships, positive
+  prices/volume, duplicate rows, missing/unexpected sessions, and NSE-local daily
+  timestamp consistency.
+- Added persisted `dataset_validation_runs` JSON audit reports and a CLI that gates
+  downstream work with `PASSED`/`FAILED` status and process exit code.
+- Added normal, invalid, missing-session, duplicate, timestamp, and custom-calendar
+  test coverage. The default weekday calendar can be replaced with explicit official
+  exchange sessions so holidays remain auditable.
+
+## Validation evidence
+
+- `python -m compileall -q app scripts tests migrations` — passed.
+- `git diff --check` — passed.
+- `pytest -q` — not runnable in the orchestration image because project dependencies
+  (including pytest and SQLAlchemy) are not installed; the surrounding workflow must
+  run the test suite after installing `requirements.txt`.
