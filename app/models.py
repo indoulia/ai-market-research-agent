@@ -124,6 +124,19 @@ class RecommendationGeneration(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RecommendationSelection(Base):
+    __tablename__ = "recommendation_selections"
+    __table_args__ = (UniqueConstraint("scan_id", "recommendation_generation_id", name="uq_selection_scan_generation"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    recommendation_generation_id: Mapped[int] = mapped_column(ForeignKey("recommendation_generations.id"))
+    rank: Mapped[int | None] = mapped_column(Integer)
+    selected: Mapped[bool] = mapped_column(Boolean)
+    selection_reason: Mapped[str] = mapped_column(String(32))
+    selection_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
