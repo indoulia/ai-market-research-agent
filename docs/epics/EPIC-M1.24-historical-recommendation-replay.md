@@ -1,7 +1,7 @@
 # EPIC-M1.24 — Historical Recommendation Replay
 
-**Status:** APPROVED  
-**Execution Status:** VALIDATING  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Approved By:** User  
 **Priority:** P1
 
