@@ -68,7 +68,7 @@ def ingest_daily_history(
                 low=Decimal(str(low)),
                 close=Decimal(str(close)),
                 volume=int(volume),
-                source="upstox-v3",
+                source=getattr(client, "source", "upstox-v3"),
             ).on_conflict_do_nothing(index_elements=["stock_id", "timestamp"])
             result = session.execute(stmt)
             inserted += result.rowcount or 0
