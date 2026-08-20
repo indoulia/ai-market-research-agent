@@ -10,9 +10,9 @@ def test_yahoo_client_normalizes_and_filters_rows(monkeypatch):
     frame = pd.DataFrame(
         [
             [10, 12, 9, 11, 100],
-            [10, 8, 9, 9, 100],       # invalid OHLC
-            [10, 12, 9, 11, -1],      # invalid volume
-            [10, 12, 9, 11, 200],     # duplicate date; last valid row wins
+            [10, 8, 9, 9, 100],
+            [10, 12, 9, 11, -1],
+            [10, 12, 9, 11, 200],
         ],
         index=pd.to_datetime(["2026-08-01", "2026-08-02", "2026-08-03", "2026-08-01"]),
         columns=["Open", "High", "Low", "Close", "Volume"],
@@ -22,6 +22,19 @@ def test_yahoo_client_normalizes_and_filters_rows(monkeypatch):
     candles = YahooFinanceClient().fetch_daily_candles(" reliance.ns ", date(2026, 8, 1), date(2026, 8, 3))
 
     assert candles == [["2026-08-01T00:00:00+00:00", 10.0, 12.0, 9.0, 11.0, 200]]
+
+
+def test_yahoo_client_filters_duplicate_and_invalid_fixture(monkeypatch):
+    fixture = pd.DataFrame(
+        {"Open": [10, 11, 11, 0], "High": [12, 12, 12, 1], "Low": [9, 10, 10, 0],
+         "Close": [11, 11, 11, 1], "Volume": [100, 200, 200, 100]},
+        index=pd.to_datetime(["2026-08-03", "2026-08-04", "2026-08-04", "2026-08-05"]),
+    )
+    monkeypatch.setattr("app.market_data.yahoo.yf.download", lambda *args, **kwargs: fixture)
+
+    candles = YahooFinanceClient().fetch_daily_candles("reliance.ns", date(2026, 8, 3), date(2026, 8, 5))
+
+    assert [(row[1], row[5]) for row in candles] == [(10.0, 100), (11.0, 200)]
 
 
 def test_yahoo_client_rejects_reverse_range():

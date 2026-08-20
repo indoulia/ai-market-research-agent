@@ -2,14 +2,19 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Iterable
+from typing import Iterable, Protocol
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.models import MarketPrice, Stock
-from .upstox import UpstoxClient
+
+
+class DailyHistoryProvider(Protocol):
+    source: str
+
+    def fetch_daily_candles(self, instrument: str, from_date: date, to_date: date) -> list[list]: ...
 
 
 def upsert_nse_universe(session: Session, instruments: Iterable[dict]) -> int:
@@ -38,7 +43,7 @@ def upsert_nse_universe(session: Session, instruments: Iterable[dict]) -> int:
 
 def ingest_daily_history(
     session: Session,
-    client: UpstoxClient,
+    client: DailyHistoryProvider,
     from_date: date,
     to_date: date,
     symbols: Iterable[str] | None = None,

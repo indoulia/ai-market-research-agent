@@ -32,3 +32,7 @@ Historical Prediction Engine only.
 
 The Yahoo adapter is a research/prototyping source and is not a claim of licensed production
 market-data redistribution. It is isolated behind the market-data provider boundary.
+
+## Next implementation task
+
+M1.3 — validate the Yahoo Finance NSE historical data provider for research use.

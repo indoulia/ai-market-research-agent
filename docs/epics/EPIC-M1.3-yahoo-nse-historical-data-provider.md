@@ -33,6 +33,14 @@ Add a Yahoo Finance research-data adapter for daily NSE OHLCV so the prediction 
 - [ ] Prediction and feature-generation code does not depend directly on `yfinance`.
 - [ ] No Upstox credential or broker integration is required.
 
+## Implementation / validation evidence
+
+Implementation adds `YahooFinanceClient` with the existing daily candle contract,
+deterministic OHLCV normalization, duplicate suppression, and local fixture tests. Yahoo
+Finance is documented as a research/prototyping source. The worker ran Python syntax
+validation; the full test suite requires project dependencies not installed in the worker
+environment.
+
 ## Non-goals
 
 - Intraday data.
