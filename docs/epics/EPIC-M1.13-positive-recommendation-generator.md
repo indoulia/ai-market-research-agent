@@ -158,6 +158,12 @@ While this reconciliation was in progress, PR #30 (the CI fix from `main`, refer
 
 Re-verified after this second reconciliation: `pytest -q` **134 passed, 0 failed**; `compileall`/`git diff --check` both exit 0; `alembic heads` single head `0013_recommendation_generations`; full PostgreSQL `upgrade head` → `downgrade base` → `upgrade head` round-trip against a freshly reset schema, clean throughout.
 
+### Third reconciliation: PR #26 (M1.7) merged to `main` mid-session (2026-08-20)
+
+PR #26 also merged to `main` (as `89c381a`) while this reconciliation was in progress. Re-ran the rebase (`git rebase --onto origin/main 0a4edb5 HEAD`) — no conflicts; M1.7 and M1.13 touch disjoint parts of `app/models.py` (M1.7 appends `WatchlistEvaluation` after `ModelVersion`; M1.13 adds fields to `Prediction` and a new `RecommendationGeneration` class after `ScanCandidate`). The only fallout: `main` now carries M1.7's `tests/test_watchlist_evaluation.py`, whose `_recommendation_kwargs()` helper predates this EPIC's `scoring_contract_version`/`opportunity_score` requirement — same root cause as the four other test files already fixed above, now a fifth. Added the same one-line kwargs.
+
+Re-verified after this third reconciliation: `pytest -q` **140 passed, 0 failed**; `compileall`/`git diff --check` both exit 0; `alembic heads` single head `0013_recommendation_generations`; full PostgreSQL `upgrade head` → `downgrade base` → `upgrade head` round-trip against a freshly reset schema, clean throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions; never erase prior findings. -->
