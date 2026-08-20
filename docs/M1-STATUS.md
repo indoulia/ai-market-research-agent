@@ -19,6 +19,8 @@ Historical Prediction Engine only.
 - Deterministic historical OHLCV quality rules and persisted validation reports
 - Yahoo Finance daily NSE research-data provider
 - Immutable positive-recommendation history persistence and query support (M1.4)
+- Deterministic recommendation outcome evaluation: horizon-based SUCCESS/FAILURE/UNEVALUABLE
+  classification with immutable outcome records (M1.5)
 
 ## Not yet production-ready
 
@@ -29,7 +31,7 @@ Historical Prediction Engine only.
 - Full walk-forward runner
 - Dataset versioning
 - Leakage detection
-- Recommendation outcome evaluation
+- Positive-recommendation performance reporting
 - Production model artifacts
 - Live prediction endpoint
 - OpenAI Agent
@@ -39,4 +41,4 @@ market-data redistribution. It is isolated behind the market-data provider bound
 
 ## Next implementation tasks
 
-- M1.5 — evaluate recommendation outcomes at their predefined horizon (depends on M1.4).
+- M1.6 — report positive-recommendation performance from evaluated outcomes (depends on M1.5).
