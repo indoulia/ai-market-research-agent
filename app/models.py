@@ -280,6 +280,19 @@ class LearningCycle(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class DataFetchAttempt(Base):
+    __tablename__ = "data_fetch_attempts"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    data_type: Mapped[str] = mapped_column(String(32))
+    scope_key: Mapped[str] = mapped_column(String(128))
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    source_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    success: Mapped[bool] = mapped_column(Boolean)
+    failure_reason: Mapped[str | None] = mapped_column(String(128))
+    refresh_policy_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
