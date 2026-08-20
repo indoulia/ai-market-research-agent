@@ -468,3 +468,21 @@ class RecommendationPublication(Base):
     rejection_reason: Mapped[str | None] = mapped_column(String(64))
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationEvidenceItem(Base):
+    __tablename__ = "recommendation_evidence_items"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evidence_category", name="uq_evidence_prediction_category"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    evidence_category: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(16))
+    source: Mapped[str | None] = mapped_column(String(64))
+    reference: Mapped[str | None] = mapped_column(String(2000))
+    evidence_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    is_stale: Mapped[bool] = mapped_column(Boolean)
+    snapshot_rule_version: Mapped[str] = mapped_column(String(32))
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
