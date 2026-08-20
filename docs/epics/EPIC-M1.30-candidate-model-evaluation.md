@@ -1,7 +1,7 @@
 # EPIC-M1.30 — Candidate Model Evaluation
 
-**Status:** APPROVED  
-**Execution Status:** VALIDATING  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Priority:** P1
 
 ## Objective
