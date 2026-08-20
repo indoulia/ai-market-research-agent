@@ -34,12 +34,28 @@ Convert evaluated candidates into positive recommendations only when every requi
 - [ ] Missing required evidence produces no recommendation.
 - [ ] Tests prove both positive and rejection paths.
 
-## Dependencies
+## Dependency Chain
 
-- M1.8 — Positive Consensus Engine
-- M1.9 — Positive Opportunity Scoring
-- M1.10 — Positive Horizon Selection
-- M1.12 — Market Universe & Daily Candidate Scan
+### Previous / Required
+- **M1.8 — Positive Consensus Engine** — defines the positive qualification gate.
+- **M1.9 — Positive Opportunity Scoring** — provides the opportunity score used by the recommendation path.
+- **M1.10 — Positive Horizon Selection** — provides the selected 1/3/5/7-day horizon.
+- **M1.12 — Market Universe & Daily Candidate Scan** — provides the candidate scan context.
+
+### Next / Unlocks
+- **M1.14 — Recommendation Selection & Daily Limit** — selects the strongest qualifying recommendations.
+- **M1.15 — Recommendation Lifecycle & Outcome Scheduler** — tracks issued recommendations through their selected horizon.
+- **M1.17 — ChatGPT Candidate Discovery** — routes externally discovered candidates through this same recommendation path.
+
+### Chain Position
+
+`M1.8 + M1.9 + M1.10 + M1.12 → M1.13 → M1.14 → M1.15 → M1.16`
+
+M1.17 branches from M1.8 and M1.13 after the core quantitative recommendation path is established.
+
+### Execution Rule
+
+Do not execute M1.14, M1.15, or M1.17 until M1.13 is implemented, reviewed, and merged. Do not bypass missing upstream EPICs.
 
 ## Completion Report
 
