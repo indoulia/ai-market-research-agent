@@ -20,7 +20,7 @@ class Stock(Base):
 
 class MarketPrice(Base):
     __tablename__ = "market_prices"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     open: Mapped[Decimal] = mapped_column(Numeric(18, 6))
@@ -64,7 +64,7 @@ class Prediction(Base):
 
 class PredictionOutcome(Base):
     __tablename__ = "prediction_outcomes"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), unique=True)
     evaluation_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     highest_price: Mapped[Decimal] = mapped_column(Numeric(18, 6))
@@ -72,6 +72,8 @@ class PredictionOutcome(Base):
     closing_price: Mapped[Decimal] = mapped_column(Numeric(18, 6))
     maximum_return: Mapped[Decimal] = mapped_column(Numeric(10, 6))
     maximum_drawdown: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    actual_return: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    prediction_error: Mapped[Decimal] = mapped_column(Numeric(10, 6))
     target_hit: Mapped[bool] = mapped_column(Boolean)
     stop_hit: Mapped[bool] = mapped_column(Boolean)
     outcome: Mapped[str] = mapped_column(String(32))
