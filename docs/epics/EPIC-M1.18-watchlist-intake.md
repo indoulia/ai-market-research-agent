@@ -1,8 +1,8 @@
 # EPIC-M1.18 — Watchlist Intake
 
-**Status:** READY_FOR_APPROVAL  
-**Execution Status:** NOT_READY  
-**Approved By:** —  
+**Status:** APPROVED  
+**Execution Status:** READY_FOR_EXECUTION  
+**Approved By:** User  
 **Priority:** P1
 
 ## Objective
