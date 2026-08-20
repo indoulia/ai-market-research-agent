@@ -1,7 +1,7 @@
 # EPIC-M1.60 — Recommendation Allocation Guidance
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Provide optional risk-aware allocation guidance based on user constraints without executing trades.

@@ -1,7 +1,7 @@
 # EPIC-M1.65 — Evidence Conflict Resolution
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Resolve or explicitly surface conflicting market, news, event, and fundamental evidence from multiple sources.

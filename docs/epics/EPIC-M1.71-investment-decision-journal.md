@@ -1,7 +1,7 @@
 # EPIC-M1.71 — Investment Decision Journal
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Give users a durable history of recommendations, decisions, feedback, and outcomes so they can evaluate their own investing behavior alongside system performance.

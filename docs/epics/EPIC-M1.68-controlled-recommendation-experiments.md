@@ -1,7 +1,7 @@
 # EPIC-M1.68 — Controlled Recommendation Experiments
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Provide an isolated framework for comparing recommendation models, scoring rules, and evidence strategies without contaminating production history.

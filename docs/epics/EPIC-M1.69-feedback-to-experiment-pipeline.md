@@ -1,7 +1,7 @@
 # EPIC-M1.69 — Feedback-to-Experiment Pipeline
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Turn repeated structured user feedback into testable learning hypotheses and isolated experiments.

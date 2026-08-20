@@ -1,7 +1,7 @@
 # EPIC-M1.66 — Recommendation Decision Trace
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Make every recommendation reproducible from its exact inputs, evidence, rules, model, score, target, SL, and confidence versions.

@@ -1,7 +1,7 @@
 # EPIC-M1.59 — Portfolio-Aware Recommendation
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Make recommendations aware of existing user holdings and active recommendations without changing the underlying opportunity score.

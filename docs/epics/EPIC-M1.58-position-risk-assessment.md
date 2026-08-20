@@ -1,7 +1,7 @@
 # EPIC-M1.58 — Position Risk Assessment
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Quantify recommendation-level downside, reward/risk, and volatility-adjusted risk so users can understand risk before acting.

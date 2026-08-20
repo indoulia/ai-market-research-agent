@@ -1,7 +1,7 @@
 # EPIC-M1.67 — Model Regression Detection
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Detect when a promoted model or scoring change materially degrades real-world recommendation performance.
