@@ -395,3 +395,19 @@ class ModelPromotionDecision(Base):
     approver: Mapped[str] = mapped_column(String(128))
     promotion_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SelfLearningCycle(Base):
+    __tablename__ = "self_learning_cycles"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    new_outcomes_count: Mapped[int] = mapped_column(Integer)
+    watermark_outcome_id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"))
+    outcome: Mapped[str] = mapped_column(String(32))
+    skip_reason: Mapped[str | None] = mapped_column(String(64))
+    dataset_version: Mapped[str | None] = mapped_column(String(32))
+    comparison_version: Mapped[str | None] = mapped_column(String(32))
+    model_promotion_decision_id: Mapped[int | None] = mapped_column(ForeignKey("model_promotion_decisions.id"))
+    discovery_triggered: Mapped[bool] = mapped_column(Boolean)
+    cycle_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
