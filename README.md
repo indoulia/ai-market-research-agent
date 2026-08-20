@@ -49,4 +49,22 @@ uvicorn app.main:app --reload
 
 Health check: `GET http://localhost:8000/health`
 
+## Historical dataset quality gate
+
+After applying migrations and ingesting candles, validate a date range with:
+
+```powershell
+python -m scripts.validate_market_data --from-date 2026-01-01 --to-date 2026-06-30
+```
+
+Add one or more `--stock-id` options to scope the run. The command checks positive
+OHLCV values, valid high/low relationships, duplicate timestamps, NSE-midnight
+timestamps, unexpected sessions, and missing sessions. It writes the complete JSON
+result to `dataset_validation_runs`; `PASSED` and exit code `0` are the downstream
+modeling/backtest gate. `FAILED` returns exit code `1`.
+
+By default, weekdays are expected sessions. Code that has an official NSE holiday
+calendar should call `validate_market_prices(..., expected_sessions=...)` so holidays
+are excluded explicitly and audibly.
+
 The current implementation is a working M1 scaffold. It does not claim to produce live investment predictions until the real historical NSE data adapter is connected and validated.
