@@ -1,7 +1,7 @@
 # EPIC-M1.64 — Data Source Reliability
 
-Status: READY_FOR_APPROVAL
-Execution Status: NOT_READY
+Status: APPROVED
+Execution Status: READY_FOR_EXECUTION
 
 ## Objective
 Measure the freshness, completeness, availability, and historical reliability of every external information source used by recommendations.
