@@ -486,3 +486,23 @@ class RecommendationEvidenceItem(Base):
     snapshot_rule_version: Mapped[str] = mapped_column(String(32))
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ConfidenceCalibrationRecord(Base):
+    __tablename__ = "confidence_calibration_records"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "calibration_version", name="uq_confidence_calibration_prediction_version"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    calibration_version: Mapped[str] = mapped_column(String(32))
+    raw_confidence: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    calibrated_confidence: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    bucket_lower: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    bucket_upper: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    verdict: Mapped[str] = mapped_column(String(32))
+    training_window_label: Mapped[str] = mapped_column(String(128))
+    calibrated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
