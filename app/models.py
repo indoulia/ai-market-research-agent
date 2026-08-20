@@ -216,6 +216,27 @@ class WatchlistDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ReplayRun(Base):
+    __tablename__ = "replay_runs"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    recommendation_generation_id: Mapped[int] = mapped_column(ForeignKey("recommendation_generations.id"))
+    replayed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    limitation: Mapped[str | None] = mapped_column(String(64))
+    replayed_qualifies: Mapped[bool | None] = mapped_column(Boolean)
+    replayed_failed_criteria: Mapped[list | None] = mapped_column(JSON)
+    replayed_opportunity_score: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    replayed_horizon_days: Mapped[int | None] = mapped_column(Integer)
+    replayed_predicted_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    replayed_model_version: Mapped[str | None] = mapped_column(String(64))
+    replayed_feature_version: Mapped[str | None] = mapped_column(String(64))
+    replayed_consensus_contract_version: Mapped[str | None] = mapped_column(String(32))
+    replayed_scoring_contract_version: Mapped[str | None] = mapped_column(String(32))
+    replayed_horizon_selection_version: Mapped[str | None] = mapped_column(String(32))
+    matches_original: Mapped[bool | None] = mapped_column(Boolean)
+    replay_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
