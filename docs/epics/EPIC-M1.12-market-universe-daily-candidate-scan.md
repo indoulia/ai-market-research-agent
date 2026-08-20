@@ -36,10 +36,24 @@ Automatically scan the supported NSE universe each trading day and produce a det
 - [ ] Empty/partial scans are handled without fabricating candidates.
 - [ ] Tests cover normal, duplicate, stale-data, and empty-universe cases.
 
-## Dependencies
+## Dependency Chain
 
-- M1.3 — Yahoo NSE Historical Data Provider
-- M1.8 — Positive Consensus Engine
+### Previous / Required
+- **M1.3 — Yahoo NSE Historical Data Provider** — supplies the market data required by the scan.
+- **M1.8 — Positive Consensus Engine** — provides the qualifying criteria used downstream.
+
+### Next / Unlocks
+- **M1.13 — Positive Recommendation Generator** — consumes the candidate set produced by this EPIC.
+
+### Chain Position
+
+`M1.3 + M1.8 → M1.12 → M1.13 → M1.14 → M1.15 → M1.16`
+
+M1.17 (ChatGPT Candidate Discovery) branches later from the same quantitative path and depends on M1.8 and M1.13.
+
+### Execution Rule
+
+Do not execute M1.13 until M1.12 is implemented, reviewed, and merged. If implementation exposes a dependency defect, report it; do not silently bypass the dependency.
 
 ## Completion Report
 
