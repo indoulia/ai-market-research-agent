@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from sqlalchemy import String, Integer, BigInteger, Boolean, DateTime, Numeric, ForeignKey, JSON
+from sqlalchemy import String, Integer, BigInteger, Boolean, DateTime, Numeric, ForeignKey, JSON, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -14,8 +14,8 @@ class Stock(Base):
     company_name: Mapped[str | None] = mapped_column(String(256))
     sector: Mapped[str | None] = mapped_column(String(128))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class MarketPrice(Base):
@@ -34,7 +34,7 @@ class MarketPrice(Base):
 class DatasetValidationRun(Base):
     __tablename__ = "dataset_validation_runs"
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     from_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     to_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(16))
@@ -49,7 +49,7 @@ class Prediction(Base):
     # the sqlite variant keeps local/test fixtures (see tests/test_recommendation_history.py) working.
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     as_of_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     entry_price: Mapped[Decimal] = mapped_column(Numeric(18, 6))
     horizon_days: Mapped[int] = mapped_column(Integer)
@@ -87,4 +87,4 @@ class ModelVersion(Base):
     feature_version: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(32))
     metrics_json: Mapped[dict | None] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
