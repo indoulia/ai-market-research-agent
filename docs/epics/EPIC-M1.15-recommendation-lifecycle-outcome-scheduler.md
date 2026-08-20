@@ -36,11 +36,26 @@ Automatically track each issued recommendation through its selected 1/3/5/7-day 
 - [ ] Missing data produces an explicit unevaluable state rather than fabricated results.
 - [ ] Tests cover 1/3/5/7-day horizons and interruption/retry behavior.
 
-## Dependencies
+## Dependency Chain
 
-- M1.5 — Evaluate Recommendation Outcomes
-- M1.10 — Positive Horizon Selection
-- M1.13 — Positive Recommendation Generator
+### Previous / Required
+- **M1.5 — Evaluate Recommendation Outcomes** — provides the objective outcome-evaluation contract.
+- **M1.10 — Positive Horizon Selection** — provides the intended trading-day horizon.
+- **M1.13 — Positive Recommendation Generator** — provides issued recommendations to track.
+- **M1.14 — Recommendation Selection & Daily Limit** — provides the selected recommendation set.
+
+### Next / Unlocks
+- **M1.16 — Recommendation Trust Report** — consumes the completed lifecycle/outcome history.
+
+### Chain Position
+
+`M1.8 + M1.9 + M1.10 + M1.12 → M1.13 → M1.14 → M1.15 → M1.16`
+
+M1.17 remains a discovery branch from M1.8/M1.13 and does not block this lifecycle chain.
+
+### Execution Rule
+
+Do not execute M1.16 until M1.15 is implemented, reviewed, and merged. Do not change issued recommendations to make lifecycle evaluation easier.
 
 ## Completion Report
 
