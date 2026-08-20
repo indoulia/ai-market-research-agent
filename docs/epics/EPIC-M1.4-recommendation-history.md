@@ -1,6 +1,6 @@
 # EPIC-M1.4 — Persist Recommendation History
 
-**Status:** VALIDATING
+**Status:** DONE
 **Priority:** P1
 **Owner:** Claude autonomous/epic-m1-4
 
@@ -43,7 +43,7 @@ Persist every positive recommendation exactly as issued so its original predicti
 
 ### Status
 
-IMPLEMENTED
+IMPLEMENTED (merged to main via PR #10, merge commit `9dde65b`)
 
 ### EPIC
 
