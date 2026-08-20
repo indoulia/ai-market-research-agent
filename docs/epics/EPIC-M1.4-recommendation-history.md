@@ -55,7 +55,7 @@ None.
 
 ### Pull Request
 
-To be opened targeting `main` from this branch (see PR for its number/URL).
+PR #10 — https://github.com/indoulia/ai-market-research-agent/pull/10
 
 ### Branch
 
