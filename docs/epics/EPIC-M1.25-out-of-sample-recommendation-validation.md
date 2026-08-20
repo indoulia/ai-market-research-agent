@@ -1,7 +1,7 @@
 # EPIC-M1.25 — Out-of-Sample Recommendation Validation
 
-**Status:** APPROVED  
-**Execution Status:** VALIDATING  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Approved By:** User  
 **Priority:** P1
 
