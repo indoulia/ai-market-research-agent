@@ -68,7 +68,7 @@ EPIC-M1.14
 
 ### Branch
 
-autonomous/epic-m1-14, stacked on the still-open `autonomous/epic-m1-13` branch/PR #28 (this EPIC selects among M1.13's `RecommendationGeneration` rows, which aren't in `main` yet).
+autonomous/epic-m1-14. Originally stacked on the then-open `autonomous/epic-m1-13` branch/PR #28; PR #28 has since been squash-merged into `main` (commit `88039fc`), and this branch was rebased directly onto `main` (see "Final reconciliation onto merged M1.13" below).
 
 ### Objective
 
@@ -145,6 +145,20 @@ PR #30 merged to `main` mid-session, requiring PR #28 (M1.13) to re-rebase; this
 ### Third reconciliation: rebased after M1.13's third reconciliation (2026-08-20)
 
 PR #26 (M1.7) also merged to `main` mid-session, requiring PR #28 to re-rebase again; this branch followed the same pattern once more — no conflicts. Re-verified: `pytest -q` **147 passed, 0 failed**; `compileall`/`git diff --check` exit 0; `alembic heads` single head `0014_recommendation_selections`; full PostgreSQL round-trip against a freshly reset schema, clean throughout.
+
+### Final reconciliation onto merged M1.13 (2026-08-20)
+
+PR #28 (M1.13) was verified (targets `main`, `mergeStateStatus: CLEAN`, CI passing) and squash-merged into `main` as commit `88039fc83e535031d63cd43919750f8f064f5b09`, per explicit user authorization to merge PR #28 and PR #29 for this occasion (this repo's standing contract otherwise never has Claude merge a PR).
+
+This branch was then rebased directly onto the new `main` tip (`git rebase --onto main 40a25e1 autonomous/epic-m1-14`), replaying only this EPIC's own four commits (the M1.14 feature commit plus its three prior reconciliation-docs commits) and dropping every M1.13-content commit now already present in `main` via the squash merge. No conflicts. The resulting diff against `main` contains exactly this EPIC's own files: `app/recommendation_selection.py`, the `RecommendationSelection` model addition in `app/models.py`, migration `0014_recommendation_selections.py`, `tests/test_recommendation_selection.py`, and this doc.
+
+Re-verified after rebase:
+- `pytest -q`: **147 passed, 0 failed**.
+- `pytest -v tests/test_recommendation_selection.py`: **7 passed**.
+- `compileall -q app scripts tests migrations`: exit 0, no output.
+- `git diff --check main..autonomous/epic-m1-14`: exit 0, no output.
+- `alembic heads`: single head, `0014_recommendation_selections`.
+- PostgreSQL round-trip against the local `market_agent` database: `downgrade base` → `upgrade head`, clean throughout, single head afterward.
 
 ## Review History
 
