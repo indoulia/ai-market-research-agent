@@ -524,3 +524,18 @@ class ConfidenceQualityClassification(Base):
     classified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     classification_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationFeedback(Base):
+    __tablename__ = "recommendation_feedback"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    user_id: Mapped[str] = mapped_column(String(128))
+    category: Mapped[str] = mapped_column(String(32))
+    reason_code: Mapped[str] = mapped_column(String(32))
+    comment: Mapped[str | None] = mapped_column(String(2000))
+    feedback_stage: Mapped[str] = mapped_column(String(16))
+    model_version: Mapped[str] = mapped_column(String(64))
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    feedback_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
