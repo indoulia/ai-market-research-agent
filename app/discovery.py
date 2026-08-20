@@ -19,7 +19,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import event, inspect, select
 from sqlalchemy.orm import Session
 
 from .models import DiscoveryRecord, RecommendationGeneration, ScanCandidate
@@ -40,6 +40,34 @@ class DiscoveryCandidateNotInScanError(RuntimeError):
     """Raised when the discovered stock has no `ScanCandidate` row in the given
     scan -- there is nothing to route through quantitative evaluation, and no
     recommendation is fabricated to work around that."""
+
+
+class DiscoveryRecordImmutableError(RuntimeError):
+    pass
+
+
+# EPIC-M1.28: the true provenance fields -- who/when/why a candidate was
+# discovered -- can never change after creation ("historical provenance
+# cannot be overwritten"). `recommendation_generation_id` is deliberately
+# excluded: it starts `None` and is legitimately set exactly once, later, by
+# `route_discovery_through_pipeline`'s own real `UPDATE` -- that is a forward
+# link populated by routing, not provenance itself, and guarding it here
+# would break that documented one-time transition.
+IMMUTABLE_PROVENANCE_FIELDS = ("scan_id", "stock_id", "source", "rationale", "discovered_at", "created_at")
+
+
+@event.listens_for(DiscoveryRecord, "before_update")
+def _reject_immutable_provenance_changes(mapper, connection, target):
+    state = inspect(target)
+    changed = [
+        field
+        for field in IMMUTABLE_PROVENANCE_FIELDS
+        if state.attrs[field].history.added or state.attrs[field].history.deleted
+    ]
+    if changed:
+        raise DiscoveryRecordImmutableError(
+            f"discovery record {target.id} field(s) {changed} cannot be modified after creation"
+        )
 
 
 def record_discovery(

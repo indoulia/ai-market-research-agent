@@ -9,6 +9,7 @@ from app.db import Base
 from app.discovery import (
     SOURCE_CHATGPT,
     DiscoveryCandidateNotInScanError,
+    DiscoveryRecordImmutableError,
     record_discovery,
     route_discovery_through_pipeline,
 )
@@ -198,3 +199,28 @@ def test_rationale_text_never_influences_the_generated_recommendation(session):
 
     # identical scan-candidate signals -> identical outcome, regardless of rationale text
     assert generation_a.outcome == generation_b.outcome == OUTCOME_QUALIFIED
+
+
+def test_discovery_provenance_is_immutable_after_creation(session):
+    scan = _make_scan(session)
+    stock = _make_stock(session)
+    discovery = record_discovery(session, scan_id=scan.id, stock_id=stock.id, rationale="thesis", discovered_at=AS_OF)
+
+    discovery.rationale = "a different story"
+    with pytest.raises(DiscoveryRecordImmutableError, match="rationale"):
+        session.flush()
+    session.rollback()
+
+
+def test_routing_can_still_populate_recommendation_generation_id_once(session):
+    """The immutability guard protects provenance fields only -- routing's
+    one-time (None -> id) link update must keep working."""
+    scan = _make_scan(session)
+    stock = _make_stock(session)
+    _make_eligible_candidate(session, scan, stock)
+    discovery = record_discovery(session, scan_id=scan.id, stock_id=stock.id, rationale="thesis", discovered_at=AS_OF)
+    assert discovery.recommendation_generation_id is None
+
+    generation = route_discovery_through_pipeline(session, discovery, **_generation_kwargs())
+
+    assert discovery.recommendation_generation_id == generation.id
