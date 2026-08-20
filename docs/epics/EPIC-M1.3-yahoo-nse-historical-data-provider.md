@@ -1,6 +1,6 @@
 # EPIC-M1.3 — Add Yahoo NSE Historical Data Provider
 
-**Status:** READY
+**Status:** VALIDATING
 **Priority:** P1
 **Owner:** Engineering Orchestrator
 
@@ -32,6 +32,14 @@ Add a Yahoo Finance research-data adapter for daily NSE OHLCV so the prediction 
 - [ ] Unit tests pass without network access.
 - [ ] Prediction and feature-generation code does not depend directly on `yfinance`.
 - [ ] No Upstox credential or broker integration is required.
+
+## Implementation / Validation Evidence
+
+- Added `YahooFinanceClient`, a lazy `yfinance` adapter returning the existing six-field candle contract.
+- Provider-boundary filtering deterministically skips missing, duplicate, non-positive, negative-volume, and invalid OHLC rows.
+- Added network-free pandas fixture tests and documented the research/prototyping data-source limitation.
+- `python -m compileall -q app tests` passed; `git diff --check` passed.
+- Full pytest validation is pending because `pytest` is not installed in the worker environment (`pytest: command not found`).
 
 ## Non-goals
 

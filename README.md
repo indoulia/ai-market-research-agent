@@ -50,3 +50,5 @@ uvicorn app.main:app --reload
 Health check: `GET http://localhost:8000/health`
 
 The current implementation is a working M1 scaffold. It does not claim to produce live investment predictions until the real historical NSE data adapter is connected and validated.
+
+Yahoo Finance (`yfinance`) is available as a research/prototyping source for daily NSE symbols such as `RELIANCE.NS`, `TCS.NS`, and `INFY.NS`. Its data is normalized and filtered at the provider boundary; it is not a claim of licensed production market-data redistribution.
