@@ -330,6 +330,32 @@ class OutcomeMeasurement(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class HistoricalLearningRecord(Base):
+    __tablename__ = "historical_learning_records"
+    __table_args__ = (
+        UniqueConstraint("dataset_version", "prediction_id", name="uq_learning_record_version_prediction"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    dataset_version: Mapped[str] = mapped_column(String(32))
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    information_cutoff: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    predicted_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    opportunity_score: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    sma20_distance: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    volume_ratio_20d: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    atr_percent: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    market_regime: Mapped[str | None] = mapped_column(String(32))
+    sector: Mapped[str | None] = mapped_column(String(128))
+    market_cap_bucket: Mapped[str | None] = mapped_column(String(32))
+    discovery_source: Mapped[str | None] = mapped_column(String(32))
+    outcome_classification: Mapped[str | None] = mapped_column(String(32))
+    realized_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    included: Mapped[bool] = mapped_column(Boolean)
+    exclusion_reason: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
