@@ -539,3 +539,20 @@ class RecommendationFeedback(Base):
     submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     feedback_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EvidenceRevalidationCheck(Base):
+    __tablename__ = "evidence_revalidation_checks"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    recommendation_evidence_item_id: Mapped[int] = mapped_column(ForeignKey("recommendation_evidence_items.id"))
+    evidence_category: Mapped[str] = mapped_column(String(32))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    freshness_threshold_seconds: Mapped[int] = mapped_column(Integer)
+    revalidation_required: Mapped[bool] = mapped_column(Boolean)
+    reason: Mapped[str | None] = mapped_column(String(32))
+    original_value: Mapped[str | None] = mapped_column(String(64))
+    current_value: Mapped[str | None] = mapped_column(String(64))
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revalidation_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
