@@ -1,6 +1,6 @@
 # EPIC-M1.2 — Historical Market Data Quality & Dataset Validation
 
-**Status:** READY
+**Status:** DONE
 **Priority:** P1
 **Owner:** Engineering Orchestrator
 
@@ -24,13 +24,17 @@ Establish a trustworthy canonical historical-market dataset on top of the comple
 
 ## Acceptance Criteria
 
-- [ ] Quality rules are explicit and machine-checkable.
-- [ ] Invalid OHLCV records are detected deterministically.
-- [ ] Duplicate and missing-session conditions are reported.
-- [ ] Validation results are persisted or emitted in a structured, auditable form.
-- [ ] Automated tests cover normal and invalid datasets.
-- [ ] Downstream consumers have a clear signal indicating whether a dataset is valid for modeling/backtesting.
-- [ ] No live trading or prediction-confidence changes are introduced.
+- [x] Quality rules are explicit and machine-checkable.
+- [x] Invalid OHLCV records are detected deterministically.
+- [x] Duplicate and missing-session conditions are reported.
+- [x] Validation results are persisted or emitted in a structured, auditable form.
+- [x] Automated tests cover normal and invalid datasets.
+- [x] Downstream consumers have a clear signal indicating whether a dataset is valid for modeling/backtesting.
+- [x] No live trading or prediction-confidence changes are introduced.
+
+## Completion Evidence
+
+Implemented and merged through the autonomous engineering flow. The implementation commit was `427d5ed` and the resulting work was published as PR #6.
 
 ## Non-goals
 
