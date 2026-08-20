@@ -1,7 +1,7 @@
 # EPIC-M1.39 — Historical Outcome Learning
 
-**Status:** APPROVED
-**Execution Status:** VALIDATING
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
