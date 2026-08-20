@@ -26,6 +26,11 @@ from .models import DiscoveryRecord, RecommendationGeneration, ScanCandidate
 from .recommendation_generator import generate_recommendation_for_candidate
 
 SOURCE_CHATGPT = "CHATGPT"
+# EPIC-M1.33: the source tag for candidates surfaced by the ordinary M1.12 daily
+# universe scan, recorded here for the same auditable-provenance reason external
+# discovery is -- so "how was this candidate surfaced" has one answer for every
+# candidate, not just externally suggested ones.
+SOURCE_DAILY_UNIVERSE_SCAN = "DAILY_UNIVERSE_SCAN"
 
 
 class DiscoveryCandidateNotInScanError(RuntimeError):
