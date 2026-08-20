@@ -47,6 +47,8 @@ def make_recommendation(session, stock, *, as_of, horizon_days=5, entry_price="1
         confidence=Decimal("0.80"),
         model_version="m1-baseline-1",
         feature_version="f1",
+        consensus_contract_version="PCC-001",
+        horizon_selection_version="PHS-001",
     )
 
 
@@ -67,6 +69,8 @@ def test_record_recommendation_persists_all_fields_with_unique_id(session):
     assert rec.confidence == Decimal("0.80")
     assert rec.model_version == "m1-baseline-1"
     assert rec.feature_version == "f1"
+    assert rec.consensus_contract_version == "PCC-001"
+    assert rec.horizon_selection_version == "PHS-001"
     assert rec.status == "OPEN"
 
     rec2 = make_recommendation(session, stock, as_of=as_of)
