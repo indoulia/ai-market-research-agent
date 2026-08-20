@@ -41,8 +41,9 @@ def scratch_db_url():
     settings.database_url = scratch_url
     try:
         cfg = Config(str(ALEMBIC_INI))
-        command.upgrade(cfg, "0002_upstox_instrument_key")
-        command.stamp(cfg, "0003_market_price_dedupe")
+        # EPIC-M1.4-SUB-02 fixed 0003_market_price_dedupe (it duplicated 0001's
+        # unique constraint under create_index and always failed on a fresh DB); a
+        # plain upgrade to head no longer needs a stamp-past workaround.
         command.upgrade(cfg, "head")
     finally:
         settings.database_url = original_url
