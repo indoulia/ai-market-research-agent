@@ -138,6 +138,20 @@ Turn an M1.12 `ScanCandidate` into a positive recommendation when the M1.8 conse
 
 I believe this implementation satisfies all six acceptance criteria with real, verified evidence, including a real-Postgres migration round-trip through the full chain M1.8→M1.9→M1.10→M1.12→M1.13. The undeclared M1.9 dependency gap is disclosed above and resolved by porting the existing, already-reviewed-in-spirit M1.9 implementation rather than by silently reinventing it or bypassing the dependency. This is NOT final approval — that remains the reviewer's call, and per the standing contract, Claude will not merge this PR.
 
+### Reconciliation onto `main` (2026-08-20)
+
+GitHub reported this PR as targeting `main` yet not mergeable, because its actual base branch was `autonomous/epic-m1-12` (M1.12's own feature branch), which was never merged into `main` — `main` instead got M1.12 through a separate PR (#27) whose commit is a byte-for-byte identical tree to `epic-m1-12`'s own M1.12 commit. There was no M1.9/M1.10 divergence to reconcile: `main`'s M1.6/M1.10/M1.11 history is the same commit chain this branch was built on, and M1.9 was already handled by porting it directly into this EPIC's own commit (see above) rather than depending on an external branch.
+
+Reconciliation performed: `git rebase --onto origin/main <merge-base> HEAD`, merge-base `02d8624`. Git dropped the duplicate M1.12 commit automatically ("patch contents already upstream") and replayed only this branch's own commits (M1.13 feature commit, the CI fix, and the CI-retrigger chore) directly onto current `main`. No source file conflicts; no product behavior changed. PR base retargeted from `autonomous/epic-m1-12` to `main` to match.
+
+Verification after reconciliation (all commands run against the rebased tree, from a fresh `.venv` with `requirements.txt` installed):
+- `pytest -q`: **134 passed, 0 failed** (the branch's own earlier CI fix — "same root cause as PR #30 on main" — already resolved the pre-existing failures noted in the prior run above; confirmed clean post-rebase).
+- `pytest -v tests/test_positive_opportunity_scoring.py tests/test_recommendation_generation.py tests/test_fresh_database_migration.py`: **29 passed**.
+- `compileall -q app scripts tests migrations`: exit 0, no output.
+- `git diff --check origin/main HEAD`: exit 0, no output.
+- `alembic heads`: single head, `0013_recommendation_generations`.
+- PostgreSQL round-trip against local `market_agent` database: `downgrade base` → `upgrade head` → `downgrade base` → `upgrade head`, all clean, exactly one head throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions; never erase prior findings. -->
