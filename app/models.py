@@ -60,6 +60,7 @@ class Prediction(Base):
     model_version: Mapped[str] = mapped_column(String(64))
     feature_version: Mapped[str] = mapped_column(String(64))
     consensus_contract_version: Mapped[str] = mapped_column(String(32))
+    horizon_selection_version: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(32), default="OPEN")
 
 

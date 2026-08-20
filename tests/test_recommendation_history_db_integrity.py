@@ -89,6 +89,7 @@ def make_recommendation(session):
         model_version="m1-baseline-1",
         feature_version="f1",
         consensus_contract_version="PCC-001",
+        horizon_selection_version="PHS-001",
         status="OPEN",
     )
     session.add(rec)
