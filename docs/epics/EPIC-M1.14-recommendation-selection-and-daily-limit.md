@@ -37,9 +37,23 @@ Select the strongest qualifying positive opportunities from all candidates witho
 - [ ] Selection-rule version is traceable.
 - [ ] Tests cover normal, limit, tie, and boundary cases.
 
-## Dependencies
+## Dependency Chain
 
-- M1.13 — Positive Recommendation Generator
+### Previous / Required
+- **M1.13 — Positive Recommendation Generator** — supplies the qualifying recommendation candidates.
+
+### Next / Unlocks
+- **M1.15 — Recommendation Lifecycle & Outcome Scheduler** — tracks selected/issued recommendations through their horizon.
+
+### Chain Position
+
+`M1.8 + M1.9 + M1.10 + M1.12 → M1.13 → M1.14 → M1.15 → M1.16`
+
+M1.17 is a later discovery branch and does not depend on M1.14.
+
+### Execution Rule
+
+Do not execute M1.15 until M1.14 is implemented, reviewed, and merged. Selection must not bypass the recommendation-generator contract.
 
 ## Completion Report
 
