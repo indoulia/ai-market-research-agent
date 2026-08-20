@@ -136,6 +136,8 @@ def _recommendation_kwargs(stock_id):
         model_version="m1-baseline-1",
         feature_version="f1",
         horizon_selection_version="PHS-001",
+        scoring_contract_version="POS-001",
+        opportunity_score=Decimal("70.00"),
     )
 
 

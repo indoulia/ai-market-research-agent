@@ -91,6 +91,8 @@ def make_recommendation(session):
         feature_version="f1",
         consensus_contract_version="PCC-001",
         horizon_selection_version="PHS-001",
+        scoring_contract_version="POS-001",
+        opportunity_score=Decimal("70.00"),
         status="OPEN",
     )
     session.add(rec)
