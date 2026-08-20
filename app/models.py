@@ -411,3 +411,39 @@ class SelfLearningCycle(Base):
     discovery_triggered: Mapped[bool] = mapped_column(Boolean)
     cycle_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    horizon_band: Mapped[str] = mapped_column(String(16))
+    custom_horizon_days: Mapped[int | None] = mapped_column(Integer)
+    risk_preference: Mapped[str] = mapped_column(String(16))
+    min_confidence_threshold: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    preferred_sectors: Mapped[list | None] = mapped_column(JSON)
+    preferred_market_cap_buckets: Mapped[list | None] = mapped_column(JSON)
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    preference_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationPreferenceSnapshot(Base):
+    __tablename__ = "recommendation_preference_snapshots"
+    __table_args__ = (
+        UniqueConstraint("user_id", "recommendation_generation_id", name="uq_pref_snapshot_user_generation"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    recommendation_generation_id: Mapped[int] = mapped_column(ForeignKey("recommendation_generations.id"))
+    user_preference_id: Mapped[int] = mapped_column(ForeignKey("user_preferences.id"))
+    horizon_band: Mapped[str] = mapped_column(String(16))
+    min_confidence_threshold: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    matched_horizon: Mapped[bool] = mapped_column(Boolean)
+    met_min_confidence: Mapped[bool] = mapped_column(Boolean)
+    preference_match_boost: Mapped[bool] = mapped_column(Boolean)
+    included: Mapped[bool] = mapped_column(Boolean)
+    exclusion_reason: Mapped[str | None] = mapped_column(String(64))
+    snapshotted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    preference_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
