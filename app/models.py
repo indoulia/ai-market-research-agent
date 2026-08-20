@@ -264,6 +264,22 @@ class ModelPromotion(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class LearningCycle(Base):
+    __tablename__ = "learning_cycles"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    new_outcomes_count: Mapped[int] = mapped_column(Integer)
+    watermark_outcome_id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"))
+    outcome: Mapped[str] = mapped_column(String(32))
+    skip_reason: Mapped[str | None] = mapped_column(String(64))
+    discovery_effectiveness_version: Mapped[str | None] = mapped_column(String(32))
+    calibration_candidate_version: Mapped[str | None] = mapped_column(String(32))
+    candidate_model_evaluation_version: Mapped[str | None] = mapped_column(String(32))
+    model_promotion_id: Mapped[int | None] = mapped_column(ForeignKey("model_promotions.id"))
+    cycle_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
