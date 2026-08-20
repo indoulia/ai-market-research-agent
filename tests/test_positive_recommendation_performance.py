@@ -63,6 +63,8 @@ def make_recommendation(session, stock, *, horizon_days=5, predicted_probability
         confidence=Decimal("0.80"),
         model_version="m1-baseline-1",
         feature_version="f1",
+        consensus_contract_version="PCC-001",
+        horizon_selection_version="PHS-001",
     )
 
 

@@ -70,6 +70,8 @@ def test_prediction_gets_a_real_datetime_default_on_sqlite(session):
         confidence="0.8",
         model_version="m1-baseline-1",
         feature_version="f1",
+        consensus_contract_version="PCC-001",
+        horizon_selection_version="PHS-001",
     )
     session.add(prediction)
     session.flush()

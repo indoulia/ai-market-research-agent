@@ -58,6 +58,8 @@ def make_evaluated(session, predicted_probability, want_success, horizon_days=1)
         confidence=Decimal("0.80"),
         model_version="m1-baseline-1",
         feature_version="f1",
+        consensus_contract_version="PCC-001",
+        horizon_selection_version="PHS-001",
     )
     close = Decimal("106") if want_success else Decimal("95")  # day 1 always resolves the outcome
     for offset in range(1, horizon_days + 1):
@@ -82,6 +84,7 @@ def make_open(session, predicted_probability, horizon_days=5):
         horizon_days=horizon_days, target_return=Decimal("0.05"), stop_return=Decimal("-0.03"),
         predicted_probability=predicted_probability, confidence=Decimal("0.80"),
         model_version="m1-baseline-1", feature_version="f1",
+        consensus_contract_version="PCC-001", horizon_selection_version="PHS-001",
     )
 
 
@@ -97,6 +100,7 @@ def make_unevaluable(session, predicted_probability, horizon_days=1):
         horizon_days=horizon_days, target_return=Decimal("0.05"), stop_return=Decimal("-0.03"),
         predicted_probability=predicted_probability, confidence=Decimal("0.80"),
         model_version="m1-baseline-1", feature_version="f1",
+        consensus_contract_version="PCC-001", horizon_selection_version="PHS-001",
     )
     session.add(MarketPrice(
         stock_id=stock.id, timestamp=AS_OF + timedelta(days=1),
