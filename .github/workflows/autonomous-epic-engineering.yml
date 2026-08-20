@@ -25,6 +25,18 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      # Git ref updates happen outside the Codex sandbox. Codex only needs to
+      # edit/test the already-created feature branch; this avoids the sandbox
+      # restriction that prevented writes under .git/refs.
+      - name: Create autonomous feature branch
+        shell: bash
+        env:
+          AUTONOMOUS_BRANCH: autonomous/epic-run-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          git switch -c "$AUTONOMOUS_BRANCH"
+          echo "AUTONOMOUS_BRANCH=$AUTONOMOUS_BRANCH" >> "$GITHUB_ENV"
+
       - name: Run Codex autonomous engineering worker
         uses: openai/codex-action@v1
         with:
@@ -33,7 +45,7 @@ jobs:
           prompt: |
             You are the autonomous engineering worker for ${{ github.repository }}.
 
-            This run was triggered by a merge/push to protected main. Treat the repository as the persistent source of truth.
+            This run was triggered by a merge/push to protected main. The workflow has already created the feature branch for you. Treat the repository and its EPIC documents as the persistent source of truth.
 
             FIRST:
             1. Read AGENTS.md.
@@ -44,13 +56,12 @@ jobs:
 
             IF AN EPIC IS ELIGIBLE:
             1. Claim it according to the orchestration policy before implementation.
-            2. Create a feature branch from current main. Never push directly to main.
+            2. Work on the current feature branch created by the workflow. Do not create another branch.
             3. Inspect relevant repository code, tests, migrations, and documentation before changing files.
             4. Implement the EPIC end-to-end, including tests and required documentation.
             5. Run the strongest available validation. Fix failures caused by your changes.
             6. Update the EPIC status and record concise implementation/validation evidence.
-            7. Commit the work with a clear message.
-            8. Push the feature branch and open a pull request targeting main.
+            7. Do not commit, push, or create a pull request. The surrounding GitHub Actions workflow owns those Git operations.
 
             SAFETY:
             - Never commit secrets or modify .env files.
@@ -60,4 +71,35 @@ jobs:
             - Keep changes limited to the selected EPIC.
 
             FINAL RESPONSE:
-            Report the selected EPIC, branch, implementation summary, validation results, PR URL if created, and any blocker. If no EPIC was eligible, say so and stop.
+            Report the selected EPIC, implementation summary, validation results, and any blocker. Do not claim that a branch, commit, push, or PR was created by you.
+
+      - name: Validate and publish Codex changes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          echo "=== Working tree after Codex ==="
+          git status --short --branch
+
+          if git diff --quiet && git diff --cached --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo "Codex made no repository changes; nothing to publish."
+            exit 0
+          fi
+
+          echo "=== Diff check ==="
+          git diff --check
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "feat: implement next autonomous EPIC"
+          git push --set-upstream origin "$AUTONOMOUS_BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$AUTONOMOUS_BRANCH" \
+            --title "feat: autonomous EPIC implementation" \
+            --body "Autonomous Codex implementation triggered by merge/push to main.\n\nCodex selected and implemented the highest-priority eligible EPIC. See the Actions run for discovery, implementation, and validation evidence.\n\nWorkflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
