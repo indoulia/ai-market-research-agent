@@ -142,6 +142,10 @@ Verification after reconciliation (fresh `.venv`, `requirements.txt` installed):
 
 PR #30 merged to `main` mid-session, requiring PR #28 (M1.13) to re-rebase; this branch was re-rebased in turn (`git rebase --onto <new-epic-m1-13-tip> <old-M1.14-feature-commit>~1 HEAD`), replaying only this EPIC's own feature and docs commits — no conflicts. Re-verified: `pytest -q` **141 passed, 0 failed**; `compileall`/`git diff --check` exit 0; `alembic heads` single head `0014_recommendation_selections`; full `upgrade head` → `downgrade base` → `upgrade head` PostgreSQL round-trip against a freshly reset schema, clean throughout.
 
+### Third reconciliation: rebased after M1.13's third reconciliation (2026-08-20)
+
+PR #26 (M1.7) also merged to `main` mid-session, requiring PR #28 to re-rebase again; this branch followed the same pattern once more — no conflicts. Re-verified: `pytest -q` **147 passed, 0 failed**; `compileall`/`git diff --check` exit 0; `alembic heads` single head `0014_recommendation_selections`; full PostgreSQL round-trip against a freshly reset schema, clean throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions; never erase prior findings. -->
