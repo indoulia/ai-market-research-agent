@@ -16,6 +16,8 @@ class UpstoxError(RuntimeError):
 class UpstoxClient:
     """Small HTTP client for the Upstox instrument master and Historical Candle V3 API."""
 
+    source = "upstox-v3"
+
     def __init__(self, access_token: str, instruments_url: str, timeout: float = 30.0) -> None:
         if not access_token:
             raise ValueError("UPSTOX_ACCESS_TOKEN is required")

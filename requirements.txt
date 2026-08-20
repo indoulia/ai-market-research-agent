@@ -11,4 +11,4 @@ xgboost>=2.1,<4
 python-dotenv>=1.0,<2
 pytest>=8.3,<9
 httpx>=0.28,<1
-yfinance>=0.2.50,<1
+yfinance>=0.2.54,<1

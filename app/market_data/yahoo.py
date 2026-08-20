@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta, timezone
 import math
 from typing import Any
 
+import pandas as pd
 import yfinance as yf
 
 
@@ -22,42 +23,57 @@ class YahooFinanceClient:
     def fetch_daily_candles(self, symbol: str, from_date: date, to_date: date) -> list[list[Any]]:
         if from_date > to_date:
             raise ValueError("from_date must be on or before to_date")
-        symbol = symbol.strip().upper()
-        if not symbol:
+        normalized_symbol = symbol.strip().upper()
+        if not normalized_symbol:
             raise ValueError("symbol is required")
         try:
             frame = yf.download(
-                symbol, start=from_date.isoformat(),
+                normalized_symbol,
+                start=from_date.isoformat(),
                 end=(to_date + timedelta(days=1)).isoformat(),
-                auto_adjust=False, progress=False, group_by="column", threads=False,
+                interval="1d",
+                auto_adjust=False,
+                progress=False,
+                group_by="column",
+                threads=False,
+                timeout=self.timeout,
             )
         except Exception as exc:
-            raise YahooFinanceError(f"Yahoo Finance history request failed: {exc}") from exc
+            raise YahooFinanceError(f"Yahoo Finance history request failed for {normalized_symbol}: {exc}") from exc
         if frame is None or frame.empty:
             return []
+        return self._normalize(frame, from_date, to_date)
+
+    @staticmethod
+    def _normalize(frame: pd.DataFrame, from_date: date, to_date: date) -> list[list[Any]]:
+        if isinstance(frame.columns, pd.MultiIndex):
+            ticker = frame.columns.get_level_values(-1)[0]
+            frame = frame.xs(ticker, axis=1, level=-1)
+        required = {"Open", "High", "Low", "Close", "Volume"}
+        if not required.issubset(frame.columns):
+            raise YahooFinanceError("Yahoo Finance response is missing OHLCV columns")
+
         rows: dict[str, list[Any]] = {}
-        for timestamp, values in frame.iterrows():
+        for timestamp, values in frame.sort_index().iterrows():
             try:
-                fields = [values[column] for column in ("Open", "High", "Low", "Close", "Volume")]
-            except (KeyError, TypeError):
-                # yfinance may return a ticker-level MultiIndex for a single symbol.
-                try:
-                    fields = [values[(column, symbol)] for column in ("Open", "High", "Low", "Close", "Volume")]
-                except (KeyError, TypeError):
-                    continue
-            numbers = [float(value) for value in fields]
-            open_price, high, low, close, volume = numbers
-            if (not all(math.isfinite(value) for value in numbers)
-                    or min(open_price, high, low, close) <= 0
-                    or volume < 0
-                    or high < max(open_price, close)
-                    or low > min(open_price, close)):
+                numbers = [float(values[column]) for column in ("Open", "High", "Low", "Close", "Volume")]
+            except (KeyError, TypeError, ValueError, OverflowError):
                 continue
-            stamp = timestamp.to_pydatetime() if hasattr(timestamp, "to_pydatetime") else timestamp
+            open_price, high, low, close, volume = numbers
+            if (
+                not all(math.isfinite(value) for value in numbers)
+                or min(open_price, high, low, close) <= 0
+                or volume < 0
+                or high < max(open_price, close)
+                or low > min(open_price, close)
+            ):
+                continue
+            stamp = pd.Timestamp(timestamp).to_pydatetime()
             if stamp.tzinfo is None:
                 stamp = datetime.combine(stamp.date(), time(), tzinfo=timezone.utc)
             else:
                 stamp = stamp.astimezone(timezone.utc)
-            key = stamp.date().isoformat()
-            rows[key] = [stamp.isoformat(), open_price, high, low, close, int(volume)]
+            if not from_date <= stamp.date() <= to_date:
+                continue
+            rows[stamp.date().isoformat()] = [stamp.isoformat(), open_price, high, low, close, int(volume)]
         return [rows[key] for key in sorted(rows)]
