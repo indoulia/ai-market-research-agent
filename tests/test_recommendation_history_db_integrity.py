@@ -88,6 +88,7 @@ def make_recommendation(session):
         confidence=Decimal("0.8"),
         model_version="m1-baseline-1",
         feature_version="f1",
+        consensus_contract_version="PCC-001",
         status="OPEN",
     )
     session.add(rec)

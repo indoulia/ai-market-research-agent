@@ -24,6 +24,7 @@ IMMUTABLE_FIELDS = (
     "confidence",
     "model_version",
     "feature_version",
+    "consensus_contract_version",
 )
 
 
@@ -58,6 +59,7 @@ def record_recommendation(
     confidence: Decimal,
     model_version: str,
     feature_version: str,
+    consensus_contract_version: str,
 ) -> Prediction:
     if horizon_days not in VALID_HORIZON_DAYS:
         raise ValueError(f"horizon_days must be one of {VALID_HORIZON_DAYS}")
@@ -73,6 +75,7 @@ def record_recommendation(
         confidence=confidence,
         model_version=model_version,
         feature_version=feature_version,
+        consensus_contract_version=consensus_contract_version,
         status="OPEN",
     )
     session.add(recommendation)
