@@ -55,7 +55,7 @@ None.
 
 ### Pull Request
 
-Not yet created — to be opened targeting `main` from this branch.
+To be opened targeting `main` from this branch (see PR for its number/URL).
 
 ### Branch
 
@@ -63,7 +63,7 @@ autonomous/epic-m1-4
 
 ### Implementation Commit
 
-Recorded in the PR; this report was written before the implementation commit was created (see repository history on this branch for the exact SHA).
+77f1c9b
 
 ### Objective
 
