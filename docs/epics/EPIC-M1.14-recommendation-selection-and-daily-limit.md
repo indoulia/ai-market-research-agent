@@ -138,6 +138,10 @@ Verification after reconciliation (fresh `.venv`, `requirements.txt` installed):
 - `alembic heads`: single head, `0014_recommendation_selections`.
 - PostgreSQL round-trip against local `market_agent` database: `downgrade base` → `upgrade head` → `downgrade base` → `upgrade head`, all clean, exactly one head throughout.
 
+### Second reconciliation: rebased after M1.13's own second reconciliation (2026-08-20)
+
+PR #30 merged to `main` mid-session, requiring PR #28 (M1.13) to re-rebase; this branch was re-rebased in turn (`git rebase --onto <new-epic-m1-13-tip> <old-M1.14-feature-commit>~1 HEAD`), replaying only this EPIC's own feature and docs commits — no conflicts. Re-verified: `pytest -q` **141 passed, 0 failed**; `compileall`/`git diff --check` exit 0; `alembic heads` single head `0014_recommendation_selections`; full `upgrade head` → `downgrade base` → `upgrade head` PostgreSQL round-trip against a freshly reset schema, clean throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions; never erase prior findings. -->
