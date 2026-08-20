@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: autonomous-epic-engineering
@@ -45,7 +46,7 @@ jobs:
           prompt: |
             You are the autonomous engineering worker for ${{ github.repository }}.
 
-            This run was triggered by a merge/push to protected main. The workflow has already created the feature branch for you. Treat the repository and its EPIC documents as the persistent source of truth.
+            This run was triggered by a merge/push to protected main or a manual orchestration run. The workflow has already created the feature branch for you. Treat the repository and its EPIC documents as the persistent source of truth.
 
             FIRST:
             1. Read AGENTS.md.
@@ -102,4 +103,4 @@ jobs:
             --base main \
             --head "$AUTONOMOUS_BRANCH" \
             --title "feat: autonomous EPIC implementation" \
-            --body "Autonomous Codex implementation triggered by merge/push to main.\n\nCodex selected and implemented the highest-priority eligible EPIC. See the Actions run for discovery, implementation, and validation evidence.\n\nWorkflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --body "Autonomous Codex implementation triggered by merge/push to main or a manual run.\n\nCodex selected and implemented the highest-priority eligible EPIC. See the Actions run for discovery, implementation, and validation evidence.\n\nWorkflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
