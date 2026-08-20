@@ -124,6 +124,20 @@ From all of one scan's M1.13-qualified candidates, deterministically select the 
 
 I believe this implementation satisfies all seven acceptance criteria with real, verified evidence, including a real-Postgres migration round-trip through the full chain M1.8→M1.9→M1.10→M1.12→M1.13→M1.14. No new undeclared dependencies were found this time — M1.13 was this EPIC's only declared dependency and is already present on this stacked branch. This is NOT final approval — that remains the reviewer's call, and per the standing contract, Claude will not merge this PR.
 
+### Reconciliation onto reconciled M1.13 (2026-08-20)
+
+PR #28 (M1.13) was reconciled onto current `main` (its base retargeted from the never-merged `autonomous/epic-m1-12` to `main`; see M1.13's own completion report for detail). This branch (`autonomous/epic-m1-14`) was stacked on the pre-reconciliation `autonomous/epic-m1-13`, so it needed the equivalent rebase.
+
+Reconciliation performed: `git rebase --onto <new-epic-m1-13-tip> c79a674 origin/autonomous/epic-m1-14`, replaying only this branch's own commit (the M1.14 feature commit) onto the reconciled M1.13 branch. This branch's separate CI-fix commit (`c8cb93f`, merged in earlier from `epic-m1-13`) was dropped automatically by the rebase as "patch contents already upstream" — it's already present via the reconciled M1.13 branch it's now stacked on. No source conflicts; no product behavior changed. `base` stays `autonomous/epic-m1-13` (unchanged ref name, now pointing at the reconciled branch).
+
+Verification after reconciliation (fresh `.venv`, `requirements.txt` installed):
+- `pytest -q`: **141 passed, 0 failed** (the pre-existing failures noted in the prior run above were already resolved by the CI fix now inherited from the reconciled M1.13 branch).
+- `pytest -v tests/test_recommendation_selection.py`: **7 passed**.
+- `compileall -q app scripts tests migrations`: exit 0, no output.
+- `git diff --check origin/main HEAD`: exit 0, no output.
+- `alembic heads`: single head, `0014_recommendation_selections`.
+- PostgreSQL round-trip against local `market_agent` database: `downgrade base` → `upgrade head` → `downgrade base` → `upgrade head`, all clean, exactly one head throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions; never erase prior findings. -->
