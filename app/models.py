@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import String, Integer, BigInteger, Boolean, DateTime, Numeric, ForeignKey, JSON, func
+from sqlalchemy import String, Integer, BigInteger, Boolean, Date, DateTime, Numeric, ForeignKey, JSON, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -79,6 +79,36 @@ class PredictionOutcome(Base):
     target_hit: Mapped[bool] = mapped_column(Boolean)
     stop_hit: Mapped[bool] = mapped_column(Boolean)
     outcome: Mapped[str] = mapped_column(String(32))
+
+
+class DailyCandidateScan(Base):
+    __tablename__ = "daily_candidate_scans"
+    __table_args__ = (UniqueConstraint("scan_date", "universe_version", name="uq_scan_date_universe_version"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_date: Mapped[date] = mapped_column(Date)
+    universe_version: Mapped[str] = mapped_column(String(32))
+    eligible_count: Mapped[int] = mapped_column(Integer)
+    excluded_count: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ScanCandidate(Base):
+    __tablename__ = "scan_candidates"
+    __table_args__ = (UniqueConstraint("scan_id", "stock_id", name="uq_scan_candidate_scan_stock"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    eligible: Mapped[bool] = mapped_column(Boolean)
+    exclusion_reason: Mapped[str | None] = mapped_column(String(64))
+    predicted_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    confidence: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    sma20_distance: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    volume_ratio_20d: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    atr_percent: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    data_quality_passed: Mapped[bool | None] = mapped_column(Boolean)
+    model_version: Mapped[str | None] = mapped_column(String(64))
+    feature_version: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ModelVersion(Base):
