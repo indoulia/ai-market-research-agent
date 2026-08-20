@@ -137,6 +137,20 @@ class RecommendationSelection(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RecommendationLifecycle(Base):
+    __tablename__ = "recommendation_lifecycles"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    recommendation_generation_id: Mapped[int] = mapped_column(
+        ForeignKey("recommendation_generations.id"), unique=True
+    )
+    state: Mapped[str] = mapped_column(String(32))
+    lifecycle_rule_version: Mapped[str] = mapped_column(String(32))
+    outcome_id: Mapped[int | None] = mapped_column(ForeignKey("prediction_outcomes.id"))
+    check_count: Mapped[int] = mapped_column(Integer, default=0)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
