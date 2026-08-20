@@ -1,0 +1,63 @@
+name: Autonomous EPIC Engineering
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: autonomous-epic-engineering
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  codex:
+    name: Discover and implement next EPIC
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run Codex autonomous engineering worker
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          prompt: |
+            You are the autonomous engineering worker for ${{ github.repository }}.
+
+            This run was triggered by a merge/push to protected main. Treat the repository as the persistent source of truth.
+
+            FIRST:
+            1. Read AGENTS.md.
+            2. Read docs/orchestration/EPIC-ORCHESTRATION-POLICY.md.
+            3. Inspect docs/epics/ and identify the highest-priority READY EPIC whose dependencies are satisfied.
+            4. Do not implement more than one EPIC in a single run.
+            5. If no eligible EPIC exists, report that clearly and make no implementation changes.
+
+            IF AN EPIC IS ELIGIBLE:
+            1. Claim it according to the orchestration policy before implementation.
+            2. Create a feature branch from current main. Never push directly to main.
+            3. Inspect relevant repository code, tests, migrations, and documentation before changing files.
+            4. Implement the EPIC end-to-end, including tests and required documentation.
+            5. Run the strongest available validation. Fix failures caused by your changes.
+            6. Update the EPIC status and record concise implementation/validation evidence.
+            7. Commit the work with a clear message.
+            8. Push the feature branch and open a pull request targeting main.
+
+            SAFETY:
+            - Never commit secrets or modify .env files.
+            - Never perform live trading, financial transactions, or production deployment.
+            - Do not invent product or architectural decisions. Mark NEEDS_DECISION when required.
+            - Do not use untrusted GitHub event values as shell code.
+            - Keep changes limited to the selected EPIC.
+
+            FINAL RESPONSE:
+            Report the selected EPIC, branch, implementation summary, validation results, PR URL if created, and any blocker. If no EPIC was eligible, say so and stop.
