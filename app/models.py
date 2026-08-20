@@ -151,6 +151,23 @@ class RecommendationLifecycle(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class DiscoveryRecord(Base):
+    __tablename__ = "discovery_records"
+    __table_args__ = (
+        UniqueConstraint("scan_id", "stock_id", "source", name="uq_discovery_scan_stock_source"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    source: Mapped[str] = mapped_column(String(32))
+    rationale: Mapped[str] = mapped_column(String(2000))
+    discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    recommendation_generation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("recommendation_generations.id")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
