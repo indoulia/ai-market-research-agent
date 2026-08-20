@@ -575,3 +575,19 @@ class RecommendationRevision(Base):
     revised_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revision_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LearningPipelinePromotionDecision(Base):
+    __tablename__ = "learning_pipeline_promotion_decisions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    source_signal: Mapped[str] = mapped_column(String(32))
+    affected_condition: Mapped[str] = mapped_column(String(256))
+    candidate_version: Mapped[str] = mapped_column(String(32))
+    sample_size: Mapped[int] = mapped_column(Integer)
+    expected_impact: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    decision: Mapped[str] = mapped_column(String(32))
+    decision_reason: Mapped[str] = mapped_column(String(64))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    approver: Mapped[str] = mapped_column(String(128))
+    gate_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
