@@ -1,8 +1,8 @@
 # EPIC-M1.4-SUB-03 — Model Timestamp Portability
 
 **Parent EPIC:** EPIC-M1.4  
-**Status:** APPROVED  
-**Execution Status:** READY_FOR_EXECUTION  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Priority:** P2
 
 ## Context

@@ -1,7 +1,7 @@
 # EPIC-M1.12 — Market Universe & Daily Candidate Scan
 
-**Status:** APPROVED  
-**Execution Status:** READY_FOR_EXECUTION  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Approved By:** User  
 **Priority:** P1
 
