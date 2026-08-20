@@ -293,6 +293,21 @@ class DataFetchAttempt(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RecommendationObservation(Base):
+    __tablename__ = "recommendation_observations"
+    __table_args__ = (UniqueConstraint("prediction_id", "day_number", name="uq_observation_prediction_day"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    observation_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    day_number: Mapped[int] = mapped_column(Integer)
+    close_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    return_since_entry: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    data_available: Mapped[bool] = mapped_column(Boolean)
+    horizon_complete: Mapped[bool] = mapped_column(Boolean)
+    observation_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
