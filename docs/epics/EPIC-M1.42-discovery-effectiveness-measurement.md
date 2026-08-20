@@ -1,7 +1,7 @@
 # EPIC-M1.42 — Discovery Effectiveness Measurement
 
-**Status:** READY_FOR_APPROVAL
-**Execution Status:** NOT_STARTED
+**Status:** APPROVED
+**Execution Status:** READY_FOR_EXECUTION
 **Priority:** P1
 
 ## Objective

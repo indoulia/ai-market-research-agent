@@ -1,6 +1,6 @@
 # EPIC-M1.47 — Recommendation Target & Stop-Loss Engine
 
-**Status:** READY_FOR_APPROVAL  
+**Status:** APPROVED  
 **Execution Status:** READY_FOR_EXECUTION  
 **Priority:** P1  
 **Dependency:** M1.14
