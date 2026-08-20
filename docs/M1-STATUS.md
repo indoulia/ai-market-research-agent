@@ -17,10 +17,11 @@ Historical Prediction Engine only.
 - FastAPI health/model endpoints
 - Test scaffold
 - Deterministic historical OHLCV quality rules and persisted validation reports
+- Yahoo Finance daily NSE research-data provider
+- Immutable positive-recommendation history persistence and query support (M1.4)
 
 ## Not yet production-ready
 
-- Yahoo Finance daily NSE research-data provider (Upstox remains available for licensed access)
 - Validated production-scale NSE historical dataset
 - Corporate-action adjustment policy
 - Point-in-time fundamentals
@@ -28,6 +29,7 @@ Historical Prediction Engine only.
 - Full walk-forward runner
 - Dataset versioning
 - Leakage detection
+- Recommendation outcome evaluation
 - Production model artifacts
 - Live prediction endpoint
 - OpenAI Agent
@@ -37,5 +39,4 @@ market-data redistribution. It is isolated behind the market-data provider bound
 
 ## Next implementation tasks
 
-- M1.2 — validate the historical NSE dataset before modeling or backtesting.
-- M1.3 — validate the Yahoo Finance NSE historical data provider for research use.
+- M1.5 — evaluate recommendation outcomes at their predefined horizon (depends on M1.4).
