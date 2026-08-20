@@ -34,10 +34,24 @@ Allow ChatGPT-assisted discovery of stocks to investigate while keeping final po
 - [ ] Discovery provenance is traceable.
 - [ ] Tests demonstrate bypass prevention.
 
-## Dependencies
+## Dependency Chain
 
-- M1.8 — Positive Consensus Engine
-- M1.13 — Positive Recommendation Generator
+### Previous / Required
+- **M1.8 — Positive Consensus Engine** — defines the positive qualification gate.
+- **M1.13 — Positive Recommendation Generator** — provides the same quantitative recommendation path used by internally discovered candidates.
+
+### Next / Unlocks
+- No downstream EPIC is currently committed. Future discovery enhancements must be separately defined and approved.
+
+### Chain Position
+
+`M1.8 → M1.13 → M1.17`
+
+M1.17 is a side branch from the core recommendation path. It does **not** require M1.14, M1.15, or M1.16 to execute.
+
+### Execution Rule
+
+Do not execute M1.17 until M1.8 and M1.13 are implemented, reviewed, and merged. ChatGPT discovery must never bypass quantitative qualification.
 
 ## Completion Report
 
