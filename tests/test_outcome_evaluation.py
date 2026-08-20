@@ -69,6 +69,8 @@ def make_recommendation(session, stock, *, horizon_days=5, entry_price="100", ta
         model_version="m1-baseline-1",
         feature_version="f1",
         consensus_contract_version="PCC-001",
+        scoring_contract_version="POS-001",
+        opportunity_score=Decimal("70.00"),
     )
 
 
