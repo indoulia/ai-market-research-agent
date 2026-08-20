@@ -1,6 +1,6 @@
 # EPIC-M1.49 — Confidence Calibration
 
-**Status:** READY_FOR_APPROVAL  
+**Status:** APPROVED  
 **Execution Status:** READY_FOR_EXECUTION  
 **Priority:** P1  
 **Dependency:** M1.16, M1.38

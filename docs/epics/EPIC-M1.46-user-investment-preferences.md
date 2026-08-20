@@ -1,6 +1,6 @@
 # EPIC-M1.46 — User Investment Preferences
 
-**Status:** READY_FOR_APPROVAL  
+**Status:** APPROVED  
 **Execution Status:** READY_FOR_EXECUTION  
 **Priority:** P1  
 **Dependency:** M1.14

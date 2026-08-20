@@ -1,7 +1,7 @@
 # EPIC-M1.33 — Continuous Stock Discovery
 
-**Status:** READY_FOR_APPROVAL
-**Execution Status:** NOT_STARTED
+**Status:** APPROVED
+**Execution Status:** READY_FOR_EXECUTION
 **Priority:** P1
 
 ## Objective

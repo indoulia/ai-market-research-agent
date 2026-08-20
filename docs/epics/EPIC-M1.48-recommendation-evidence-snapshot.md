@@ -1,6 +1,6 @@
 # EPIC-M1.48 — Recommendation Evidence Snapshot
 
-**Status:** READY_FOR_APPROVAL  
+**Status:** APPROVED  
 **Execution Status:** READY_FOR_EXECUTION  
 **Priority:** P1  
 **Dependency:** M1.35, M1.47

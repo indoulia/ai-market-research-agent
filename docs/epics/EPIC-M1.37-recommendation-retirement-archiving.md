@@ -1,7 +1,7 @@
 # EPIC-M1.37 — Recommendation Retirement & Archiving
 
-**Status:** READY_FOR_APPROVAL
-**Execution Status:** NOT_STARTED
+**Status:** APPROVED
+**Execution Status:** READY_FOR_EXECUTION
 **Priority:** P1
 
 ## Objective
