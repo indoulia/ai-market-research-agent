@@ -1,7 +1,7 @@
 # EPIC-M1.26 — Market Regime Detection
 
-**Status:** APPROVED  
-**Execution Status:** VALIDATING  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Priority:** P1
 
 ## Objective
