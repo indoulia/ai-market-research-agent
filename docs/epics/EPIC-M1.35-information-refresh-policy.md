@@ -1,7 +1,7 @@
 # EPIC-M1.35 — Automatic Information Refresh Policy
 
-**Status:** APPROVED
-**Execution Status:** VALIDATING
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
