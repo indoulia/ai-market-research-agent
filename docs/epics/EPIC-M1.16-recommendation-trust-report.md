@@ -37,10 +37,24 @@ Expose the historical truth of recommendation performance so trust is based on e
 - [ ] Insufficient samples are explicitly identified.
 - [ ] Tests verify report calculations against known fixtures.
 
-## Dependencies
+## Dependency Chain
 
-- M1.6 — Positive Recommendation Performance Report
-- M1.15 — Recommendation Lifecycle & Outcome Scheduler
+### Previous / Required
+- **M1.6 — Positive Recommendation Performance Report** — provides the historical performance calculations.
+- **M1.15 — Recommendation Lifecycle & Outcome Scheduler** — provides completed lifecycle/outcome data.
+
+### Next / Unlocks
+- **Future self-learning/calibration EPICs** — may use the trust report as evidence, but must be separately defined and approved.
+
+### Chain Position
+
+`M1.8 + M1.9 + M1.10 + M1.12 → M1.13 → M1.14 → M1.15 → M1.16`
+
+M1.11 (Calibration Feedback Loop) may consume the same outcome/performance evidence and should be coordinated with M1.16 rather than treated as an implicit dependency.
+
+### Execution Rule
+
+Do not treat a recommendation as trustworthy merely because the report exists. Every statistic must expose sample size and preserve failures/unevaluable cases. Do not proceed to future self-learning work based on insufficient evidence.
 
 ## Completion Report
 
