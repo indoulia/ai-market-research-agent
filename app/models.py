@@ -13,6 +13,8 @@ class Stock(Base):
     exchange: Mapped[str] = mapped_column(String(16), default="NSE")
     company_name: Mapped[str | None] = mapped_column(String(256))
     sector: Mapped[str | None] = mapped_column(String(128))
+    industry: Mapped[str | None] = mapped_column(String(128))
+    market_cap: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -165,6 +167,18 @@ class DiscoveryRecord(Base):
     recommendation_generation_id: Mapped[int | None] = mapped_column(
         ForeignKey("recommendation_generations.id")
     )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DiscoverySegment(Base):
+    __tablename__ = "discovery_segments"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    discovery_record_id: Mapped[int] = mapped_column(ForeignKey("discovery_records.id"), unique=True)
+    market_cap_bucket: Mapped[str] = mapped_column(String(32))
+    sector: Mapped[str] = mapped_column(String(128))
+    industry: Mapped[str] = mapped_column(String(128))
+    liquidity_bucket: Mapped[str] = mapped_column(String(32))
+    segmentation_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
