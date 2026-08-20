@@ -447,3 +447,24 @@ class RecommendationPreferenceSnapshot(Base):
     snapshotted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     preference_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationPublication(Base):
+    __tablename__ = "recommendation_publications"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "methodology_version", name="uq_publication_prediction_methodology"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    methodology_version: Mapped[str] = mapped_column(String(32))
+    entry_price: Mapped[Decimal] = mapped_column(Numeric(18, 6))
+    target_price: Mapped[Decimal] = mapped_column(Numeric(18, 6))
+    stop_loss_price: Mapped[Decimal] = mapped_column(Numeric(18, 6))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    upside_percentage: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    downside_percentage: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    reward_risk_ratio: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    published: Mapped[bool] = mapped_column(Boolean)
+    rejection_reason: Mapped[str | None] = mapped_column(String(64))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
