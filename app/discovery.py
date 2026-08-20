@@ -31,6 +31,9 @@ SOURCE_CHATGPT = "CHATGPT"
 # discovery is -- so "how was this candidate surfaced" has one answer for every
 # candidate, not just externally suggested ones.
 SOURCE_DAILY_UNIVERSE_SCAN = "DAILY_UNIVERSE_SCAN"
+# EPIC-M1.19: the source tag for a watchlist stock (M1.18) routed through this
+# same pipeline for positive analysis.
+SOURCE_WATCHLIST = "WATCHLIST"
 
 
 class DiscoveryCandidateNotInScanError(RuntimeError):
