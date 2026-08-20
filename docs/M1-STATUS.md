@@ -19,7 +19,7 @@ Historical Prediction Engine only.
 
 ## Not yet production-ready
 
-- Real NSE historical data provider
+- Yahoo Finance daily NSE research-data provider (Upstox remains available for licensed access)
 - Corporate-action adjustment policy
 - Point-in-time fundamentals
 - Event-aware target/stop labeler
@@ -30,6 +30,5 @@ Historical Prediction Engine only.
 - Live prediction endpoint
 - OpenAI Agent
 
-## Next implementation task
-
-M1.1 — finalize the real historical NSE data contract and ingestion adapter.
+The Yahoo adapter is a research/prototyping source and is not a claim of licensed production
+market-data redistribution. It is isolated behind the market-data provider boundary.

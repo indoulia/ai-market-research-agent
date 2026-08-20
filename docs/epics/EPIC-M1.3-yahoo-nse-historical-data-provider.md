@@ -1,8 +1,8 @@
 # EPIC-M1.3 — Add Yahoo NSE Historical Data Provider
 
-**Status:** READY
+**Status:** VALIDATING
 **Priority:** P1
-**Owner:** Engineering Orchestrator
+**Owner:** Codex autonomous/epic-run-32368034067
 
 ## Objective
 
@@ -41,3 +41,12 @@ Add a Yahoo Finance research-data adapter for daily NSE OHLCV so the prediction 
 - Portfolio management.
 - Prediction-model changes.
 - UI/dashboard work.
+
+## Implementation status
+
+Implemented the `YahooFinanceClient` adapter, normalized daily OHLCV output, deterministic
+row filtering/deduplication, ingestion source propagation, and offline fixture tests.
+
+Validation evidence: `python -m compileall app tests` passed. The configured environment does
+not include pytest (`No module named pytest`), so the test suite could not be executed in this
+run; `requirements.txt` includes the required test and Yahoo Finance dependencies.
