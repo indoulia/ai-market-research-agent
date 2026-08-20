@@ -1,7 +1,7 @@
 # EPIC-M1.14 — Recommendation Selection & Daily Limit
 
-**Status:** APPROVED  
-**Execution Status:** READY_FOR_EXECUTION  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Approved By:** User  
 **Priority:** P1
 
