@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/orchestration/**'
+      - 'docs/epics/**'
   workflow_dispatch:
 
 concurrency:
@@ -26,9 +29,6 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      # Git ref updates happen outside the Codex sandbox. Codex only needs to
-      # edit/test the already-created feature branch; this avoids the sandbox
-      # restriction that prevented writes under .git/refs.
       - name: Create autonomous feature branch
         shell: bash
         env:
@@ -43,8 +43,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           permission-profile: ":workspace"
-          model: gpt-5.6-terra
-          effort: medium
+          model: gpt-5.6-luna
+          effort: low
           prompt: |
             You are the autonomous engineering worker for ${{ github.repository }}.
 
@@ -53,9 +53,10 @@ jobs:
             FIRST:
             1. Read AGENTS.md.
             2. Read docs/orchestration/EPIC-ORCHESTRATION-POLICY.md.
-            3. Inspect docs/epics/ and identify the highest-priority READY EPIC whose dependencies are satisfied.
-            4. Do not implement more than one EPIC in a single run.
-            5. If no eligible EPIC exists, report that clearly and make no implementation changes.
+            3. Read docs/orchestration/COST-CONTROL-POLICY.md.
+            4. Inspect docs/epics/ and identify the highest-priority READY EPIC whose dependencies are satisfied.
+            5. Do not implement more than one EPIC in a single run.
+            6. If no eligible EPIC exists, report that clearly and make no implementation changes.
 
             IF AN EPIC IS ELIGIBLE:
             1. Claim it according to the orchestration policy before implementation.
@@ -69,8 +70,9 @@ jobs:
             COST CONTROL:
             - Work on exactly one EPIC.
             - Prefer focused repository inspection over broad, repetitive exploration.
-            - Stop when the EPIC is implemented and the strongest practical validation has passed.
+            - Stop when acceptance criteria and strongest practical validation pass.
             - Do not continue polishing after acceptance criteria are satisfied.
+            - Do not retry indefinitely.
 
             SAFETY:
             - Never commit secrets or modify .env files.
@@ -97,9 +99,7 @@ jobs:
             exit 0
           fi
 
-          echo "=== Diff check ==="
           git diff --check
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
