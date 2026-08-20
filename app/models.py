@@ -506,3 +506,21 @@ class ConfidenceCalibrationRecord(Base):
     training_window_label: Mapped[str] = mapped_column(String(128))
     calibrated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ConfidenceQualityClassification(Base):
+    __tablename__ = "confidence_quality_classifications"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "classification_rule_version", name="uq_confidence_quality_prediction_version"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    confidence_calibration_record_id: Mapped[int] = mapped_column(ForeignKey("confidence_calibration_records.id"))
+    quality: Mapped[str] = mapped_column(String(32))
+    reasons: Mapped[list] = mapped_column(JSON)
+    sample_count: Mapped[int] = mapped_column(Integer)
+    calibration_verdict: Mapped[str] = mapped_column(String(32))
+    is_data_fresh: Mapped[bool] = mapped_column(Boolean)
+    classified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    classification_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
