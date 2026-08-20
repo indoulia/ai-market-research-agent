@@ -1,6 +1,6 @@
 # EPIC-M1.5 — Evaluate Recommendation Outcomes
 
-**Status:** VALIDATING
+**Status:** DONE
 **Priority:** P1
 
 ## Objective
