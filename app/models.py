@@ -237,6 +237,18 @@ class ReplayRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class MarketRegime(Base):
+    __tablename__ = "market_regimes"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"), unique=True)
+    regime: Mapped[str] = mapped_column(String(32))
+    breadth_positive_ratio: Mapped[Decimal] = mapped_column(Numeric(6, 4))
+    average_atr_percent: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    eligible_count: Mapped[int] = mapped_column(Integer)
+    regime_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
