@@ -45,7 +45,9 @@ class DatasetValidationRun(Base):
 
 class Prediction(Base):
     __tablename__ = "predictions"
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    # BigInteger on sqlite doesn't get rowid-alias autoincrement, unlike Postgres BIGSERIAL;
+    # the sqlite variant keeps local/test fixtures (see tests/test_recommendation_history.py) working.
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default="now()")
     as_of_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -54,6 +56,7 @@ class Prediction(Base):
     target_return: Mapped[Decimal] = mapped_column(Numeric(10, 6))
     stop_return: Mapped[Decimal] = mapped_column(Numeric(10, 6))
     predicted_probability: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    confidence: Mapped[Decimal] = mapped_column(Numeric(10, 8))
     model_version: Mapped[str] = mapped_column(String(64))
     feature_version: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(32), default="OPEN")
