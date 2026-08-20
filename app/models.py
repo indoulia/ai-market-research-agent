@@ -120,3 +120,16 @@ class ModelVersion(Base):
     status: Mapped[str] = mapped_column(String(32))
     metrics_json: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WatchlistEvaluation(Base):
+    __tablename__ = "watchlist_evaluations"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consensus_contract_version: Mapped[str] = mapped_column(String(32))
+    qualifies: Mapped[bool] = mapped_column(Boolean)
+    failed_criteria: Mapped[list] = mapped_column(JSON)
+    outcome: Mapped[str] = mapped_column(String(32))
+    backlog_reason: Mapped[str | None] = mapped_column(String(64))
+    prediction_id: Mapped[int | None] = mapped_column(ForeignKey("predictions.id"))
