@@ -109,6 +109,26 @@ This branch, M1.9's (`autonomous/epic-m1-9`, PR #22), and M1.10's (`autonomous/e
 
 I believe this implementation satisfies all seven acceptance criteria with real, verified evidence. The undeclared dependency on M1.8 and the resulting 3-way migration-numbering collision with M1.9/M1.10 are both real, disclosed risks flagged above rather than silently resolved or hidden. This is NOT final approval — that remains the reviewer's call, and per the corrected contract, Claude will not merge this PR.
 
+### Reconciliation onto current `main` (2026-08-20)
+
+M1.8's `app/consensus.py`, which this EPIC depends on directly, turned out to be byte-identical between this branch's dependency commit and current `main` (`git diff --stat` between them is empty) — main gained an equivalent M1.8 implementation through a different PR, so no consensus-logic reconciliation was needed, only a rebase. This EPIC is genuinely still required: it is the only mechanism in the repository for evaluating a user-supplied stock outside the M1.12 daily scan, and nothing in M1.8–M1.14 supersedes it.
+
+Reconciliation performed:
+1. `git rebase --onto origin/main f2b7863 HEAD` (merge-base `f2b7863`, this branch's own M1.8 dependency commit) — replayed only this EPIC's own commit onto current `main`. One conflict, in `app/models.py`: `main` already carries M1.4-SUB-03's `func.now()` portability fix for `ModelVersion.created_at` where this branch's stale parent still had the pre-fix `server_default="now()"`; resolved by keeping `main`'s portable version and appending this EPIC's `WatchlistEvaluation` model unchanged.
+2. Resolved the exact 3-way migration collision flagged above: since M1.9's and M1.10's own `0009` claims were each renumbered away during their own reconciliation (M1.9 ported into M1.13 as `0012`; `main`'s actual M1.10 never reserved `0009` at all), this EPIC's `0009_watchlist_evaluations` was the only remaining claimant and keeps its number. But `main`'s `0010_horizon_selection_version` had filled the gap with `down_revision = 0008` directly (skipping the never-merged `0009`), so merging this EPIC as-is would have produced two Alembic heads (`0009` as a dead-end off `0008`, and the real `0008→0010→0011` chain). Fixed by changing `migrations/versions/0010_horizon_selection_version.py`'s `down_revision` from `0008_consensus_contract_version` to `0009_watchlist_evaluations`, slotting the chain to `0008→0009→0010→0011`.
+3. Cherry-picked `9049bec` ("fix: repair CI, broken since M1.10 merged onto main", open as PR #30 on `main`, not yet merged) — same root cause as M1.13/M1.14's own CI fixes: `record_recommendation()` on `main` now requires `horizon_selection_version` as a mandatory keyword argument (added when M1.10 landed on `main`), which several pre-existing test files never picked up. Applied cleanly, no conflicts.
+4. This EPIC's own `tests/test_watchlist_evaluation.py::_recommendation_kwargs()` helper predates M1.10 and had the same gap; added the same one-line `horizon_selection_version="PHS-001"` fix.
+
+**Note for the reviewer on merge ordering:** this PR now modifies `migrations/versions/0010_horizon_selection_version.py` (a file `main`, PR #28, and PR #29 all also carry unchanged). If PR #26 merges to `main` before PR #28/#29, those two will need a follow-up rebase to pick up the `0009→0010` chain fix; if they merge first, PR #26 will need the equivalent rebase against whatever `main` looks like then. Either order is mechanically fine — only one side needs a small follow-up rebase, not a rewrite.
+
+Verification after reconciliation (fresh `.venv`, `requirements.txt` installed):
+- `pytest -q`: **114 passed, 0 failed**.
+- `pytest -v tests/test_watchlist_evaluation.py`: 6 passed.
+- `compileall -q app scripts tests migrations`: exit 0, no output.
+- `git diff --check origin/main HEAD`: exit 0, no output.
+- `alembic heads`: single head, `0011_daily_candidate_scan` (this branch targets `main` directly, not the M1.12–14 stack, so it does not include those migrations).
+- PostgreSQL round-trip against local `market_agent` database (schema reset first, since the DB is shared with PR #28/#29 validation in this same session): `upgrade head` from `<base>` through `0011` (confirmed the `0008→0009→0010→0011` chain applies in order) → `downgrade base` → `upgrade head` again, all clean, exactly one head throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions here. Do not delete prior reviews. -->
