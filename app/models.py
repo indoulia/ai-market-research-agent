@@ -319,6 +319,17 @@ class RecommendationRetirement(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class OutcomeMeasurement(Base):
+    __tablename__ = "outcome_measurements"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_outcome_id: Mapped[int] = mapped_column(ForeignKey("prediction_outcomes.id"), unique=True)
+    outcome_classification: Mapped[str] = mapped_column(String(32))
+    realized_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    measured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    measurement_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
