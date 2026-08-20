@@ -18,7 +18,7 @@ jobs:
   codex:
     name: Discover and implement next EPIC
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - name: Checkout main
         uses: actions/checkout@v5
@@ -43,6 +43,8 @@ jobs:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           permission-profile: ":workspace"
+          model: gpt-5.6-terra
+          effort: medium
           prompt: |
             You are the autonomous engineering worker for ${{ github.repository }}.
 
@@ -63,6 +65,12 @@ jobs:
             5. Run the strongest available validation. Fix failures caused by your changes.
             6. Update the EPIC status and record concise implementation/validation evidence.
             7. Do not commit, push, or create a pull request. The surrounding GitHub Actions workflow owns those Git operations.
+
+            COST CONTROL:
+            - Work on exactly one EPIC.
+            - Prefer focused repository inspection over broad, repetitive exploration.
+            - Stop when the EPIC is implemented and the strongest practical validation has passed.
+            - Do not continue polishing after acceptance criteria are satisfied.
 
             SAFETY:
             - Never commit secrets or modify .env files.
