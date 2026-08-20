@@ -73,7 +73,7 @@ EPIC-M1.4
 
 ### Pull Request
 
-To be recorded once opened; Claude does not merge PRs (see the corrected top-level contract).
+PR #15 — https://github.com/indoulia/ai-market-research-agent/pull/15
 
 ### Branch
 
