@@ -308,6 +308,17 @@ class RecommendationObservation(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RecommendationRetirement(Base):
+    __tablename__ = "recommendation_retirements"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), unique=True)
+    retired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    retirement_reason: Mapped[str] = mapped_column(String(32))
+    lifecycle_state_at_retirement: Mapped[str] = mapped_column(String(32))
+    retirement_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
