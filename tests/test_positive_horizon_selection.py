@@ -107,6 +107,8 @@ def _recommendation_kwargs(stock_id):
         confidence=Decimal("0.80"),
         model_version="m1-baseline-1",
         feature_version="f1",
+        scoring_contract_version="POS-001",
+        opportunity_score=Decimal("70.00"),
     )
 
 

@@ -61,6 +61,8 @@ class Prediction(Base):
     feature_version: Mapped[str] = mapped_column(String(64))
     consensus_contract_version: Mapped[str] = mapped_column(String(32))
     horizon_selection_version: Mapped[str] = mapped_column(String(32))
+    scoring_contract_version: Mapped[str] = mapped_column(String(32))
+    opportunity_score: Mapped[Decimal] = mapped_column(Numeric(6, 2))
     status: Mapped[str] = mapped_column(String(32), default="OPEN")
 
 
@@ -108,6 +110,17 @@ class ScanCandidate(Base):
     data_quality_passed: Mapped[bool | None] = mapped_column(Boolean)
     model_version: Mapped[str | None] = mapped_column(String(64))
     feature_version: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationGeneration(Base):
+    __tablename__ = "recommendation_generations"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_candidate_id: Mapped[int] = mapped_column(ForeignKey("scan_candidates.id"), unique=True)
+    outcome: Mapped[str] = mapped_column(String(16))
+    consensus_contract_version: Mapped[str] = mapped_column(String(32))
+    failed_criteria: Mapped[list | None] = mapped_column(JSON)
+    prediction_id: Mapped[int | None] = mapped_column(ForeignKey("predictions.id"), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
