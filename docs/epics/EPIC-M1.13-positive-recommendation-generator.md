@@ -152,6 +152,12 @@ Verification after reconciliation (all commands run against the rebased tree, fr
 - `alembic heads`: single head, `0013_recommendation_generations`.
 - PostgreSQL round-trip against local `market_agent` database: `downgrade base` → `upgrade head` → `downgrade base` → `upgrade head`, all clean, exactly one head throughout.
 
+### Second reconciliation: PR #30 merged to `main` mid-session (2026-08-20)
+
+While this reconciliation was in progress, PR #30 (the CI fix from `main`, referenced above) was merged to `main` as `0a4edb5`. Re-ran the rebase (`git rebase --onto origin/main 3bf98da HEAD`) to pick up the new `main` tip. This branch's own equivalent CI-fix commit now partially overlapped `0a4edb5`: both added `consensus_contract_version`/`horizon_selection_version` to the same four test files, but this branch's version additionally added `scoring_contract_version`/`opportunity_score` (required once M1.13's own migration `0012` landed, which `main`'s standalone PR #30 fix predates). Resolved as a union — kept both additions, in the three files where they touch adjoining lines (`test_model_timestamp_portability.py`, `test_positive_recommendation_performance.py`, `test_recommendation_calibration.py`); `test_fresh_database_migration.py`'s fix was already fully covered by `0a4edb5` and needed no further change on this branch.
+
+Re-verified after this second reconciliation: `pytest -q` **134 passed, 0 failed**; `compileall`/`git diff --check` both exit 0; `alembic heads` single head `0013_recommendation_generations`; full PostgreSQL `upgrade head` → `downgrade base` → `upgrade head` round-trip against a freshly reset schema, clean throughout.
+
 ## Review History
 
 <!-- ChatGPT: append review decisions; never erase prior findings. -->
