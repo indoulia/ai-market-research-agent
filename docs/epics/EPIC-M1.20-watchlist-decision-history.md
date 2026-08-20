@@ -1,7 +1,7 @@
 # EPIC-M1.20 — Watchlist Decision History
 
-**Status:** APPROVED  
-**Execution Status:** VALIDATING  
+**Status:** DONE  
+**Execution Status:** COMPLETED  
 **Approved By:** User  
 **Priority:** P1
 
