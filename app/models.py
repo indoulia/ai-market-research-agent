@@ -193,6 +193,29 @@ class WatchlistEntry(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class WatchlistDecision(Base):
+    __tablename__ = "watchlist_decisions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    symbol: Mapped[str] = mapped_column(String(32))
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    recommendation_generation_id: Mapped[int] = mapped_column(
+        ForeignKey("recommendation_generations.id"), unique=True
+    )
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    outcome: Mapped[str] = mapped_column(String(16))
+    failed_criteria: Mapped[list | None] = mapped_column(JSON)
+    consensus_contract_version: Mapped[str] = mapped_column(String(32))
+    prediction_id: Mapped[int | None] = mapped_column(ForeignKey("predictions.id"))
+    model_version: Mapped[str | None] = mapped_column(String(64))
+    feature_version: Mapped[str | None] = mapped_column(String(64))
+    scoring_contract_version: Mapped[str | None] = mapped_column(String(32))
+    horizon_selection_version: Mapped[str | None] = mapped_column(String(32))
+    opportunity_score: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    decision_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
