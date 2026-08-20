@@ -72,6 +72,8 @@ def test_prediction_gets_a_real_datetime_default_on_sqlite(session):
         feature_version="f1",
         consensus_contract_version="PCC-001",
         horizon_selection_version="PHS-001",
+        scoring_contract_version="POS-001",
+        opportunity_score="70.00",
     )
     session.add(prediction)
     session.flush()
