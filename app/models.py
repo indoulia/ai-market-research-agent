@@ -624,3 +624,14 @@ class UserHolding(Base):
     quantity: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserAllocationLimit(Base):
+    __tablename__ = "user_allocation_limits"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    max_position_percentage: Mapped[Decimal] = mapped_column(Numeric(6, 4))
+    max_sector_percentage: Mapped[Decimal] = mapped_column(Numeric(6, 4))
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    limit_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
