@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.models import MarketPrice, Stock
+from app.refresh_policy import DATA_TYPE_MARKET, record_fetch_attempt
 
 
 class DailyHistoryProvider(Protocol):
@@ -47,17 +48,35 @@ def ingest_daily_history(
     from_date: date,
     to_date: date,
     symbols: Iterable[str] | None = None,
+    *,
+    requested_at: datetime,
 ) -> int:
-    """Fetch and idempotently persist daily OHLCV candles for active NSE stocks."""
+    """Fetch and idempotently persist daily OHLCV candles for active NSE stocks.
+
+    Mirrors app.fundamental_data.ingest / app.news_data.ingest: a provider failure for
+    one stock is recorded via M1.35's `record_fetch_attempt` and does not abort the
+    remaining stocks in the batch (previously an unhandled provider exception here
+    would abort the entire run, unlike its sibling ingest modules)."""
     query = select(Stock).where(Stock.is_active.is_(True), Stock.instrument_key.is_not(None))
     if symbols:
         normalized = [symbol.strip().upper() for symbol in symbols]
         query = query.where(Stock.symbol.in_(normalized))
     stocks = session.scalars(query.order_by(Stock.symbol)).all()
     inserted = 0
+    provider_id = getattr(client, "source", "upstox-v3")
 
     for stock in stocks:
-        candles = client.fetch_daily_candles(stock.instrument_key, from_date, to_date)
+        try:
+            candles = client.fetch_daily_candles(stock.instrument_key, from_date, to_date)
+        except Exception as exc:
+            record_fetch_attempt(
+                session, data_type=DATA_TYPE_MARKET, scope_key=str(stock.id), requested_at=requested_at,
+                source_timestamp=None, success=False, failure_reason=str(exc), provider_id=provider_id,
+            )
+            session.commit()
+            continue
+
+        latest_timestamp = None
         for candle in candles:
             if len(candle) < 6:
                 continue
@@ -65,6 +84,7 @@ def ingest_daily_history(
             open_price, high, low, close, volume = candle[1:6]
             if min(open_price, high, low, close) < 0 or volume < 0:
                 continue
+            latest_timestamp = timestamp if latest_timestamp is None else max(latest_timestamp, timestamp)
             stmt = insert(MarketPrice).values(
                 stock_id=stock.id,
                 timestamp=timestamp,
@@ -73,9 +93,14 @@ def ingest_daily_history(
                 low=Decimal(str(low)),
                 close=Decimal(str(close)),
                 volume=int(volume),
-                source=getattr(client, "source", "upstox-v3"),
+                source=provider_id,
             ).on_conflict_do_nothing(index_elements=["stock_id", "timestamp"])
             result = session.execute(stmt)
             inserted += result.rowcount or 0
+
+        record_fetch_attempt(
+            session, data_type=DATA_TYPE_MARKET, scope_key=str(stock.id), requested_at=requested_at,
+            source_timestamp=latest_timestamp, success=True, provider_id=provider_id,
+        )
         session.commit()
     return inserted
