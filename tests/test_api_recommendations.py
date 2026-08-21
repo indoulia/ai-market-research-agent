@@ -69,12 +69,12 @@ def client(session):
         app.dependency_overrides.clear()
 
 
-def _make_prediction(session, symbol="AAA", sector="TECH", target_return=Decimal("0.05")):
+def _make_prediction(session, symbol="AAA", sector="TECH", target_return=Decimal("0.05"), market_cap=Decimal("1000000000")):
     scan_date = date(2027, 1, 1) + timedelta(days=next(_scan_counter))
     scan = DailyCandidateScan(scan_date=scan_date, universe_version="DCS-001", eligible_count=1, excluded_count=0)
     session.add(scan)
     session.flush()
-    stock = Stock(symbol=symbol, exchange="NSE", sector=sector, company_name=f"{symbol} Ltd", market_cap=Decimal("1000000000"), is_active=True)
+    stock = Stock(symbol=symbol, exchange="NSE", sector=sector, company_name=f"{symbol} Ltd", market_cap=market_cap, is_active=True)
     session.add(stock)
     session.flush()
     session.add(MarketPrice(
@@ -129,13 +129,13 @@ def _add_lifecycle(session, generation, state=STATE_ISSUED):
     return lifecycle
 
 
-def _make_gate_passed(session, *, symbol="AAA", sector="TECH", target_return=Decimal("0.05"), trust_score=Decimal("0.9")):
+def _make_gate_passed(session, *, symbol="AAA", sector="TECH", target_return=Decimal("0.05"), trust_score=Decimal("0.9"), market_cap=Decimal("1000000000")):
     """Create a prediction that clears M1.81's positive gate, WITHOUT ranking
     it. `rank_positive_opportunities` is idempotent per `evaluated_at` -- a
     second call for the same timestamp returns the first call's snapshot
     unchanged -- so every prediction meant to appear in the same feed must
     be ranked together in one `_rank_and_activate` call, not one-by-one."""
-    prediction, generation, stock, _scan = _make_prediction(session, symbol=symbol, sector=sector, target_return=target_return)
+    prediction, generation, stock, _scan = _make_prediction(session, symbol=symbol, sector=sector, target_return=target_return, market_cap=market_cap)
     _add_evidence_quality(session, prediction)
     _add_trust_score(session, prediction, score=trust_score)
     evaluate_positive_gate(session, prediction, evaluated_at=AS_OF)
@@ -224,6 +224,24 @@ def test_ranking_is_ordered_by_score_descending_by_default(client, session):
     response = client.get("/api/v1/recommendations")
     symbols = [item["symbol"] for item in response.json()["data"]]
     assert symbols == ["HIGH", "LOW"]
+
+
+def test_market_cap_bucket_filter_uses_crore_thresholds(client, session):
+    # Regression test: this filter must reuse app.discovery_segmentation's
+    # canonical INR-crore thresholds (LARGE_CAP >= 20000, MID_CAP >= 5000,
+    # else SMALL_CAP) -- an earlier version of this endpoint invented its
+    # own absolute-currency thresholds that never matched real data.
+    small = _make_gate_passed(session, symbol="SMALL", sector="S1", market_cap=Decimal("1000"))
+    large = _make_gate_passed(session, symbol="LARGE", sector="S2", market_cap=Decimal("50000"))
+    _rank_and_activate(session, [small, large])
+
+    response = client.get("/api/v1/recommendations", params={"marketCapBucket": "LARGE_CAP"})
+    symbols = [item["symbol"] for item in response.json()["data"]]
+    assert symbols == ["LARGE"]
+
+    response = client.get("/api/v1/recommendations", params={"marketCapBucket": "SMALL_CAP"})
+    symbols = [item["symbol"] for item in response.json()["data"]]
+    assert symbols == ["SMALL"]
 
 
 def test_horizon_filter(client, session):

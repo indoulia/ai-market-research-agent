@@ -24,7 +24,7 @@ def get_recommendations(
     market: str | None = Query(default=None, description="Exchange, e.g. nse"),
     sector: str | None = Query(default=None),
     industry: str | None = Query(default=None),
-    marketCapBucket: str | None = Query(default=None, description="LARGE_CAP|MID_CAP|SMALL_CAP"),
+    marketCapBucket: str | None = Query(default=None, description="LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED"),
     minScore: Decimal | None = Query(default=None),
     minTrust: Decimal | None = Query(default=None),
     sort: str = Query(default="score", description="score|trust|upside|confidence|updatedAt"),

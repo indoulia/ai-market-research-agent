@@ -42,6 +42,7 @@ from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.confidence_quality import CONFIDENCE_QUALITY_VERSION
+from app.discovery_segmentation import BUCKET_UNCLASSIFIED, MARKET_CAP_BUCKET_THRESHOLDS
 from app.lifecycle import OPEN_STATES
 from app.models import (
     ConfidenceQualityClassification,
@@ -74,16 +75,6 @@ from ..schemas.recommendations import (
     RecommendationSummary,
 )
 
-# Market-cap bucket policy owned by this API layer -- no existing domain
-# module defines one. Thresholds are on whatever unit Stock.market_cap is
-# ingested in; versioned so a future retune is a visible contract change.
-MARKET_CAP_BUCKET_VERSION = "MCB-001"
-LARGE_CAP = "LARGE_CAP"
-MID_CAP = "MID_CAP"
-SMALL_CAP = "SMALL_CAP"
-_LARGE_CAP_MIN = Decimal("200000000000")
-_MID_CAP_MIN = Decimal("50000000000")
-
 SORT_FIELDS = ("score", "trust", "upside", "confidence", "updatedAt")
 DIRECTIONS = ("asc", "desc")
 
@@ -110,11 +101,14 @@ class RecommendationPage:
 
 
 def _market_cap_bucket_expr():
+    """SQL equivalent of `app.discovery_segmentation.classify_market_cap_bucket`,
+    reusing its canonical thresholds/vocabulary (bug fix from EPIC-M1.135: this
+    module originally invented its own absolute-currency thresholds, silently
+    incompatible with `Stock.market_cap`'s actual INR-crore unit -- see M1.137's
+    completion report)."""
     return case(
-        (Stock.market_cap.is_(None), None),
-        (Stock.market_cap >= _LARGE_CAP_MIN, LARGE_CAP),
-        (Stock.market_cap >= _MID_CAP_MIN, MID_CAP),
-        else_=SMALL_CAP,
+        *[(Stock.market_cap >= threshold, bucket) for threshold, bucket in MARKET_CAP_BUCKET_THRESHOLDS],
+        else_=BUCKET_UNCLASSIFIED,
     )
 
 

@@ -666,7 +666,7 @@
             }
           },
           {
-            "description": "LARGE_CAP|MID_CAP|SMALL_CAP",
+            "description": "LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED",
             "in": "query",
             "name": "marketCapBucket",
             "required": false,
@@ -679,7 +679,7 @@
                   "type": "null"
                 }
               ],
-              "description": "LARGE_CAP|MID_CAP|SMALL_CAP",
+              "description": "LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED",
               "title": "Marketcapbucket"
             }
           },
