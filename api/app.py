@@ -9,11 +9,12 @@ from app.settings import settings
 
 from .exception_handlers import register_exception_handlers
 from .middleware import RequestContextMiddleware
-from .routers import auth, bootstrap, discovery, health, market, news_events, preferences, recommendation_detail, recommendations, tracking
+from .routers import auth, bootstrap, discovery, health, market, meta, news_events, preferences, recommendation_detail, recommendations, tracking
 from .versioning import API_PREFIX
 
 api_router = APIRouter(prefix=API_PREFIX)
 api_router.include_router(health.router)
+api_router.include_router(meta.router)
 api_router.include_router(bootstrap.router)
 api_router.include_router(recommendations.router)
 api_router.include_router(recommendation_detail.router)

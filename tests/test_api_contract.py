@@ -77,6 +77,33 @@ def test_bootstrap_reports_contract_and_capabilities(client):
     }
 
 
+def test_version_endpoint_reports_api_and_contract_version(client):
+    response = client.get("/api/v1/version")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["apiVersion"] == "v1"
+    assert data["contractVersion"]
+
+
+def test_capabilities_endpoint_matches_bootstrap_capabilities(client):
+    response = client.get("/api/v1/capabilities")
+    assert response.status_code == 200
+    capabilities = response.json()["data"]
+    bootstrap_capabilities = client.get("/api/v1/app/bootstrap").json()["data"]["capabilities"]
+    assert capabilities == bootstrap_capabilities
+    assert capabilities == {
+        "recommendations": True,
+        "discovery": True,
+        "marketSummary": True,
+        "news": True,
+        "events": True,
+        "feedback": True,
+        "preferences": True,
+        "auth": True,
+        "analytics": True,
+    }
+
+
 def test_unmatched_route_returns_canonical_error_envelope(client):
     response = client.get("/api/v1/does-not-exist")
     assert response.status_code == 404

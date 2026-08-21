@@ -12,25 +12,13 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
+from ..capabilities import CAPABILITIES
 from ..envelope import success
-from ..schemas.bootstrap import ApiCapabilities, BootstrapResponse, ServerTime
+from ..schemas.bootstrap import BootstrapResponse, ServerTime
 from ..schemas.common import SuccessEnvelope
 from ..versioning import API_VERSION, CONTRACT_VERSION
 
 router = APIRouter(prefix="/app", tags=["app"])
-
-# Flipped to True as each dependent API epic merges into main.
-CAPABILITIES = ApiCapabilities(
-    recommendations=True,
-    discovery=True,
-    marketSummary=True,
-    news=True,
-    events=True,
-    feedback=True,
-    preferences=True,
-    auth=True,
-    analytics=True,
-)
 
 
 @router.get("/bootstrap", response_model=SuccessEnvelope[BootstrapResponse])
