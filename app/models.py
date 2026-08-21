@@ -2190,3 +2190,28 @@ class ChampionRollback(Base):
     approver: Mapped[str] = mapped_column(String(128))
     rollback_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ResolvedFact(Base):
+    __tablename__ = "resolved_facts"
+    __table_args__ = (
+        UniqueConstraint(
+            "fact_type", "stock_id", "fact_key", "resolved_at", name="uq_resolved_fact_type_stock_key_resolved_at",
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    fact_type: Mapped[str] = mapped_column(String(32), index=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    fact_key: Mapped[str] = mapped_column(String(128))
+    resolved_value_numeric: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    resolved_value_text: Mapped[str | None] = mapped_column(String(512))
+    winning_source: Mapped[str | None] = mapped_column(String(64))
+    winning_source_authority_tier: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    source_count: Mapped[int] = mapped_column(Integer)
+    sources_considered: Mapped[list] = mapped_column(JSON)
+    conflicting: Mapped[bool] = mapped_column(Boolean)
+    resolution_reason: Mapped[str] = mapped_column(String(48))
+    confidence: Mapped[Decimal] = mapped_column(Numeric(4, 3))
+    resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolution_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
