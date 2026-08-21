@@ -33,3 +33,25 @@ Next: M1.100 and downstream continuous-learning EPICs.
 
 ## Execution Rule
 The system must prefer honest abstention and controlled improvement over increased prediction volume. No self-learning action may bypass validation or rewrite historical evidence.
+
+## Completion Report
+
+**Status:** VALIDATING (implemented, tests passing, PR open)
+
+**Implementation:**
+- `app/self_correction_loop.py` (`generate_learning_hypotheses`, `get_hypothesis_history`, `get_latest_eligibility_effect`): a new, versioned (`HYPOTHESIS_RULE_VERSION = "SCL-001"`) module combining M1.85 `PredictionAttributionSnapshot` (failure-pattern evidence, itself already derived from M1.5 closed outcomes) and M1.86 `PredictionUsefulnessAssessment`/investment-usefulness evidence into explicit, persisted `LearningHypothesis` rows.
+- **Identify repeatable failure patterns / generate hypotheses from evidence:** a hypothesis is only ever generated for a segment (attribution dimension/value, or horizon) whose *baseline* window already shows a real weakness vs. the overall baseline rate, using the same `WEAKNESS_MARGIN`/`MIN_SAMPLE_SIZE_FOR_COMPARISON` this platform already uses everywhere else (`app/trust_report.py`) — a segment that looks fine in the baseline never produces a hypothesis at all.
+- **Replay and validate candidates out of sample / promote only on demonstrated improvement:** reuses M1.25's own `EvaluationWindow`/`OverlappingEvaluationWindowsError` disjoint-window abstraction. A baseline-flagged weakness is `VALIDATED` only if it independently replicates in a later, disjoint monitoring window's own evidence; `REJECTED` if it does not replicate; `PENDING_VALIDATION` (never validated) if the monitoring window lacks enough evidence to judge either way.
+- **Create controlled candidate changes, never apply directly:** each hypothesis carries a fixed, versioned `proposed_action` (e.g. `AVOID_REGIME_SEGMENT`, `REDUCE_HORIZON_ELIGIBILITY`, `RESTRICT_SEGMENT_ELIGIBILITY`, `REQUIRE_EVIDENCE_CATEGORY`) and an `eligibility_effect` (`RESTRICT` only when `VALIDATED`, `RESTORE` otherwise) — a read-only signal, never applied. This module has no write path to `Prediction`, `ScanCandidate`, or any live selection/eligibility table, matching the platform's established propose/gate posture (M1.65/M1.74/M1.77/M1.79/M1.80/M1.81/M1.83/M1.84/M1.87).
+- **Reduce or restore eligibility based on validated performance:** `get_latest_eligibility_effect` always reflects the most recently generated run for a segment — a later run whose weakness no longer replicates naturally supersedes an earlier `RESTRICT` with `RESTORE`, without ever mutating the earlier, immutable row (no separate "restore" code path is needed; it falls out of re-running against fresh evidence).
+- **Recalculate trust only from measured evidence:** this module never computes trust itself — that remains M1.77's exclusive, already-merged job.
+- **Preserve every learning decision:** new immutable table `learning_hypotheses` (migration `0073_learning_hypotheses.py`, model `LearningHypothesis`), one row per `(model_version, hypothesis_category, dimension, factor_value, generated_at)`, enforced immutable after creation via a `before_update` listener matching the established gate/decision-table pattern. A generation run is idempotent per `(model_version, generated_at)`.
+
+**Tests:** `tests/test_self_correction_loop.py` (10 tests) — no hypothesis when baseline isn't weak, validated/rejected/pending outcomes for factor failure patterns, low-horizon-usefulness hypothesis generation, overlapping-window rejection, idempotency, immutability, and `get_latest_eligibility_effect` correctly flipping from `RESTRICT` to `RESTORE` once a later run's evidence no longer replicates the original weakness.
+
+**Verification (real commands run, not fabricated):**
+- `python -m pytest tests/test_self_correction_loop.py -q` → `10 passed`
+- `python -m pytest -q` (full suite) → `896 passed, 6 skipped`
+- `python -m alembic heads` → single head `0073_learning_hypotheses (head)`, chain resolves cleanly
+
+**Not wired into any live selection/eligibility feed** — consistent with this platform's established propose/gate split; wiring `eligibility_effect` into the actual recommendation feed remains a future deployment step, the same posture M1.84's `eligibility_reduced` and M1.87's ranking output already documented.

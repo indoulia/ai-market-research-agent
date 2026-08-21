@@ -1232,3 +1232,31 @@ class PositiveOpportunityRanking(Base):
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ranking_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LearningHypothesis(Base):
+    __tablename__ = "learning_hypotheses"
+    __table_args__ = (
+        UniqueConstraint(
+            "model_version", "hypothesis_category", "dimension", "factor_value", "generated_at",
+            name="uq_learning_hypothesis_segment_generated_at",
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    hypothesis_category: Mapped[str] = mapped_column(String(32))
+    dimension: Mapped[str] = mapped_column(String(64))
+    factor_value: Mapped[str] = mapped_column(String(64))
+    baseline_window_label: Mapped[str] = mapped_column(String(64))
+    monitoring_window_label: Mapped[str] = mapped_column(String(64))
+    baseline_sample_count: Mapped[int] = mapped_column(Integer)
+    monitoring_sample_count: Mapped[int] = mapped_column(Integer)
+    baseline_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    monitoring_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    proposed_action: Mapped[str] = mapped_column(String(64))
+    validation_status: Mapped[str] = mapped_column(String(32))
+    eligibility_effect: Mapped[str] = mapped_column(String(32))
+    evidence_reference: Mapped[dict] = mapped_column(JSON)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    hypothesis_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
