@@ -94,9 +94,13 @@ def ingest_daily_history(
                 close=Decimal(str(close)),
                 volume=int(volume),
                 source=provider_id,
-            ).on_conflict_do_nothing(index_elements=["stock_id", "timestamp"])
+            ).on_conflict_do_nothing(index_elements=["stock_id", "timestamp"]).returning(MarketPrice.id)
+            # `.rowcount` on a single-row ON CONFLICT DO NOTHING insert is
+            # unreliable across drivers (observed -1 under psycopg3 even when
+            # the row landed) -- counting RETURNING rows is deterministic: a
+            # skipped conflict returns no row, an actual insert returns one.
             result = session.execute(stmt)
-            inserted += result.rowcount or 0
+            inserted += len(result.fetchall())
 
         record_fetch_attempt(
             session, data_type=DATA_TYPE_MARKET, scope_key=str(stock.id), requested_at=requested_at,

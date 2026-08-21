@@ -1,0 +1,66 @@
+x-db-url: &db-url postgresql+psycopg://${POSTGRES_USER:-market_agent}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-market_agent}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-market_agent}
+      POSTGRES_USER: ${POSTGRES_USER:-market_agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-market_agent} -d ${POSTGRES_DB:-market_agent}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: *db-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: *db-url
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build:
+      context: flutter_app
+      args:
+        API_BASE_URL: ${API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+  # On-demand market-data ingestion, not started by `docker compose up`.
+  # Provider (upstox|yahoo) is picked by MARKET_DATA_PROVIDER in .env.
+  # Run with: docker compose run --rm ingest --from-date 2026-01-01 --to-date 2026-08-21
+  ingest:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: *db-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["python", "-m", "scripts.ingest_market_history"]
+    profiles: ["tools"]
+
+volumes:
+  postgres-data:
