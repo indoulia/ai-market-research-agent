@@ -1678,6 +1678,23 @@ class SpecializationRoutingDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ProviderOutageSnapshot(Base):
+    __tablename__ = "provider_outage_snapshots"
+    __table_args__ = (
+        UniqueConstraint("data_type", "evaluated_at", name="uq_provider_outage_data_type_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    data_type: Mapped[str] = mapped_column(String(32), index=True)
+    total_registered_providers: Mapped[int] = mapped_column(Integer)
+    healthy_provider_count: Mapped[int] = mapped_column(Integer)
+    degraded_provider_count: Mapped[int] = mapped_column(Integer)
+    degraded_provider_ids: Mapped[list] = mapped_column(JSON)
+    severity: Mapped[str] = mapped_column(String(16))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    snapshot_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
