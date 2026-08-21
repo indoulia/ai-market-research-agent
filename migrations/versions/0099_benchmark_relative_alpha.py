@@ -1,8 +1,8 @@
 """add benchmarks, benchmark_daily_prices, benchmark_relative_assessments
 and benchmark_performance_reports tables
 
-Revision ID: 0098_benchmark_relative
-Revises: 0097_event_schedule_orchestration
+Revision ID: 0099_benchmark_relative
+Revises: 0098_purged_embargo_validation
 
 EPIC-M1.129: determine whether a recommendation creates genuine
 stock-specific value relative to its industry, sector and broad-market
@@ -11,8 +11,8 @@ benchmarks rather than simply benefiting from a rising market.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0098_benchmark_relative"
-down_revision = "0097_event_schedule_orchestration"
+revision = "0099_benchmark_relative"
+down_revision = "0098_purged_embargo_validation"
 branch_labels = None
 depends_on = None
 
