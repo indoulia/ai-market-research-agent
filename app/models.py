@@ -1260,3 +1260,21 @@ class LearningHypothesis(Base):
     generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     hypothesis_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RankingEffectivenessReport(Base):
+    __tablename__ = "ranking_effectiveness_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    window_label: Mapped[str] = mapped_column(String(128))
+    top_k: Mapped[int] = mapped_column(Integer)
+    composite_sample_count: Mapped[int] = mapped_column(Integer)
+    composite_success_count: Mapped[int] = mapped_column(Integer)
+    composite_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    alternative_sample_count: Mapped[int] = mapped_column(Integer)
+    alternative_success_count: Mapped[int] = mapped_column(Integer)
+    alternative_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    success_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    effectiveness_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
