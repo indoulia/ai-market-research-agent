@@ -74,6 +74,7 @@ def test_bootstrap_reports_contract_and_capabilities(client):
         "preferences": True,
         "auth": True,
         "analytics": True,
+        "dashboard": True,
     }
 
 
@@ -101,6 +102,7 @@ def test_capabilities_endpoint_matches_bootstrap_capabilities(client):
         "preferences": True,
         "auth": True,
         "analytics": True,
+        "dashboard": True,
     }
 
 

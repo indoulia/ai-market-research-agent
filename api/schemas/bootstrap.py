@@ -19,6 +19,7 @@ class ApiCapabilities(BaseModel):
     preferences: bool
     auth: bool
     analytics: bool
+    dashboard: bool
 
 
 class BootstrapResponse(BaseModel):

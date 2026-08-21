@@ -41,6 +41,9 @@ class RecommendationsRepository {
 
   Future<RecommendationsPage> fetchPage({
     int? horizonDays,
+    String? market,
+    String? sector,
+    String? marketCapBucket,
     RecommendationSort sort = RecommendationSort.score,
     bool descending = true,
     int pageSize = 20,
@@ -51,6 +54,9 @@ class RecommendationsRepository {
       'direction': descending ? 'desc' : 'asc',
       'pageSize': pageSize.toString(),
       if (horizonDays != null) 'horizon': horizonDays.toString(),
+      'market': ?market,
+      'sector': ?sector,
+      'marketCapBucket': ?marketCapBucket,
       'cursor': ?cursor,
     };
 

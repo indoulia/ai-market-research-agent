@@ -56,6 +56,9 @@ class _FakeRecommendationsRepository extends RecommendationsRepository {
   @override
   Future<RecommendationsPage> fetchPage({
     int? horizonDays,
+    String? market,
+    String? sector,
+    String? marketCapBucket,
     RecommendationSort sort = RecommendationSort.score,
     bool descending = true,
     int pageSize = 20,

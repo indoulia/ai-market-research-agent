@@ -11,6 +11,10 @@
             "title": "Auth",
             "type": "boolean"
           },
+          "dashboard": {
+            "title": "Dashboard",
+            "type": "boolean"
+          },
           "discovery": {
             "title": "Discovery",
             "type": "boolean"
@@ -49,7 +53,8 @@
           "feedback",
           "preferences",
           "auth",
-          "analytics"
+          "analytics",
+          "dashboard"
         ],
         "title": "ApiCapabilities",
         "type": "object"
@@ -288,6 +293,336 @@
           "pageSize"
         ],
         "title": "CursorMeta",
+        "type": "object"
+      },
+      "DashboardEvent": {
+        "description": "One entry in the important-events strip -- a merged, time-ordered\nprojection of M1.139's `/news` and `/events` feeds (the same merge\nthe Flutter M1.140 UI already does client-side, done once here\nserver-side so the dashboard needs only one request).",
+        "properties": {
+          "evidenceId": {
+            "title": "Evidenceid",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "materiality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materiality"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "title": "Occurredat",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "symbol",
+          "title",
+          "occurredAt",
+          "source",
+          "materiality",
+          "evidenceId"
+        ],
+        "title": "DashboardEvent",
+        "type": "object"
+      },
+      "DashboardOpportunity": {
+        "description": "One top-opportunity summary card, per EPIC-M3.2's API Contract field\nlist. A deliberately leaner projection of M1.135's `RecommendationSummary`\n-- only the fields the EPIC names, plus `id` -- not a second, divergent\nrecommendation representation (the underlying row is the exact same one\n`/recommendations` returns). `id` is the one addition beyond the EPIC's\nown \"must expose at minimum\" list: the Acceptance Criteria requires\n\"navigation into full opportunity/detail views\", which is impossible\nwithout an identifier for the existing `/recommendation/:id` detail\nroute -- an honest, necessary extension, not a contract violation\n(\"at minimum\" permits additional fields).",
+        "properties": {
+          "confidence": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "score": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Score",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "stopLoss": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Stoploss",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "targetPrice": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Targetprice",
+            "type": "string"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "upsidePercent": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Upsidepercent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "name",
+          "price",
+          "targetPrice",
+          "stopLoss",
+          "horizon",
+          "upsidePercent",
+          "score",
+          "confidence",
+          "trustScore",
+          "status",
+          "updatedAt"
+        ],
+        "title": "DashboardOpportunity",
+        "type": "object"
+      },
+      "DashboardSnapshot": {
+        "properties": {
+          "asOf": {
+            "format": "date-time",
+            "title": "Asof",
+            "type": "string"
+          },
+          "dataFreshness": {
+            "$ref": "#/components/schemas/DataFreshness"
+          },
+          "importantEvents": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEvent"
+            },
+            "title": "Importantevents",
+            "type": "array"
+          },
+          "indices": {
+            "items": {
+              "$ref": "#/components/schemas/IndexQuote"
+            },
+            "title": "Indices",
+            "type": "array"
+          },
+          "marketRegime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Marketregime"
+          },
+          "marketStatus": {
+            "title": "Marketstatus",
+            "type": "string"
+          },
+          "recentChanges": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardOpportunity"
+            },
+            "title": "Recentchanges",
+            "type": "array"
+          },
+          "topOpportunities": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardOpportunity"
+            },
+            "title": "Topopportunities",
+            "type": "array"
+          },
+          "trustSummary": {
+            "$ref": "#/components/schemas/DashboardTrustSummary"
+          }
+        },
+        "required": [
+          "marketStatus",
+          "asOf",
+          "marketRegime",
+          "indices",
+          "topOpportunities",
+          "importantEvents",
+          "recentChanges",
+          "trustSummary",
+          "dataFreshness"
+        ],
+        "title": "DashboardSnapshot",
+        "type": "object"
+      },
+      "DashboardTrustSummary": {
+        "description": "A compact projection of M1.147's `/tracking/summary` -- only the\nfields relevant to a one-glance trust widget. Not a recomputation:\nevery value here is read verbatim from `TrackingSummary`.",
+        "properties": {
+          "calibrationScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibrationscore"
+          },
+          "modelVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelversion"
+          },
+          "sampleSize": {
+            "title": "Samplesize",
+            "type": "integer"
+          },
+          "smallSample": {
+            "title": "Smallsample",
+            "type": "boolean"
+          },
+          "trustDelta": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustdelta"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
+          }
+        },
+        "required": [
+          "trustScore",
+          "trustDelta",
+          "calibrationScore",
+          "sampleSize",
+          "smallSample",
+          "modelVersion"
+        ],
+        "title": "DashboardTrustSummary",
+        "type": "object"
+      },
+      "DataFreshness": {
+        "description": "Per-section as-of timestamps so a viewer can tell which parts of the\nsnapshot are current vs. stale, without fabricating a single combined\nnumber across sources that update on different cadences.",
+        "properties": {
+          "marketAsOf": {
+            "format": "date-time",
+            "title": "Marketasof",
+            "type": "string"
+          },
+          "newsAsOf": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newsasof"
+          },
+          "opportunitiesAsOf": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opportunitiesasof"
+          }
+        },
+        "required": [
+          "opportunitiesAsOf",
+          "marketAsOf",
+          "newsAsOf"
+        ],
+        "title": "DataFreshness",
         "type": "object"
       },
       "DiscoveryItem": {
@@ -1740,6 +2075,22 @@
         "title": "SuccessEnvelope[BreakdownResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_DashboardSnapshot_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DashboardSnapshot"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[DashboardSnapshot]",
+        "type": "object"
+      },
       "SuccessEnvelope_FeedbackResponse_": {
         "properties": {
           "data": {
@@ -2650,6 +3001,123 @@
         "summary": "Get Capabilities",
         "tags": [
           "meta"
+        ]
+      }
+    },
+    "/api/v1/dashboard/snapshot": {
+      "get": {
+        "operationId": "get_snapshot_api_v1_dashboard_snapshot_get",
+        "parameters": [
+          {
+            "description": "Exchange, e.g. nse",
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exchange, e.g. nse",
+              "title": "Market"
+            }
+          },
+          {
+            "description": "1|3|5|7 trading-day horizon",
+            "in": "query",
+            "name": "horizon",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "1|3|5|7 trading-day horizon",
+              "title": "Horizon"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Additive quick filter, reuses M1.135's `sector` vocabulary",
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Additive quick filter, reuses M1.135's `sector` vocabulary",
+              "title": "Sector"
+            }
+          },
+          {
+            "description": "LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED",
+            "in": "query",
+            "name": "marketCapBucket",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED",
+              "title": "Marketcapbucket"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_DashboardSnapshot_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Snapshot",
+        "tags": [
+          "dashboard"
         ]
       }
     },
