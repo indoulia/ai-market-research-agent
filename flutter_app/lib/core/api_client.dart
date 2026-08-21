@@ -13,13 +13,39 @@ class ApiClient {
 
   ApiClient({http.Client? httpClient}) : _http = httpClient ?? http.Client();
 
+  /// EPIC-M1.146 — the current session's bearer token, attached to every
+  /// request as `Authorization: Bearer <token>` when set. A static field
+  /// (not per-instance) so the many repositories that each construct their
+  /// own `ApiClient()` all pick up sign-in/sign-out without being wired to
+  /// an auth controller individually — set once, from one place
+  /// (`AuthController`), per this repo's own "wire it centrally, not
+  /// per-repository" note from EPIC-M1.142's completion report.
+  static String? bearerToken;
+
+  /// EPIC-M1.146 — called whenever a response carries `MRA_SESSION_EXPIRED`,
+  /// wherever in the app that request happened to originate. Set once by
+  /// [AuthController] so a session that expires mid-session (not just at
+  /// cold-start `restore()`) still flips global auth state and the router
+  /// redirects to sign-in — satisfying "expired sessions do not leave the
+  /// user on a broken screen" without every repository/screen needing its
+  /// own awareness of auth.
+  static void Function()? onSessionExpired;
+
+  Map<String, String> _headersWith(Map<String, String>? extra) => {
+    if (bearerToken != null) 'Authorization': 'Bearer $bearerToken',
+    ...?extra,
+  };
+
   /// GETs `$apiV1$path` with [query], returning the decoded `data` value and
   /// leaving `meta` for the caller (cursor/page info lives there).
   Future<ApiResponse> get(String path, {Map<String, String>? query}) async {
     final uri = Uri.parse(
       '${ApiConfig.apiV1}$path',
     ).replace(queryParameters: query?.isEmpty ?? true ? null : query);
-    return _decode(() => _http.get(uri));
+    final headers = _headersWith(null);
+    return _decode(
+      () => _http.get(uri, headers: headers.isEmpty ? null : headers),
+    );
   }
 
   /// PUTs a JSON [body] to `$apiV1$path` (EPIC-M1.141's preference update).
@@ -28,7 +54,7 @@ class ApiClient {
     return _decode(
       () => _http.put(
         uri,
-        headers: const {'Content-Type': 'application/json'},
+        headers: _headersWith(const {'Content-Type': 'application/json'}),
         body: jsonEncode(body),
       ),
     );
@@ -36,7 +62,7 @@ class ApiClient {
 
   /// POSTs a JSON [body] to `$apiV1$path` (EPIC-M1.141's feedback
   /// submission). [headers] adds request-specific headers (e.g.
-  /// `Idempotency-Key`) alongside `Content-Type`.
+  /// `Idempotency-Key`) alongside `Content-Type`/`Authorization`.
   Future<ApiResponse> post(
     String path, {
     required Map<String, dynamic> body,
@@ -46,7 +72,10 @@ class ApiClient {
     return _decode(
       () => _http.post(
         uri,
-        headers: {'Content-Type': 'application/json', ...?headers},
+        headers: _headersWith({
+          'Content-Type': 'application/json',
+          ...?headers,
+        }),
         body: jsonEncode(body),
       ),
     );
@@ -71,7 +100,11 @@ class ApiClient {
     }
 
     if (response.statusCode >= 400) {
-      throw ApiException.fromEnvelope(body);
+      final exception = ApiException.fromEnvelope(body);
+      if (exception.code == 'MRA_SESSION_EXPIRED') {
+        onSessionExpired?.call();
+      }
+      throw exception;
     }
 
     return ApiResponse(

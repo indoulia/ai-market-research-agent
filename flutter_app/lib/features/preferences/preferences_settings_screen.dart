@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/auth/auth_controller.dart';
 import '../../design_system/design_system.dart';
 import 'general_settings_screen.dart';
 import 'quick_preferences_screen.dart';
@@ -11,7 +12,12 @@ import 'quick_preferences_screen.dart';
 /// to the Preferences tab for its "manage notifications" shortcut without
 /// the tabs needing to be threaded through as a constructor parameter.
 class PreferencesSettingsScreen extends StatelessWidget {
-  const PreferencesSettingsScreen({super.key});
+  /// EPIC-M1.146 — threaded through only so [GeneralSettingsScreen] can
+  /// show a "Sign out" action; null in every context (tests, the QA
+  /// gallery) that doesn't wire up real auth.
+  final AuthController? authController;
+
+  const PreferencesSettingsScreen({super.key, this.authController});
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +26,12 @@ class PreferencesSettingsScreen extends StatelessWidget {
       child: Column(
         children: [
           _PreferencesTabBar(),
-          const Expanded(
+          Expanded(
             child: TabBarView(
-              children: [QuickPreferencesScreen(), GeneralSettingsScreen()],
+              children: [
+                const QuickPreferencesScreen(),
+                GeneralSettingsScreen(authController: authController),
+              ],
             ),
           ),
         ],

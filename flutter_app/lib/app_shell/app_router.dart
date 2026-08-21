@@ -1,5 +1,8 @@
 import 'package:go_router/go_router.dart';
 
+import '../core/auth/auth_controller.dart';
+import '../features/auth/sign_in_screen.dart';
+import '../features/auth/splash_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/detail/recommendation_detail_screen.dart';
 import '../features/discover/discover_screen.dart';
@@ -19,9 +22,50 @@ import 'placeholder_screen.dart';
 /// long-lived instance the running app uses.
 final GoRouter appRouter = buildAppRouter();
 
-GoRouter buildAppRouter() => GoRouter(
-  initialLocation: '/home',
+/// EPIC-M1.146 — [authController] is optional and opt-in: passing none (as
+/// every pre-existing test and call site does) reproduces the exact
+/// pre-M1.146 router with no `/sign-in`/`/splash` routes and no redirect,
+/// so this epic adds auth gating without changing behavior for anything
+/// that doesn't ask for it. Only [main.dart]'s real app passes a real,
+/// restoring [AuthController].
+GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
+  initialLocation: authController != null ? '/splash' : '/home',
+  refreshListenable: authController,
+  redirect: authController == null
+      ? null
+      : (context, state) {
+          final status = authController.status;
+          final loc = state.matchedLocation;
+          if (status == AuthStatus.restoring) {
+            return loc == '/splash' ? null : '/splash';
+          }
+          final needsSignIn =
+              status == AuthStatus.unauthenticated ||
+              status == AuthStatus.sessionExpired;
+          if (needsSignIn) {
+            if (loc == '/sign-in') return null;
+            return '/sign-in?from=${Uri.encodeComponent(loc)}';
+          }
+          if (loc == '/splash' || loc == '/sign-in') {
+            final from = state.uri.queryParameters['from'];
+            return (from != null && from.isNotEmpty) ? from : '/home';
+          }
+          return null;
+        },
   routes: [
+    if (authController != null) ...[
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/sign-in',
+        builder: (context, state) => SignInScreen(
+          controller: authController,
+          redirectTo: state.uri.queryParameters['from'],
+        ),
+      ),
+    ],
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
           AppShellScaffold(navigationShell: navigationShell),
@@ -98,7 +142,8 @@ GoRouter buildAppRouter() => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[5].path,
-              builder: (context, state) => const PreferencesSettingsScreen(),
+              builder: (context, state) =>
+                  PreferencesSettingsScreen(authController: authController),
             ),
           ],
         ),
