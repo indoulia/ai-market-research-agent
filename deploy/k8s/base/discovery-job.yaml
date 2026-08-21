@@ -1,0 +1,28 @@
+# On-demand discovery scan, mirroring `docker compose run --rm discovery`. Consumes
+# whatever market data `market-agent-ingest` (ingest-job.yaml) has already persisted --
+# run that first if this reports input_market_price_rows: 0. Not part of
+# `kubectl apply -k deploy/k8s/base`; re-run with
+# `kubectl delete job/market-agent-discovery --ignore-not-found` then re-apply (same
+# pattern as migration-job.yaml / ingest-job.yaml). For a recurring scan instead of a
+# one-off, see discovery-cronjob.yaml.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: market-agent-discovery
+  namespace: market-agent
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: discovery
+          image: market-agent-api:local
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "scripts.run_discovery_scan"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: DATABASE_URL

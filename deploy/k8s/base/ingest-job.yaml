@@ -1,0 +1,59 @@
+# On-demand market-data ingestion, mirroring `docker compose run --rm ingest`.
+# Not part of `kubectl apply -k deploy/k8s/base` -- a Job's spec is immutable once
+# created, so re-running means `kubectl delete job/market-agent-ingest --ignore-not-found`
+# then `kubectl apply -f deploy/k8s/base/ingest-job.yaml` (same pattern as
+# migration-job.yaml). Override the date window per run with:
+#   kubectl set env job/market-agent-ingest -n market-agent FROM_DATE=2026-06-01 TO_DATE=2026-08-21
+# (must be set before the Job's pod is created -- Jobs don't support live env changes).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: market-agent-ingest
+  namespace: market-agent
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ingest
+          image: market-agent-api:local
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - python -m scripts.ingest_market_history --from-date "$FROM_DATE" --to-date "$TO_DATE"
+          env:
+            - name: FROM_DATE
+              value: "2026-01-01"
+            - name: TO_DATE
+              value: "2026-08-21"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: DATABASE_URL
+            - name: MARKET_DATA_PROVIDER
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: MARKET_DATA_PROVIDER
+                  optional: true
+            - name: YAHOO_SYMBOLS
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: YAHOO_SYMBOLS
+                  optional: true
+            - name: UPSTOX_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_ACCESS_TOKEN
+                  optional: true
+            - name: UPSTOX_INSTRUMENTS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_INSTRUMENTS_URL
+                  optional: true

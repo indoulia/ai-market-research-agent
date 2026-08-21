@@ -6,12 +6,16 @@
   ./deploy/k8s/deploy.ps1
 .EXAMPLE
   ./deploy/k8s/deploy.ps1 -SkipMigrate    # redeploy without re-running Alembic
+.EXAMPLE
+  ./deploy/k8s/deploy.ps1 -RunIngest -RunDiscovery   # also seed data and scan (EPIC-M1.150)
 #>
 [CmdletBinding()]
 param(
     [string]$ApiBaseUrl = "http://market-agent.test",
     [string]$Namespace = "market-agent",
-    [switch]$SkipMigrate
+    [switch]$SkipMigrate,
+    [switch]$RunIngest,
+    [switch]$RunDiscovery
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,6 +23,8 @@ $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $EnvFile = Join-Path $PSScriptRoot "market-agent.env"
 $BaseDir = Join-Path $PSScriptRoot "base"
 $MigrationJob = Join-Path $BaseDir "migration-job.yaml"
+$IngestJob = Join-Path $BaseDir "ingest-job.yaml"
+$DiscoveryJob = Join-Path $BaseDir "discovery-job.yaml"
 
 function Invoke-Checked {
     param([Parameter(Mandatory)][string]$Description, [Parameter(Mandatory)][ScriptBlock]$Command)
@@ -74,6 +80,22 @@ try {
         kubectl -n $Namespace rollout restart deploy/market-agent-api deploy/market-agent-web
         kubectl -n $Namespace rollout status deploy/market-agent-api --timeout=120s
         kubectl -n $Namespace rollout status deploy/market-agent-web --timeout=120s
+    }
+
+    if ($RunIngest) {
+        Invoke-Checked "Run ingest Job (EPIC-M1.150)" {
+            kubectl -n $Namespace delete job/market-agent-ingest --ignore-not-found
+            kubectl apply -f $IngestJob
+            kubectl -n $Namespace wait --for=condition=complete job/market-agent-ingest --timeout=180s
+        }
+    }
+
+    if ($RunDiscovery) {
+        Invoke-Checked "Run discovery Job (EPIC-M1.150)" {
+            kubectl -n $Namespace delete job/market-agent-discovery --ignore-not-found
+            kubectl apply -f $DiscoveryJob
+            kubectl -n $Namespace wait --for=condition=complete job/market-agent-discovery --timeout=120s
+        }
     }
 
     Write-Host "==> Verifying" -ForegroundColor Cyan
