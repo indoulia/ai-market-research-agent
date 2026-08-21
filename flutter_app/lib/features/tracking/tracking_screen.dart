@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_exception.dart';
 import '../../design_system/design_system.dart';
+import 'active_prediction.dart';
+import 'active_prediction_card.dart';
 import 'tracked_prediction.dart';
 import 'tracking_breakdown.dart';
 import 'tracking_repository.dart';
@@ -15,6 +19,17 @@ enum _LoadState { loading, error, loaded }
 const _ranges = ['7d', '30d', '90d', '1y'];
 const _secondaryMetrics = ['hitRate', 'return', 'calibration'];
 const _dimensions = ['horizon', 'sector', 'marketCap', 'regime', 'setup'];
+
+/// EPIC-M3.8 — user-selectable auto-refresh cadence for the "Active
+/// positions" monitoring section. `off` is the default: a live-monitoring
+/// feed opts a user IN to polling rather than surprising them with
+/// background network activity (AC: "user-selectable refresh behavior").
+const _refreshIntervals = <String, Duration?>{
+  'Off': null,
+  '30s': Duration(seconds: 30),
+  '1m': Duration(minutes: 1),
+  '5m': Duration(minutes: 5),
+};
 
 /// EPIC-M1.148 — the "Tracking" destination: a historical view of MRA
 /// performance, prediction outcomes and Trust Score evolution, consuming
@@ -47,15 +62,91 @@ class _TrackingScreenState extends State<TrackingScreen> {
   List<TrackedPrediction> _predictions = const [];
   String? _predictionsCursor;
 
+  List<ActivePrediction> _activePredictions = const [];
+  String? _activeCursor;
+  bool _activeLoading = true;
+  ApiException? _activeError;
+  String _refreshLabel = 'Off';
+  Timer? _refreshTimer;
+  DateTime? _activeFetchedAt;
+
   bool _secondaryLoading = false;
   bool _breakdownLoading = false;
   bool _loadingMorePredictions = false;
+  bool _loadingMoreActive = false;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.repository ?? TrackingRepository();
     _load();
+    _loadActive();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadActive() async {
+    setState(() {
+      _activeLoading = true;
+      _activeError = null;
+    });
+    try {
+      final page = await _repository.fetchActivePredictions();
+      setState(() {
+        _activePredictions = page.items;
+        _activeCursor = page.nextCursor;
+        _activeFetchedAt = DateTime.now();
+        _activeLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _activeError = e is ApiException ? e : ApiException.network(e);
+        _activeLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadMoreActive() async {
+    if (_activeCursor == null || _loadingMoreActive) return;
+    setState(() => _loadingMoreActive = true);
+    try {
+      final page = await _repository.fetchActivePredictions(
+        cursor: _activeCursor,
+      );
+      setState(() {
+        _activePredictions = [..._activePredictions, ...page.items];
+        _activeCursor = page.nextCursor;
+        _loadingMoreActive = false;
+      });
+    } catch (_) {
+      setState(() => _loadingMoreActive = false);
+    }
+  }
+
+  void _onRefreshLabelChanged(String label) {
+    if (label == _refreshLabel) return;
+    setState(() => _refreshLabel = label);
+    _refreshTimer?.cancel();
+    final interval = _refreshIntervals[label];
+    if (interval != null) {
+      _refreshTimer = Timer.periodic(interval, (_) => _loadActive());
+    }
+  }
+
+  Future<void> _openActivePredictionDetail(ActivePrediction item) async {
+    await showMraBottomSheet<void>(
+      context: context,
+      title: item.symbol,
+      builder: (context) => _ActivePredictionDetailSheet(
+        repository: _repository,
+        predictionId: item.predictionId,
+        fallback: item,
+      ),
+    );
   }
 
   // 90d/1y in day buckets would be dozens of noisy points on a compact
@@ -228,6 +319,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ),
               ),
               const SizedBox(height: MraSpacing.xl),
+              _buildActiveSection(context),
+              const SizedBox(height: MraSpacing.xl),
               TrackingTrendCard(
                 title: 'Trust Score trend',
                 tooltip:
@@ -381,6 +474,114 @@ class _TrackingScreenState extends State<TrackingScreen> {
           deltaPositive: (s.trustDelta ?? 0) >= 0,
           icon: Icons.verified_outlined,
         ),
+      ],
+    );
+  }
+
+  /// EPIC-M3.8 — "Active positions": a compact live view of active
+  /// positive recommendations (current price/target/SL distance, horizon
+  /// remaining, Trust/freshness, M1.119-sourced status), independent of
+  /// the historical "Recent closed predictions" table below.
+  Widget _buildActiveSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Active positions',
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            if (_activeFetchedAt != null)
+              Text(
+                'Updated ${ActivePredictionCard.formatRelativeTime(_activeFetchedAt)}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            IconButton(
+              tooltip: 'Refresh active positions',
+              icon: const Icon(Icons.refresh, size: 20),
+              onPressed: _loadActive,
+            ),
+          ],
+        ),
+        const SizedBox(height: MraSpacing.xs),
+        Semantics(
+          container: true,
+          label: 'Auto-refresh interval selector',
+          child: Wrap(
+            spacing: MraSpacing.sm,
+            children: _refreshIntervals.keys
+                .map(
+                  (label) => ChoiceChip(
+                    label: Text(label),
+                    selected: label == _refreshLabel,
+                    onSelected: (_) => _onRefreshLabelChanged(label),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+        const SizedBox(height: MraSpacing.sm),
+        if (_activeLoading && _activePredictions.isEmpty)
+          const MraCard(child: SkeletonCard())
+        else if (_activeError != null && _activePredictions.isEmpty)
+          MraStateView.error(
+            message: _activeError?.message,
+            onAction: _loadActive,
+          )
+        else if (_activePredictions.isEmpty)
+          const MraStateView.empty(message: 'No active positions right now.')
+        else
+          _buildActiveGrid(context),
+      ],
+    );
+  }
+
+  Widget _buildActiveGrid(BuildContext context) {
+    return Column(
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 900
+                ? 3
+                : (constraints.maxWidth >= 600 ? 2 : 1);
+            final cardWidth =
+                (constraints.maxWidth - MraSpacing.sm * (columns - 1)) /
+                columns;
+            return Wrap(
+              spacing: MraSpacing.sm,
+              runSpacing: MraSpacing.sm,
+              children: _activePredictions
+                  .map(
+                    (item) => SizedBox(
+                      width: cardWidth,
+                      child: ActivePredictionCard(
+                        prediction: item,
+                        onTap: () => _openActivePredictionDetail(item),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            );
+          },
+        ),
+        const SizedBox(height: MraSpacing.md),
+        if (_loadingMoreActive)
+          const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else if (_activeCursor != null)
+          OutlinedButton(
+            onPressed: _loadMoreActive,
+            child: const Text('Load more'),
+          ),
       ],
     );
   }
@@ -557,4 +758,93 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   static String Function(double) _secondaryMetricFormatter(String m) =>
       m == 'calibration' ? _fmtPpValue : _fmtPctValue;
+}
+
+enum _DetailLoadState { loading, error, loaded }
+
+/// EPIC-M3.8 — the `/predictions/active/{predictionId}` drill-down sheet.
+/// Always re-fetches fresh data from the server (never just re-renders the
+/// list's own snapshot) so a tap always reflects the latest server
+/// freshness, falling back to the list item's already-known fields only if
+/// that re-fetch fails.
+class _ActivePredictionDetailSheet extends StatefulWidget {
+  final TrackingRepository repository;
+  final int predictionId;
+  final ActivePrediction fallback;
+
+  const _ActivePredictionDetailSheet({
+    required this.repository,
+    required this.predictionId,
+    required this.fallback,
+  });
+
+  @override
+  State<_ActivePredictionDetailSheet> createState() =>
+      _ActivePredictionDetailSheetState();
+}
+
+class _ActivePredictionDetailSheetState
+    extends State<_ActivePredictionDetailSheet> {
+  _DetailLoadState _state = _DetailLoadState.loading;
+  ActivePrediction? _prediction;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _state = _DetailLoadState.loading);
+    try {
+      final prediction = await widget.repository.fetchActivePrediction(
+        widget.predictionId,
+      );
+      setState(() {
+        _prediction = prediction;
+        _state = _DetailLoadState.loaded;
+      });
+    } catch (_) {
+      // Keep the list's already-known snapshot visible rather than an
+      // empty sheet -- it is stale but real data, not fabricated.
+      setState(() {
+        _prediction = widget.fallback;
+        _state = _DetailLoadState.error;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_state == _DetailLoadState.loading && _prediction == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: MraSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final prediction = _prediction!;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_state == _DetailLoadState.error)
+          Padding(
+            padding: const EdgeInsets.only(bottom: MraSpacing.sm),
+            child: MraChip(
+              label: 'Showing last known data — refresh failed',
+              tone: MraChipTone.warning,
+              icon: Icons.warning_amber_outlined,
+            ),
+          ),
+        ActivePredictionCard(prediction: prediction),
+        if (prediction.nextEvaluationAt != null) ...[
+          const SizedBox(height: MraSpacing.sm),
+          Text(
+            'Next evaluation: ${prediction.nextEvaluationAt}',
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+        ],
+      ],
+    );
+  }
 }

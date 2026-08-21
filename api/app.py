@@ -9,7 +9,7 @@ from app.settings import settings
 
 from .exception_handlers import register_exception_handlers
 from .middleware import RequestContextMiddleware
-from .routers import auth, bootstrap, dashboard, discovery, health, market, meta, news_events, opportunities, preferences, recommendation_detail, recommendations, tracking
+from .routers import auth, bootstrap, dashboard, discovery, health, market, meta, news_events, opportunities, preferences, predictions_active, recommendation_detail, recommendations, tracking
 from .versioning import API_PREFIX
 
 api_router = APIRouter(prefix=API_PREFIX)
@@ -26,6 +26,7 @@ api_router.include_router(preferences.router)
 api_router.include_router(auth.router)
 api_router.include_router(tracking.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(predictions_active.router)
 
 
 def register_api(app: FastAPI) -> None:

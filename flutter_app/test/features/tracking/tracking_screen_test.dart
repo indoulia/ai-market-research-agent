@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mra_app/design_system/theme/mra_theme.dart';
+import 'package:mra_app/design_system/design_system.dart';
+import 'package:mra_app/features/tracking/active_prediction.dart';
 import 'package:mra_app/features/tracking/tracked_prediction.dart';
 import 'package:mra_app/features/tracking/tracking_breakdown.dart';
 import 'package:mra_app/features/tracking/tracking_repository.dart';
@@ -17,12 +18,18 @@ class _FakeTrackingRepository extends TrackingRepository {
   TrackingSummary Function(String range) summaryFor;
   TrackingBreakdown Function(String dimension) breakdownFor;
   TrackedPredictionsPage Function(String? cursor) predictionsFor;
+  ActivePredictionsPage Function(String? cursor) activePredictionsFor;
+  ActivePrediction Function(int predictionId)? activePredictionFor;
 
   _FakeTrackingRepository({
     required this.summaryFor,
     required this.breakdownFor,
     required this.predictionsFor,
-  });
+    ActivePredictionsPage Function(String? cursor)? activePredictionsFor,
+    this.activePredictionFor,
+  }) : activePredictionsFor =
+           activePredictionsFor ??
+           ((_) => const ActivePredictionsPage(items: [], nextCursor: null));
 
   @override
   Future<TrackingSummary> fetchSummary({required String range}) async {
@@ -52,6 +59,19 @@ class _FakeTrackingRepository extends TrackingRepository {
     String? cursor,
     int pageSize = 10,
   }) async => predictionsFor(cursor);
+
+  @override
+  Future<ActivePredictionsPage> fetchActivePredictions({
+    String? cursor,
+    int pageSize = 10,
+  }) async => activePredictionsFor(cursor);
+
+  @override
+  Future<ActivePrediction> fetchActivePrediction(int predictionId) async {
+    final override = activePredictionFor;
+    if (override != null) return override(predictionId);
+    return _activePrediction(id: predictionId);
+  }
 }
 
 TrackingSummary _summary({
@@ -122,6 +142,33 @@ TrackedPredictionsPage _predictionsPage({String? nextCursor, int id = 101}) {
     ],
     nextCursor: nextCursor,
   );
+}
+
+ActivePrediction _activePrediction({
+  int id = 501,
+  String symbol = 'INFY',
+  String status = 'ACTIVE',
+}) {
+  return ActivePrediction.fromJson({
+    'predictionId': id,
+    'symbol': symbol,
+    'companyName': '$symbol Ltd',
+    'exchange': 'NSE',
+    'price': '105.00',
+    'targetPrice': '120.00',
+    'stopLoss': '95.00',
+    'horizon': 5,
+    'remainingTradingDays': 3,
+    'distanceToTargetPercent': '14.3',
+    'distanceToStopLossPercent': '9.5',
+    'score': '0.8',
+    'confidence': '0.75',
+    'trustScore': '0.82',
+    'status': status,
+    'lastPriceAt': '2026-08-20T10:00:00Z',
+    'lastRevisionAt': null,
+    'nextEvaluationAt': '2026-08-21T09:15:00Z',
+  });
 }
 
 _FakeTrackingRepository _defaultRepo({
@@ -208,6 +255,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.timeseriesMetricCalls, ['trust', 'hitRate']);
 
+    await tester.ensureVisible(find.text('Realized return'));
     await tester.tap(find.text('Realized return'));
     await tester.pumpAndSettle();
 
@@ -357,4 +405,117 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  group('EPIC-M3.8 active positions section', () {
+    testWidgets('shows an empty state when there are no active positions', (
+      tester,
+    ) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Active positions'), findsOneWidget);
+      expect(find.text('No active positions right now.'), findsOneWidget);
+    });
+
+    testWidgets(
+      'renders an active prediction card with price/target/SL/status',
+      (tester) async {
+        final repo = _FakeTrackingRepository(
+          summaryFor: (_) => _summary(),
+          breakdownFor: (dimension) => _breakdown(dimension),
+          predictionsFor: (_) => _predictionsPage(),
+          activePredictionsFor: (_) => ActivePredictionsPage(
+            items: [_activePrediction()],
+            nextCursor: null,
+          ),
+        );
+        await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+        await tester.pumpAndSettle();
+
+        expect(find.text('INFY'), findsOneWidget);
+        expect(find.textContaining('Target 120.00'), findsOneWidget);
+        expect(find.textContaining('SL 95.00'), findsOneWidget);
+        expect(find.widgetWithText(MraChip, 'Active'), findsOneWidget);
+        expect(find.text('3/5D remaining'), findsOneWidget);
+      },
+    );
+
+    testWidgets('shows the M1.119-sourced status label, not a recomputed one', (
+      tester,
+    ) async {
+      final repo = _FakeTrackingRepository(
+        summaryFor: (_) => _summary(),
+        breakdownFor: (dimension) => _breakdown(dimension),
+        predictionsFor: (_) => _predictionsPage(),
+        activePredictionsFor: (_) => ActivePredictionsPage(
+          items: [_activePrediction(status: 'TARGET_HIT')],
+          nextCursor: null,
+        ),
+      );
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Target hit'), findsOneWidget);
+    });
+
+    testWidgets('tapping a card opens the detail sheet via a fresh fetch', (
+      tester,
+    ) async {
+      final requestedIds = <int>[];
+      final repo = _FakeTrackingRepository(
+        summaryFor: (_) => _summary(),
+        breakdownFor: (dimension) => _breakdown(dimension),
+        predictionsFor: (_) => _predictionsPage(),
+        activePredictionsFor: (_) => ActivePredictionsPage(
+          items: [_activePrediction(id: 777, symbol: 'TCS')],
+          nextCursor: null,
+        ),
+        activePredictionFor: (id) {
+          requestedIds.add(id);
+          return _activePrediction(id: id, symbol: 'TCS');
+        },
+      );
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('TCS'));
+      await tester.pumpAndSettle();
+
+      expect(requestedIds, [777]);
+      expect(
+        find.text('Next evaluation: 2026-08-21 09:15:00.000Z'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('selecting a refresh interval starts periodic polling', (
+      tester,
+    ) async {
+      var fetchCount = 0;
+      final repo = _FakeTrackingRepository(
+        summaryFor: (_) => _summary(),
+        breakdownFor: (dimension) => _breakdown(dimension),
+        predictionsFor: (_) => _predictionsPage(),
+        activePredictionsFor: (_) {
+          fetchCount++;
+          return const ActivePredictionsPage(items: [], nextCursor: null);
+        },
+      );
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      final initialCount = fetchCount;
+
+      await tester.tap(find.text('30s'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 31));
+
+      expect(fetchCount, greaterThan(initialCount));
+
+      // Cancel the periodic timer before the test ends -- flutter_test
+      // fails the test if a Timer is still pending at teardown.
+      await tester.tap(find.text('Off'));
+      await tester.pump();
+    });
+  });
 }
