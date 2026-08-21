@@ -4784,6 +4784,159 @@
         ]
       }
     },
+    "/api/v1/performance/breakdown": {
+      "get": {
+        "operationId": "get_performance_breakdown_api_v1_performance_breakdown_get",
+        "parameters": [
+          {
+            "description": "horizon|sector|marketCap|regime|setup|stock",
+            "in": "query",
+            "name": "dimension",
+            "required": true,
+            "schema": {
+              "description": "horizon|sector|marketCap|regime|setup|stock",
+              "title": "Dimension",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_BreakdownResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Performance Breakdown",
+        "tags": [
+          "performance"
+        ]
+      }
+    },
+    "/api/v1/performance/summary": {
+      "get": {
+        "operationId": "get_performance_summary_api_v1_performance_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "30d",
+              "title": "Range",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_TrackingSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Performance Summary",
+        "tags": [
+          "performance"
+        ]
+      }
+    },
+    "/api/v1/performance/timeseries": {
+      "get": {
+        "operationId": "get_performance_timeseries_api_v1_performance_timeseries_get",
+        "parameters": [
+          {
+            "description": "trust|hitRate|return|calibration",
+            "in": "query",
+            "name": "metric",
+            "required": true,
+            "schema": {
+              "description": "trust|hitRate|return|calibration",
+              "title": "Metric",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "30d",
+              "title": "Range",
+              "type": "string"
+            }
+          },
+          {
+            "description": "day|week",
+            "in": "query",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "description": "day|week",
+              "title": "Bucket",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_TimeseriesResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Performance Timeseries",
+        "tags": [
+          "performance"
+        ]
+      }
+    },
     "/api/v1/predictions/active": {
       "get": {
         "operationId": "get_active_predictions_api_v1_predictions_active_get",
@@ -5636,12 +5789,12 @@
         "operationId": "get_tracking_breakdown_api_v1_tracking_breakdown_get",
         "parameters": [
           {
-            "description": "horizon|sector|marketCap|regime|setup",
+            "description": "horizon|sector|marketCap|regime|setup|stock",
             "in": "query",
             "name": "dimension",
             "required": true,
             "schema": {
-              "description": "horizon|sector|marketCap|regime|setup",
+              "description": "horizon|sector|marketCap|regime|setup|stock",
               "title": "Dimension",
               "type": "string"
             }

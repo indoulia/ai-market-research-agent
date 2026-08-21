@@ -268,8 +268,14 @@ void main() {
     (tester) async {
       final repo = _FakeTrackingRepository(
         summaryFor: (_) => _summary(),
-        breakdownFor: (dimension) =>
-            _breakdown(dimension, key: dimension == 'sector' ? 'IT' : '3D'),
+        breakdownFor: (dimension) => _breakdown(
+          dimension,
+          key: switch (dimension) {
+            'sector' => 'IT',
+            'stock' => 'AAA',
+            _ => '3D',
+          },
+        ),
         predictionsFor: (_) => _predictionsPage(),
       );
       await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
@@ -282,6 +288,14 @@ void main() {
 
       expect(repo.breakdownDimensionCalls, ['horizon', 'sector']);
       expect(find.text('IT'), findsOneWidget);
+
+      // EPIC-M3.7: "stock" is a breakdown dimension option too.
+      await tester.ensureVisible(find.text('Stock'));
+      await tester.tap(find.text('Stock'));
+      await tester.pumpAndSettle();
+
+      expect(repo.breakdownDimensionCalls, ['horizon', 'sector', 'stock']);
+      expect(find.text('AAA'), findsOneWidget);
     },
   );
 

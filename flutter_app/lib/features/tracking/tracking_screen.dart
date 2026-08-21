@@ -18,7 +18,14 @@ enum _LoadState { loading, error, loaded }
 
 const _ranges = ['7d', '30d', '90d', '1y'];
 const _secondaryMetrics = ['hitRate', 'return', 'calibration'];
-const _dimensions = ['horizon', 'sector', 'marketCap', 'regime', 'setup'];
+const _dimensions = [
+  'horizon',
+  'sector',
+  'marketCap',
+  'regime',
+  'setup',
+  'stock',
+];
 
 /// EPIC-M3.8 — user-selectable auto-refresh cadence for the "Active
 /// positions" monitoring section. `off` is the default: a live-monitoring
@@ -725,6 +732,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
     'marketCap' => 'Market cap',
     'regime' => 'Regime',
     'setup' => 'Setup',
+    'stock' => 'Stock',
     _ => d,
   };
 

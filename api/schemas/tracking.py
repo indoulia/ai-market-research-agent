@@ -10,7 +10,7 @@ from pydantic import BaseModel
 VALID_RANGES = ("7d", "30d", "90d", "1y")
 VALID_TIMESERIES_METRICS = ("trust", "hitRate", "return", "calibration")
 VALID_BUCKETS = ("day", "week")
-VALID_BREAKDOWN_DIMENSIONS = ("horizon", "sector", "marketCap", "regime", "setup")
+VALID_BREAKDOWN_DIMENSIONS = ("horizon", "sector", "marketCap", "regime", "setup", "stock")
 VALID_PREDICTION_STATUSES = ("active", "closed")
 
 MODEL_VERSION_MIXED = "MIXED"

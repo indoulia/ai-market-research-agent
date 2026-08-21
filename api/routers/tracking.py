@@ -32,7 +32,7 @@ def get_tracking_timeseries(
 
 @router.get("/breakdown", response_model=SuccessEnvelope[BreakdownResponse])
 def get_tracking_breakdown(
-    dimension: str = Query(..., description="horizon|sector|marketCap|regime|setup"), db: Session = Depends(get_db)
+    dimension: str = Query(..., description="horizon|sector|marketCap|regime|setup|stock"), db: Session = Depends(get_db)
 ):
     return success(get_breakdown(db, dimension))
 
