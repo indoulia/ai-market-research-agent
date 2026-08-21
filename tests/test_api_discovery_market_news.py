@@ -292,3 +292,72 @@ def test_events_list_from_corporate_actions(client, session):
     assert items[0]["symbol"] == "AAA"
     assert items[0]["type"] == "DIVIDEND"
     assert items[0]["evidenceId"]
+
+
+def test_news_event_type_and_materiality_filters(session, client):
+    stock = _make_stock(session, symbol="AAA")
+    session.add_all([
+        NewsEventRecord(stock_id=stock.id, source="test", external_id="n1", headline="AAA general update", event_type="NEWS_STORY", materiality="LOW", published_at=AS_OF, fetched_at=AS_OF, ingestion_rule_version="NEV-001"),
+        NewsEventRecord(stock_id=stock.id, source="test", external_id="n2", headline="AAA reports earnings", event_type="CORPORATE_EVENT", materiality="HIGH", published_at=AS_OF, fetched_at=AS_OF, ingestion_rule_version="NEV-001"),
+    ])
+    session.commit()
+
+    by_type = client.get("/api/v1/news", params={"eventType": "CORPORATE_EVENT"}).json()["data"]
+    assert [i["headline"] for i in by_type] == ["AAA reports earnings"]
+    assert by_type[0]["eventType"] == "CORPORATE_EVENT"
+
+    by_materiality = client.get("/api/v1/news", params={"materiality": "LOW"}).json()["data"]
+    assert [i["headline"] for i in by_materiality] == ["AAA general update"]
+
+
+def test_news_date_range_filter(session, client):
+    stock = _make_stock(session, symbol="AAA")
+    earlier = AS_OF - timedelta(days=10)
+    session.add_all([
+        NewsEventRecord(stock_id=stock.id, source="test", external_id="n1", headline="old news", event_type="NEWS_STORY", materiality="LOW", published_at=earlier, fetched_at=earlier, ingestion_rule_version="NEV-001"),
+        NewsEventRecord(stock_id=stock.id, source="test", external_id="n2", headline="recent news", event_type="NEWS_STORY", materiality="LOW", published_at=AS_OF, fetched_at=AS_OF, ingestion_rule_version="NEV-001"),
+    ])
+    session.commit()
+
+    response = client.get("/api/v1/news", params={"from": (AS_OF - timedelta(days=1)).isoformat()})
+    items = response.json()["data"]
+    assert [i["headline"] for i in items] == ["recent news"]
+
+
+def test_events_type_and_date_filters(session, client):
+    stock = _make_stock(session, symbol="AAA")
+    earlier = AS_OF - timedelta(days=30)
+    session.add_all([
+        CorporateAction(stock_id=stock.id, action_type="SPLIT", effective_date=earlier.date(), ratio=Decimal("2"), cash_amount=None, old_symbol=None, new_symbol=None, source="test", action_version="CA-001", recorded_at=earlier),
+        CorporateAction(stock_id=stock.id, action_type="DIVIDEND", effective_date=AS_OF.date(), ratio=None, cash_amount=Decimal("2.5"), old_symbol=None, new_symbol=None, source="test", action_version="CA-001", recorded_at=AS_OF),
+    ])
+    session.commit()
+
+    by_type = client.get("/api/v1/events", params={"type": "DIVIDEND"}).json()["data"]
+    assert [i["type"] for i in by_type] == ["DIVIDEND"]
+
+    by_date = client.get("/api/v1/events", params={"from": (AS_OF - timedelta(days=1)).isoformat()}).json()["data"]
+    assert [i["type"] for i in by_date] == ["DIVIDEND"]
+
+
+def test_event_detail_by_id(session, client):
+    stock = _make_stock(session, symbol="AAA")
+    action = CorporateAction(
+        stock_id=stock.id, action_type="DIVIDEND", effective_date=AS_OF.date(), ratio=None, cash_amount=Decimal("2.5"),
+        old_symbol=None, new_symbol=None, source="test", action_version="CA-001", recorded_at=AS_OF,
+    )
+    session.add(action)
+    session.commit()
+
+    response = client.get(f"/api/v1/events/{action.id}")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["symbol"] == "AAA"
+    assert data["type"] == "DIVIDEND"
+    assert data["evidenceId"] == action.id
+
+
+def test_event_detail_not_found(client):
+    response = client.get("/api/v1/events/999999")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "MRA_NOT_FOUND"
