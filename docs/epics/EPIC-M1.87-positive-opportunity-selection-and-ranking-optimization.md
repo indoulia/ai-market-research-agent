@@ -1,7 +1,7 @@
 # EPIC-M1.87 — Positive Opportunity Selection & Ranking Optimization
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -31,7 +31,7 @@ The ranking layer must not manufacture positive recommendations. It may only ran
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #139 (`e12191e`).
 
 **Implementation:**
 - `app/opportunity_ranking.py` (`rank_positive_opportunities`, `get_ranking_history`): a new, versioned (`OPPORTUNITY_RANKING_VERSION = "OPR-001"`), read-only ranking layer over predictions whose *latest* M1.81 `PositiveRecommendationGateDecision` is `VERDICT_GATE_PASS`. Never writes to `Prediction` or any upstream table.
