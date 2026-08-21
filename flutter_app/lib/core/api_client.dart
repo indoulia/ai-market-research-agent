@@ -19,10 +19,43 @@ class ApiClient {
     final uri = Uri.parse(
       '${ApiConfig.apiV1}$path',
     ).replace(queryParameters: query?.isEmpty ?? true ? null : query);
+    return _decode(() => _http.get(uri));
+  }
 
+  /// PUTs a JSON [body] to `$apiV1$path` (EPIC-M1.141's preference update).
+  Future<ApiResponse> put(String path, {required Map<String, dynamic> body}) {
+    final uri = Uri.parse('${ApiConfig.apiV1}$path');
+    return _decode(
+      () => _http.put(
+        uri,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ),
+    );
+  }
+
+  /// POSTs a JSON [body] to `$apiV1$path` (EPIC-M1.141's feedback
+  /// submission). [headers] adds request-specific headers (e.g.
+  /// `Idempotency-Key`) alongside `Content-Type`.
+  Future<ApiResponse> post(
+    String path, {
+    required Map<String, dynamic> body,
+    Map<String, String>? headers,
+  }) {
+    final uri = Uri.parse('${ApiConfig.apiV1}$path');
+    return _decode(
+      () => _http.post(
+        uri,
+        headers: {'Content-Type': 'application/json', ...?headers},
+        body: jsonEncode(body),
+      ),
+    );
+  }
+
+  Future<ApiResponse> _decode(Future<http.Response> Function() send) async {
     http.Response response;
     try {
-      response = await _http.get(uri);
+      response = await send();
     } catch (e) {
       throw ApiException.network(e);
     }
