@@ -1,8 +1,8 @@
 # EPIC-M1.150 — Kubernetes-Native Ingest & Discovery-Scan Execution
 
 **Track:** M1 / Operational Discovery
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED, PR OPEN
+**Status:** DONE
+**Execution Status:** DONE (merged via PR #275)
 **Priority:** P1
 
 ## Objective
