@@ -409,6 +409,7 @@
           "comment": {
             "anyOf": [
               {
+                "maxLength": 2000,
                 "type": "string"
               },
               {
@@ -803,8 +804,10 @@
         "properties": {
           "mutedAlertTypes": {
             "items": {
+              "maxLength": 64,
               "type": "string"
             },
+            "maxItems": 200,
             "title": "Mutedalerttypes",
             "type": "array"
           }
@@ -1075,22 +1078,28 @@
           },
           "industries": {
             "items": {
+              "maxLength": 64,
               "type": "string"
             },
+            "maxItems": 200,
             "title": "Industries",
             "type": "array"
           },
           "marketCapBuckets": {
             "items": {
+              "maxLength": 64,
               "type": "string"
             },
+            "maxItems": 200,
             "title": "Marketcapbuckets",
             "type": "array"
           },
           "markets": {
             "items": {
+              "maxLength": 64,
               "type": "string"
             },
+            "maxItems": 200,
             "title": "Markets",
             "type": "array"
           },
@@ -1110,15 +1119,19 @@
           },
           "sectors": {
             "items": {
+              "maxLength": 64,
               "type": "string"
             },
+            "maxItems": 200,
             "title": "Sectors",
             "type": "array"
           },
           "watchlist": {
             "items": {
+              "maxLength": 64,
               "type": "string"
             },
+            "maxItems": 200,
             "title": "Watchlist",
             "type": "array"
           }
@@ -1679,6 +1692,22 @@
         "title": "SessionResponse",
         "type": "object"
       },
+      "SuccessEnvelope_ApiCapabilities_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ApiCapabilities"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[ApiCapabilities]",
+        "type": "object"
+      },
       "SuccessEnvelope_BootstrapResponse_": {
         "properties": {
           "data": {
@@ -1901,6 +1930,22 @@
           "meta"
         ],
         "title": "SuccessEnvelope[UserContext]",
+        "type": "object"
+      },
+      "SuccessEnvelope_VersionResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/VersionResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[VersionResponse]",
         "type": "object"
       },
       "TimeseriesPoint": {
@@ -2276,6 +2321,24 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "VersionResponse": {
+        "properties": {
+          "apiVersion": {
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "contractVersion": {
+            "title": "Contractversion",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiVersion",
+          "contractVersion"
+        ],
+        "title": "VersionResponse",
+        "type": "object"
+      },
       "api__schemas__common__CursorEnvelope_EventItem___1": {
         "properties": {
           "data": {
@@ -2566,6 +2629,27 @@
         "summary": "Post Auth Session",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "operationId": "get_capabilities_api_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_ApiCapabilities_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Capabilities",
+        "tags": [
+          "meta"
         ]
       }
     },
@@ -4015,6 +4099,27 @@
         "summary": "Get Tracking Timeseries",
         "tags": [
           "tracking"
+        ]
+      }
+    },
+    "/api/v1/version": {
+      "get": {
+        "operationId": "get_version_api_v1_version_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_VersionResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Version",
+        "tags": [
+          "meta"
         ]
       }
     },
