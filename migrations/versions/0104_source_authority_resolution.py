@@ -1,7 +1,7 @@
 """add resolved_facts table
 
-Revision ID: 0103_source_authority
-Revises: 0102_market_calendar
+Revision ID: 0104_source_authority
+Revises: 0103_information_latency
 
 EPIC-M1.127: resolve conflicting external facts using explicit source
 authority, freshness, provenance and fact-type policies rather than
@@ -10,8 +10,8 @@ simple provider majority voting.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0103_source_authority"
-down_revision = "0102_market_calendar"
+revision = "0104_source_authority"
+down_revision = "0103_information_latency"
 branch_labels = None
 depends_on = None
 
