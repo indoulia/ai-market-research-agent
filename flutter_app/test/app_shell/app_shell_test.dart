@@ -68,11 +68,19 @@ void main() {
     addTearDown(tester.view.reset);
 
     final router = buildAppRouter();
-    router.go('/home/recommendation/TATASTEEL');
+    router.go('/home/recommendation/42');
     await tester.pumpWidget(_appWithRouter(router));
     await tester.pumpAndSettle();
 
-    expect(find.text('TATASTEEL'), findsWidgets);
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/home/recommendation/42',
+    );
+    // The mocked test HttpClient returns 400, so the real detail screen
+    // lands on its error state — proves the route resolved to the real
+    // screen (EPIC-M1.138), not that data loaded (covered by that epic's
+    // own repository-mocked tests).
+    expect(find.text('Something went wrong'), findsOneWidget);
   });
 
   testWidgets('settings screen links to the design-system gallery', (
@@ -126,17 +134,23 @@ void main() {
     await tester.pumpWidget(_appWithRouter(router));
     await tester.pumpAndSettle();
 
-    router.go('/home/recommendation/INFY');
+    router.go('/home/recommendation/7');
     await tester.pumpAndSettle();
-    expect(find.text('INFY'), findsWidgets);
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/home/recommendation/7',
+    );
 
     // Switch to another branch and back — the home branch's stack (still on
     // the recommendation detail route) must be preserved, not reset to
     // '/home'.
     router.go('/discover');
     await tester.pumpAndSettle();
-    router.go('/home/recommendation/INFY');
+    router.go('/home/recommendation/7');
     await tester.pumpAndSettle();
-    expect(find.text('INFY'), findsWidgets);
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/home/recommendation/7',
+    );
   });
 }
