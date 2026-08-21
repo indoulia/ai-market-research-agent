@@ -7,6 +7,23 @@ from sqlalchemy.orm import Session
 
 from .models import MarketPrice, Prediction, PredictionOutcome
 
+# EPIC-M1.95: the versioned identity of the label-generation methodology
+# below (same-day tie-break rule, horizon-expiry/invalidation
+# classification) -- recorded on every outcome going forward so a future
+# change to this methodology is never mistaken for a change to history.
+# Pre-EPIC rows have `label_methodology_version IS NULL`, honestly
+# meaning "not recorded at the time", never backfilled with a guess.
+LABEL_METHODOLOGY_VERSION = "LBL-001"
+
+# EPIC-M1.95's own canonical label-category vocabulary (scope: "define
+# target-hit, stop-loss-hit, horizon-expiry and invalidation outcomes"),
+# derived purely from an already-computed `PredictionOutcome` -- see
+# `classify_label_category`.
+LABEL_TARGET_HIT = "TARGET_HIT"
+LABEL_STOP_LOSS_HIT = "STOP_LOSS_HIT"
+LABEL_HORIZON_EXPIRY = "HORIZON_EXPIRY"
+LABEL_INVALIDATED = "INVALIDATED"
+
 # Outcomes are objective historical fact once computed; never rewrite them (mirrors the
 # immutability guarantee app/recommendations.py enforces on the original recommendation).
 IMMUTABLE_FIELDS = (
@@ -22,6 +39,7 @@ IMMUTABLE_FIELDS = (
     "target_hit",
     "stop_hit",
     "outcome",
+    "label_methodology_version",
 )
 
 
@@ -87,6 +105,26 @@ def _find_exit(window: list[MarketPrice], entry_price: Decimal, target_return: D
     return _ExitEvent(price=last.close, at=last.timestamp, target_hit=False, stop_hit=False)
 
 
+def classify_label_category(outcome: PredictionOutcome) -> str:
+    """The one canonical, deterministic mapping from an already-computed
+    `PredictionOutcome` to this EPIC's four-category label vocabulary
+    (scope: "labels support model training, calibration and trust
+    measurement consistently") -- a pure function of fields `evaluate_
+    recommendation` already wrote, never a new computation or a second
+    opinion on what happened. `outcome.outcome == "UNEVALUABLE"` (bad
+    OHLC data made the true exit undeterminable) is the one existing case
+    where a label genuinely cannot be trusted, so it maps to
+    `LABEL_INVALIDATED` -- never fabricated as a target/stop/expiry hit
+    it never was."""
+    if outcome.outcome == "UNEVALUABLE":
+        return LABEL_INVALIDATED
+    if outcome.target_hit:
+        return LABEL_TARGET_HIT
+    if outcome.stop_hit:
+        return LABEL_STOP_LOSS_HIT
+    return LABEL_HORIZON_EXPIRY
+
+
 def evaluate_recommendation(session: Session, prediction: Prediction) -> PredictionOutcome | None:
     existing = session.execute(
         select(PredictionOutcome).where(PredictionOutcome.prediction_id == prediction.id)
@@ -130,6 +168,7 @@ def evaluate_recommendation(session: Session, prediction: Prediction) -> Predict
             target_hit=False,
             stop_hit=False,
             outcome="UNEVALUABLE",
+            label_methodology_version=LABEL_METHODOLOGY_VERSION,
         )
         session.add(outcome)
         session.flush()
@@ -158,6 +197,7 @@ def evaluate_recommendation(session: Session, prediction: Prediction) -> Predict
         target_hit=exit_event.target_hit,
         stop_hit=exit_event.stop_hit,
         outcome=result,
+        label_methodology_version=LABEL_METHODOLOGY_VERSION,
     )
     session.add(outcome)
     prediction.status = "EVALUATED"

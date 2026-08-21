@@ -83,6 +83,7 @@ class PredictionOutcome(Base):
     target_hit: Mapped[bool] = mapped_column(Boolean)
     stop_hit: Mapped[bool] = mapped_column(Boolean)
     outcome: Mapped[str] = mapped_column(String(32))
+    label_methodology_version: Mapped[str | None] = mapped_column(String(32))
 
 
 class DailyCandidateScan(Base):
