@@ -1,7 +1,7 @@
 # EPIC-M1.120 — Event-Driven Market Intelligence Refresh
 
-**Status:** APPROVED
-**Execution Status:** VALIDATING
+**Status:** DONE
+**Execution Status:** DONE
 **Priority:** P0
 
 ## Objective
