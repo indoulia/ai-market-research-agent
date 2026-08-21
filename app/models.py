@@ -2215,3 +2215,20 @@ class ResolvedFact(Base):
     resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     resolution_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MicrostructureSnapshot(Base):
+    __tablename__ = "microstructure_snapshots"
+    __table_args__ = (UniqueConstraint("prediction_id", name="uq_microstructure_snapshot_prediction"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    liquidity_bucket: Mapped[str] = mapped_column(String(32))
+    previous_liquidity_bucket: Mapped[str | None] = mapped_column(String(32))
+    liquidity_regime_changed: Mapped[bool] = mapped_column(Boolean)
+    average_daily_turnover: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    gap_percent: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    gap_bucket: Mapped[str] = mapped_column(String(32))
+    probable_circuit_band_event: Mapped[bool] = mapped_column(Boolean)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    snapshot_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
