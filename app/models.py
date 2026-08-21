@@ -1454,6 +1454,27 @@ class NewsConsensusAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class SegmentCalibrationAssessment(Base):
+    __tablename__ = "segment_calibration_assessments"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_segment_calibration_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    model_version: Mapped[str] = mapped_column(String(64))
+    resolved_segment_level: Mapped[str] = mapped_column(String(32))
+    resolved_segment_key: Mapped[str] = mapped_column(String(128))
+    resolved_sample_count: Mapped[int] = mapped_column(Integer)
+    predicted_mean: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    observed_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    fallback_chain: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    calibration_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
