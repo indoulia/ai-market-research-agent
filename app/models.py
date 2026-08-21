@@ -1913,4 +1913,64 @@ class OrchestrationExecution(Base):
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     failure_reason: Mapped[str | None] = mapped_column(String(256))
     orchestration_rule_version: Mapped[str] = mapped_column(String(32))
+
+
+class Benchmark(Base):
+    __tablename__ = "benchmarks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    level: Mapped[str] = mapped_column(String(16))
+    label: Mapped[str] = mapped_column(String(128))
+    symbol: Mapped[str] = mapped_column(String(32))
+    sector: Mapped[str | None] = mapped_column(String(128))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BenchmarkDailyPrice(Base):
+    __tablename__ = "benchmark_daily_prices"
+    __table_args__ = (UniqueConstraint("benchmark_id", "trade_date", name="uq_benchmark_price_benchmark_date"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    benchmark_id: Mapped[int] = mapped_column(ForeignKey("benchmarks.id"), index=True)
+    trade_date: Mapped[date] = mapped_column(Date)
+    close: Mapped[Decimal] = mapped_column(Numeric(18, 6))
+    source: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BenchmarkRelativeAssessment(Base):
+    __tablename__ = "benchmark_relative_assessments"
+    __table_args__ = (
+        UniqueConstraint(
+            "prediction_id", "benchmark_level", "evaluated_at", name="uq_benchmark_relative_prediction_level_evaluated_at",
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    benchmark_level: Mapped[str] = mapped_column(String(16))
+    benchmark_id: Mapped[int | None] = mapped_column(ForeignKey("benchmarks.id"))
+    benchmark_code: Mapped[str | None] = mapped_column(String(64))
+    stock_return_pct: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    benchmark_return_pct: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    relative_alpha: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    assessment_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BenchmarkPerformanceReport(Base):
+    __tablename__ = "benchmark_performance_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    benchmark_relative_environment: Mapped[str] = mapped_column(String(32), index=True)
+    benchmark_level: Mapped[str] = mapped_column(String(16))
+    window_label: Mapped[str] = mapped_column(String(128))
+    segment_sample_count: Mapped[int] = mapped_column(Integer)
+    segment_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    baseline_sample_count: Mapped[int] = mapped_column(Integer)
+    baseline_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

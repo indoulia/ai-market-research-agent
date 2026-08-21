@@ -21,11 +21,14 @@ in ``get_events`` as ``REANALYSIS_TRIGGER`` items alongside M1.54's
 overlapping signals (evidence-staleness-per-category vs. prediction-
 level drift/disagreement/material-change) and both belong on this feed.
 
-M1.119 (real-time outcome monitor), M1.126 (information latency) and
-M1.129 (benchmark-relative alpha) are still APPROVED but not yet
-implemented. Consequences, named rather than hidden:
-  - ``benchmarkRelative``/``benchmarkReturnPct`` are always ``None`` --
-    no domain module computes a benchmark-relative return yet.
+M1.119 (real-time outcome monitor) and M1.126 (information latency) are
+still APPROVED but not yet implemented. M1.129 (benchmark-relative alpha)
+landed after this EPIC's Dependencies note was written --
+``benchmarkRelative``/``benchmarkReturnPct`` now read the latest
+BROAD_MARKET-level ``app.benchmark_relative_alpha.BenchmarkRelativeAssessment``
+row when one exists (``None`` until that assessment has actually been
+computed for a prediction -- this module never computes it on the fly).
+Consequences, named rather than hidden:
   - Outcome detection reflects M1.5's periodic (lifecycle-check-time)
     evaluation, not true real-time detection latency.
   - ``expiryAt`` is a naive calendar-day estimate
@@ -48,6 +51,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.benchmark_relative_alpha import LEVEL_BROAD_MARKET, get_benchmark_relative_history
 from app.confidence_quality import get_confidence_quality
 from app.decision_trace import get_decision_trace
 from app.discovery_segmentation import BUCKET_UNCLASSIFIED, classify_liquidity_bucket
@@ -114,6 +118,17 @@ def _latest_trust(session: Session, prediction_id: int) -> Decimal | None:
     return history[-1].overall_trust_score if history else None
 
 
+def _latest_broad_market_assessment(session: Session, prediction_id: int):
+    broad_market_history = [a for a in get_benchmark_relative_history(session, prediction_id) if a.benchmark_level == LEVEL_BROAD_MARKET]
+    return broad_market_history[-1] if broad_market_history else None
+
+
+def _benchmark_relative_summary(assessment) -> str | None:
+    if assessment is None:
+        return None
+    return f"{assessment.verdict} vs {assessment.benchmark_code} (alpha {assessment.relative_alpha})"
+
+
 def _target_stop_upside(session: Session, prediction: Prediction) -> tuple[Decimal, Decimal, Decimal]:
     publication = get_publication(session, prediction.id, methodology_version=TARGET_STOP_METHODOLOGY_VERSION)
     target_price = publication.target_price if publication else prediction.entry_price * (1 + prediction.target_return)
@@ -171,7 +186,7 @@ def get_detail(session: Session, recommendation_id: int) -> RecommendationDetail
         market=market_summary(session, scan_candidate.scan_id if scan_candidate else None),
         news=news_summary(session, active.stock_id),
         events=event_summary(session, active.stock_id),
-        benchmarkRelative=None,
+        benchmarkRelative=_benchmark_relative_summary(_latest_broad_market_assessment(session, active.id)),
         liquidity=liquidity,
         providerEvidence=list(decision_trace.evidence_categories_snapshot) if decision_trace else [],
         status=lifecycle.state if lifecycle else active.status,
@@ -309,6 +324,7 @@ def get_outcome(session: Session, recommendation_id: int) -> OutcomeResponse:
             targetHit=None, stopLossHit=None, horizonExpired=None, benchmarkReturnPct=None, evidenceId=None,
         )
     horizon_expired = outcome.outcome != "UNEVALUABLE" and not outcome.target_hit and not outcome.stop_hit
+    broad_market_assessment = _latest_broad_market_assessment(session, active.id)
     return OutcomeResponse(
         status=outcome.outcome,
         detectedAt=outcome.evaluation_date,
@@ -317,6 +333,10 @@ def get_outcome(session: Session, recommendation_id: int) -> OutcomeResponse:
         targetHit=outcome.target_hit,
         stopLossHit=outcome.stop_hit,
         horizonExpired=horizon_expired,
-        benchmarkReturnPct=None,
+        benchmarkReturnPct=(
+            broad_market_assessment.benchmark_return_pct * 100
+            if broad_market_assessment is not None and broad_market_assessment.benchmark_return_pct is not None
+            else None
+        ),
         evidenceId=outcome.id,
     )
