@@ -666,3 +666,31 @@ class RecommendationRevalidationOutcome(Base):
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revalidation_engine_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserAlertPreference(Base):
+    __tablename__ = "user_alert_preferences"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    muted_alert_types: Mapped[list] = mapped_column(JSON)
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    alert_preference_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationAlert(Base):
+    __tablename__ = "recommendation_alerts"
+    __table_args__ = (
+        UniqueConstraint("user_id", "alert_type", "source_table", "source_id", name="uq_alert_user_type_source"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    alert_type: Mapped[str] = mapped_column(String(32))
+    severity: Mapped[str] = mapped_column(String(16))
+    prediction_id: Mapped[int | None] = mapped_column(ForeignKey("predictions.id"))
+    source_table: Mapped[str] = mapped_column(String(64))
+    source_id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"))
+    message: Mapped[str] = mapped_column(String(512))
+    triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    alert_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
