@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta
 import math
 from typing import Any
 
 import pandas as pd
 import yfinance as yf
+
+from .quality import NSE_TIMEZONE
 
 
 class YahooFinanceError(RuntimeError):
@@ -71,11 +73,17 @@ class YahooFinanceClient:
             ):
                 continue
             stamp = pd.Timestamp(timestamp).to_pydatetime()
-            if stamp.tzinfo is None:
-                stamp = datetime.combine(stamp.date(), time(), tzinfo=timezone.utc)
-            else:
-                stamp = stamp.astimezone(timezone.utc)
-            if not from_date <= stamp.date() <= to_date:
+            # yfinance daily bars index by exchange trading date with no
+            # meaningful intraday time; every other daily-bar producer/consumer
+            # in this repo (app/scan.py's cutoff math, the market-data quality
+            # validator, every test fixture) stamps/expects that date at
+            # midnight in Asia/Kolkata -- anchoring to UTC midnight instead
+            # (as this used to) shifts the same calendar date across the IST
+            # boundary and makes every Yahoo-ingested row look permanently
+            # stale to the discovery scan (EPIC-M1.149).
+            trading_date = stamp.date() if stamp.tzinfo is None else stamp.astimezone(NSE_TIMEZONE).date()
+            if not from_date <= trading_date <= to_date:
                 continue
-            rows[stamp.date().isoformat()] = [stamp.isoformat(), open_price, high, low, close, int(volume)]
+            localized = datetime.combine(trading_date, time.min, tzinfo=NSE_TIMEZONE)
+            rows[trading_date.isoformat()] = [localized.isoformat(), open_price, high, low, close, int(volume)]
         return [rows[key] for key in sorted(rows)]

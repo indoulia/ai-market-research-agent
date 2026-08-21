@@ -62,5 +62,23 @@ services:
     entrypoint: ["python", "-m", "scripts.ingest_market_history"]
     profiles: ["tools"]
 
+  # On-demand discovery scan, not started by `docker compose up`. Consumes
+  # whatever market data `ingest` has already persisted; run `ingest` first if
+  # this reports input_market_price_rows: 0. SignalProvider is picked by
+  # DISCOVERY_SIGNAL_PROVIDER in .env ("baseline" today).
+  # Run with: docker compose run --rm discovery
+  discovery:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: *db-url
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    entrypoint: ["python", "-m", "scripts.run_discovery_scan"]
+    profiles: ["tools"]
+
 volumes:
   postgres-data:

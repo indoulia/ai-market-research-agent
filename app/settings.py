@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +16,17 @@ class Settings(BaseSettings):
     # universe when market_data_provider=yahoo, which has no instrument-master
     # endpoint of its own.
     yahoo_symbols: str = ""
+    # EPIC-M1.149: which SignalProvider scripts/run_discovery_scan.py resolves.
+    # "baseline" (app/baseline_signal.py) is the only value implemented today --
+    # a real trained-model provider is out of this EPIC's scope, so an unknown
+    # value is a hard, explicit operational failure rather than a silent
+    # fallback to baseline.
+    discovery_signal_provider: str = "baseline"
+    # Same 5%/-3% target/stop used across every other discovery path in this
+    # repo (M1.13 generation, M1.14 selection tests) -- overridable per
+    # deployment without a code change.
+    discovery_target_return: Decimal = Decimal("0.05")
+    discovery_stop_return: Decimal = Decimal("-0.03")
     app_env: str = "development"
     log_level: str = "INFO"
     # EPIC-M1.145: comma-separated origins allowed to call /api/v1 from a
