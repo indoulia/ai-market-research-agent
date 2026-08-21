@@ -1,7 +1,7 @@
 # EPIC-M1.100 — Experiment Multiplicity & Holdout Protection
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -30,7 +30,7 @@ Next: M1.101.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #148 (`a0b55c6`).
 
 **Implementation:**
 - `app/experiment_integrity_guard.py`: a new, versioned (`EXPERIMENT_INTEGRITY_VERSION = "EIG-001"`) module that adds exactly the three capabilities M1.68's already-merged experiment registry (`Experiment`/`ExperimentArm`/`ExperimentResult`) never had, without reimplementing the registry itself:
