@@ -1,8 +1,8 @@
 # EPIC-M1.147 — Longitudinal Tracking & Performance Analytics API
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #208, commit fcc4a3b)
 **Priority:** P0
 
 ## Objective
