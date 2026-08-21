@@ -43,7 +43,7 @@ void main() {
     expect(session.userId, 'analyst-1');
     expect(http_.lastRequest?.method, 'POST');
     expect(jsonDecode(http_.lastRequest!.body), {'userId': 'analyst-1'});
-    expect(http_.lastRequest?.url.path, '/api/v1/auth/session');
+    expect(http_.lastRequest?.url.path, '/api/v1/auth/login');
   });
 
   test('logout posts and returns revoked', () async {

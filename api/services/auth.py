@@ -1,14 +1,15 @@
-"""Service backing /api/v1/auth/session, /api/v1/auth/logout, /api/v1/me
-and /api/v1/me/permissions (EPIC-M1.145).
+"""Service backing /api/v1/auth/login, /api/v1/auth/refresh,
+/api/v1/auth/session, /api/v1/auth/logout, /api/v1/me and
+/api/v1/me/permissions.
 
-``POST /auth/session`` does double duty as the contract's "establish/
-refresh" endpoint: a request carrying a currently-valid session token
-(``Authorization: Bearer ...``) refreshes (rotates) it; a request with no
-such header establishes a brand-new session from the request body's
-credential. This mirrors how mobile/web clients actually behave (silently
-refresh while a session exists, fall back to a fresh login once it
-doesn't) without needing two endpoints for it, matching the documented
-single-endpoint contract.
+EPIC-M1.145 shipped the session lifecycle (``app/auth_session.py``) behind
+a single combined ``POST /auth/session`` "establish-or-refresh" endpoint.
+EPIC-M3.12 defines the same lifecycle behind three explicit verbs instead
+-- ``login`` (always establishes a brand-new session), ``refresh`` (always
+rotates an existing live one) and ``GET session`` (reads the current one,
+alongside ``GET /me``) -- so this module now exposes ``login``/``refresh``
+as distinct functions rather than one that branches on whether a bearer
+token happened to be present.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.auth_session import (
+    STATUS_EXPIRED,
     STATUS_VALID,
     SelfAssertedCredentialVerifier,
     create_session,
@@ -26,10 +28,10 @@ from app.auth_session import (
     revoke_session,
 )
 
-from ..deps import get_optional_bearer_subject
+from ..deps import SessionExpiredApiError, get_optional_bearer_subject
 from ..errors import UnauthenticatedError, ValidationError
 from ..request_context import get_request_id
-from ..schemas.auth import DEFAULT_CAPABILITIES, PermissionsResponse, SessionRequest, SessionResponse, UserContext
+from ..schemas.auth import DEFAULT_CAPABILITIES, LoginRequest, PermissionsResponse, SessionResponse, UserContext
 
 _verifier = SelfAssertedCredentialVerifier()
 
@@ -41,24 +43,36 @@ def _to_response(auth_session) -> SessionResponse:
     )
 
 
-def establish_or_refresh_session(db: Session, request: SessionRequest, *, authorization: str | None) -> SessionResponse:
-    existing_token = get_optional_bearer_subject(authorization)
-    if existing_token:
-        status, _ = get_session_status(db, existing_token, at=datetime.now(timezone.utc))
-        if status == STATUS_VALID:
-            # Only a currently-live session can be silently refreshed
-            # (rotated to a new token with a fresh expiry). An expired
-            # session is never silently renewed -- that would defeat the
-            # point of expiry -- so it falls through to requiring a fresh
-            # credential below, same as no session token at all.
-            new_session = refresh_session(db, existing_token, at=datetime.now(timezone.utc))
-            return _to_response(new_session)
-
+def login(db: Session, request: LoginRequest) -> SessionResponse:
+    """``POST /auth/login`` -- always establishes a brand-new session from
+    the caller's credential, regardless of any session token already on
+    the request. Unlike M1.145's combined endpoint, login never silently
+    refreshes an existing session -- that is `refresh`'s job."""
     user_id = _verifier.verify(request.model_dump())
     if user_id is None:
-        raise ValidationError("userId is required to establish a new session.", field_errors={"userId": "required"})
-
+        raise ValidationError("userId is required to sign in.", field_errors={"userId": "required"})
     new_session = create_session(db, user_id=user_id, issued_at=datetime.now(timezone.utc))
+    return _to_response(new_session)
+
+
+def refresh(db: Session, *, authorization: str | None) -> SessionResponse:
+    """``POST /auth/refresh`` -- rotates the caller's currently-live
+    session token for a fresh one with a new expiry. A missing/unknown/
+    revoked token raises the generic ``MRA_UNAUTHENTICATED`` (an attacker
+    can't use the error to probe which tokens ever existed); an
+    expired-but-otherwise-real token raises the deterministic
+    ``MRA_SESSION_EXPIRED`` instead -- refreshing an already-expired
+    session would defeat the point of expiry, so the caller must sign in
+    again via `login`."""
+    token = get_optional_bearer_subject(authorization)
+    if not token:
+        raise UnauthenticatedError()
+    status, _ = get_session_status(db, token, at=datetime.now(timezone.utc))
+    if status == STATUS_EXPIRED:
+        raise SessionExpiredApiError()
+    if status != STATUS_VALID:
+        raise UnauthenticatedError()
+    new_session = refresh_session(db, token, at=datetime.now(timezone.utc))
     return _to_response(new_session)
 
 

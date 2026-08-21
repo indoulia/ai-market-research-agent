@@ -2338,6 +2338,20 @@
         "title": "LearningSummary",
         "type": "object"
       },
+      "LoginRequest": {
+        "description": "Body for ``POST /api/v1/auth/login`` (EPIC-M3.12). ``userId`` is\nverified by whichever ``CredentialVerifier`` this deployment configures\n(see ``app.auth_session``); the default, until a real identity provider\nis integrated, is self-asserted.",
+        "properties": {
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "title": "LoginRequest",
+        "type": "object"
+      },
       "LogoutResponse": {
         "properties": {
           "revoked": {
@@ -3657,24 +3671,6 @@
         "title": "ServerTime",
         "type": "object"
       },
-      "SessionRequest": {
-        "description": "Only consulted when establishing a brand-new session (no valid\n``Authorization`` bearer session token on the request) -- see\n``api/services/auth.py``. ``userId`` is verified by whichever\n``CredentialVerifier`` this deployment configures (see\n``app.auth_session``); the default, until a real identity provider is\nintegrated, is self-asserted.",
-        "properties": {
-          "userId": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Userid"
-          }
-        },
-        "title": "SessionRequest",
-        "type": "object"
-      },
       "SessionResponse": {
         "properties": {
           "expiresAt": {
@@ -4977,6 +4973,47 @@
         ]
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "post_auth_login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_SessionResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Auth Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "operationId": "post_auth_logout_api_v1_auth_logout_post",
@@ -5026,9 +5063,9 @@
         ]
       }
     },
-    "/api/v1/auth/session": {
+    "/api/v1/auth/refresh": {
       "post": {
-        "operationId": "post_auth_session_api_v1_auth_session_post",
+        "operationId": "post_auth_refresh_api_v1_auth_refresh_post",
         "parameters": [
           {
             "in": "header",
@@ -5047,23 +5084,6 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/SessionRequest"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Request"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "content": {
@@ -5086,7 +5106,56 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Post Auth Session",
+        "summary": "Post Auth Refresh",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "get": {
+        "operationId": "get_auth_session_api_v1_auth_session_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_UserContext_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Auth Session",
         "tags": [
           "auth"
         ]
