@@ -5,6 +5,7 @@ from decimal import Decimal
 from sqlalchemy import event, inspect, select
 from sqlalchemy.orm import Session
 
+from .corporate_actions import adjust_price, compute_price_adjustment_factor
 from .models import MarketPrice, Prediction, PredictionOutcome
 
 # EPIC-M1.95: the versioned identity of the label-generation methodology
@@ -90,7 +91,40 @@ class _ExitEvent:
     stop_hit: bool
 
 
-def _find_exit(window: list[MarketPrice], entry_price: Decimal, target_return: Decimal, stop_return: Decimal) -> _ExitEvent:
+@dataclass(frozen=True)
+class _AdjustedBar:
+    """EPIC-M1.96: one window day's high/low/close, adjusted onto the
+    prediction's own `as_of_timestamp` economic basis via `app.
+    corporate_actions.compute_price_adjustment_factor` -- never a mutated
+    `MarketPrice` row. A stock with no recorded corporate action is
+    adjusted by exactly `Decimal("1")`, so this is a true no-op for every
+    prediction that never encounters one."""
+
+    timestamp: datetime
+    high: Decimal
+    low: Decimal
+    close: Decimal
+
+
+def _adjusted_window(session: Session, prediction: Prediction, window: list[MarketPrice]) -> list[_AdjustedBar]:
+    reference_date = prediction.as_of_timestamp.date()
+    bars = []
+    for row in window:
+        factor = compute_price_adjustment_factor(
+            session, prediction.stock_id, reference_date=reference_date, price_date=row.timestamp.date()
+        )
+        bars.append(
+            _AdjustedBar(
+                timestamp=row.timestamp,
+                high=adjust_price(row.high, factor),
+                low=adjust_price(row.low, factor),
+                close=adjust_price(row.close, factor),
+            )
+        )
+    return bars
+
+
+def _find_exit(window: list[_AdjustedBar], entry_price: Decimal, target_return: Decimal, stop_return: Decimal) -> _ExitEvent:
     target_price = entry_price * (1 + target_return)
     stop_price = entry_price * (1 + stop_return)
     for row in window:
@@ -148,21 +182,21 @@ def evaluate_recommendation(session: Session, prediction: Prediction) -> Predict
         return None
 
     window = list(rows[: prediction.horizon_days])
-    highest_price = max(row.high for row in window)
-    lowest_price = min(row.low for row in window)
-    closing_price = window[-1].close
-    maximum_return = (highest_price - prediction.entry_price) / prediction.entry_price
-    maximum_drawdown = (lowest_price - prediction.entry_price) / prediction.entry_price
 
+    # Data-quality validity is checked against the raw, as-fetched rows --
+    # a corporate-action adjustment (EPIC-M1.96) never fixes bad source
+    # data, and must not mask it either.
     if not all(_has_valid_ohlc(row) for row in window):
+        raw_highest = max(row.high for row in window)
+        raw_lowest = min(row.low for row in window)
         outcome = PredictionOutcome(
             prediction_id=prediction.id,
             evaluation_date=window[-1].timestamp,
-            highest_price=highest_price,
-            lowest_price=lowest_price,
-            closing_price=closing_price,
-            maximum_return=maximum_return,
-            maximum_drawdown=maximum_drawdown,
+            highest_price=raw_highest,
+            lowest_price=raw_lowest,
+            closing_price=window[-1].close,
+            maximum_return=(raw_highest - prediction.entry_price) / prediction.entry_price,
+            maximum_drawdown=(raw_lowest - prediction.entry_price) / prediction.entry_price,
             actual_return=Decimal("0"),
             prediction_error=Decimal("0") - prediction.target_return,
             target_hit=False,
@@ -174,7 +208,18 @@ def evaluate_recommendation(session: Session, prediction: Prediction) -> Predict
         session.flush()
         return outcome
 
-    exit_event = _find_exit(window, prediction.entry_price, prediction.target_return, prediction.stop_return)
+    # EPIC-M1.96: adjusted onto entry-date economic basis before any
+    # target/stop comparison or return calculation -- a true no-op
+    # (factor == 1 for every bar) when the stock has no recorded
+    # corporate action between as_of_timestamp and the window's dates.
+    adjusted = _adjusted_window(session, prediction, window)
+    highest_price = max(bar.high for bar in adjusted)
+    lowest_price = min(bar.low for bar in adjusted)
+    closing_price = adjusted[-1].close
+    maximum_return = (highest_price - prediction.entry_price) / prediction.entry_price
+    maximum_drawdown = (lowest_price - prediction.entry_price) / prediction.entry_price
+
+    exit_event = _find_exit(adjusted, prediction.entry_price, prediction.target_return, prediction.stop_return)
     actual_return = (exit_event.price - prediction.entry_price) / prediction.entry_price
     prediction_error = actual_return - prediction.target_return
     if exit_event.target_hit:

@@ -1152,3 +1152,19 @@ class HorizonUsefulnessReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     report_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CorporateAction(Base):
+    __tablename__ = "corporate_actions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    action_type: Mapped[str] = mapped_column(String(32))
+    effective_date: Mapped[date] = mapped_column(Date)
+    ratio: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    cash_amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    old_symbol: Mapped[str | None] = mapped_column(String(32))
+    new_symbol: Mapped[str | None] = mapped_column(String(32))
+    source: Mapped[str] = mapped_column(String(64))
+    action_version: Mapped[str] = mapped_column(String(32))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
