@@ -1,7 +1,7 @@
 # EPIC-M3.6 — Discovery Intelligence
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Track:** UI + API
 **Priority:** P0
 
