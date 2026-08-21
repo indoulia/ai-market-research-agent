@@ -1,6 +1,6 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
-from sqlalchemy import String, Integer, BigInteger, Boolean, Date, DateTime, Numeric, ForeignKey, Index, JSON, UniqueConstraint, func
+from sqlalchemy import String, Integer, BigInteger, Boolean, Date, DateTime, Time, Numeric, ForeignKey, Index, JSON, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -2047,4 +2047,63 @@ class PortfolioSelectionEffectivenessReport(Base):
     verdict: Mapped[str] = mapped_column(String(32))
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     effectiveness_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MarketCalendarVersion(Base):
+    __tablename__ = "market_calendar_versions"
+    __table_args__ = (
+        UniqueConstraint("exchange", "version_label", name="uq_market_calendar_exchange_version_label"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    exchange: Mapped[str] = mapped_column(String(16), index=True)
+    version_label: Mapped[str] = mapped_column(String(64))
+    source: Mapped[str] = mapped_column(String(64))
+    timezone_name: Mapped[str] = mapped_column(String(64))
+    effective_from: Mapped[date] = mapped_column(Date)
+    effective_to: Mapped[date | None] = mapped_column(Date)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    calendar_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MarketHoliday(Base):
+    __tablename__ = "market_holidays"
+    __table_args__ = (
+        UniqueConstraint("calendar_version_id", "holiday_date", name="uq_market_holiday_version_date"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    calendar_version_id: Mapped[int] = mapped_column(ForeignKey("market_calendar_versions.id"), index=True)
+    holiday_date: Mapped[date] = mapped_column(Date)
+    description: Mapped[str] = mapped_column(String(256))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MarketSpecialSession(Base):
+    __tablename__ = "market_special_sessions"
+    __table_args__ = (
+        UniqueConstraint("calendar_version_id", "session_date", name="uq_market_special_session_version_date"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    calendar_version_id: Mapped[int] = mapped_column(ForeignKey("market_calendar_versions.id"), index=True)
+    session_date: Mapped[date] = mapped_column(Date)
+    pre_market_start: Mapped[time | None] = mapped_column(Time)
+    open_time: Mapped[time] = mapped_column(Time)
+    close_time: Mapped[time] = mapped_column(Time)
+    post_market_end: Mapped[time | None] = mapped_column(Time)
+    description: Mapped[str] = mapped_column(String(256))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MarketUnexpectedClosure(Base):
+    __tablename__ = "market_unexpected_closures"
+    __table_args__ = (
+        UniqueConstraint("exchange", "closure_date", name="uq_market_unexpected_closure_exchange_date"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    exchange: Mapped[str] = mapped_column(String(16), index=True)
+    closure_date: Mapped[date] = mapped_column(Date)
+    reason: Mapped[str] = mapped_column(String(256))
+    source: Mapped[str] = mapped_column(String(64))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
