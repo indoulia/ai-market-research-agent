@@ -1,8 +1,9 @@
 # EPIC-M1.83 — Prediction Stability & Model Agreement
 
-**Status:** READY_FOR_APPROVAL
-**Execution Status:** NOT_READY
-**Priority:** P1
+**Status:** APPROVED
+**Execution Status:** READY_FOR_EXECUTION
+**Approved By:** User
+**Priority:** P0
 
 ## Objective
 Measure whether predictions remain stable under normal information updates and whether independent candidate models agree on the opportunity.
