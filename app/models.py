@@ -1073,3 +1073,23 @@ class PredictionStabilityAssessment(Base):
     assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     assessment_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TrustControlDecision(Base):
+    __tablename__ = "trust_control_decisions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_trust_control_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    overall_trust_quality: Mapped[str] = mapped_column(String(32))
+    eligibility_reduced: Mapped[bool] = mapped_column(Boolean)
+    segment_trust_ok: Mapped[bool] = mapped_column(Boolean)
+    calibration_drift_ok: Mapped[bool] = mapped_column(Boolean)
+    benchmark_performance_ok: Mapped[bool] = mapped_column(Boolean)
+    stability_ok: Mapped[bool] = mapped_column(Boolean)
+    causes: Mapped[list] = mapped_column(JSON)
+    recommended_action: Mapped[str] = mapped_column(String(32))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    control_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
