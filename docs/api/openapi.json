@@ -359,6 +359,26 @@
         "title": "CursorEnvelope[ActivePrediction]",
         "type": "object"
       },
+      "CursorEnvelope_DiscoveryCandidate_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryCandidate"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[DiscoveryCandidate]",
+        "type": "object"
+      },
       "CursorEnvelope_DiscoveryItem_": {
         "properties": {
           "data": {
@@ -824,6 +844,209 @@
         "title": "DataFreshness",
         "type": "object"
       },
+      "DiscoveryCandidate": {
+        "description": "One row of `GET /api/v1/discovery/candidates` -- the same discovery\nuniverse as `DiscoveryItem` above, reprojected with an explicit\nlifecycle stage and (only for an authenticated caller) a suppression\nreason, per EPIC-M3.6. Suppressed is never a negative/bearish call --\nit only means this candidate did not clear the positive-opportunity\nbar this cycle.\n\n`candidateId` is the underlying `DiscoveryRecord.id` (EPIC-M3.6's own\nfield name for it). The EPIC's `providerEvidence` and `qualification`\nfields are deliberately not separate keys here -- they are already\nserved, without inventing a second representation, by\n`discoveryReasons` (the provider's own rationale text) and\n`score`/`trustScore` (the qualification signal) respectively.\n`publishedRecommendationId` is only set once `lifecycleStage` reaches\n`PUBLISHED`, letting a client link straight to `/recommendation/:id`.",
+        "properties": {
+          "candidateId": {
+            "title": "Candidateid",
+            "type": "integer"
+          },
+          "companyName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Companyname"
+          },
+          "discoveredAt": {
+            "format": "date-time",
+            "title": "Discoveredat",
+            "type": "string"
+          },
+          "discoveryReasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discoveryreasons",
+            "type": "array"
+          },
+          "discoverySources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discoverysources",
+            "type": "array"
+          },
+          "exchange": {
+            "title": "Exchange",
+            "type": "string"
+          },
+          "industry": {
+            "title": "Industry",
+            "type": "string"
+          },
+          "lifecycleStage": {
+            "title": "Lifecyclestage",
+            "type": "string"
+          },
+          "liquidity": {
+            "title": "Liquidity",
+            "type": "string"
+          },
+          "marketCapBucket": {
+            "title": "Marketcapbucket",
+            "type": "string"
+          },
+          "publishedRecommendationId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publishedrecommendationid"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "sector": {
+            "title": "Sector",
+            "type": "string"
+          },
+          "suppressionReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suppressionreason"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
+          }
+        },
+        "required": [
+          "candidateId",
+          "symbol",
+          "companyName",
+          "exchange",
+          "sector",
+          "industry",
+          "marketCapBucket",
+          "liquidity",
+          "discoveredAt",
+          "discoverySources",
+          "discoveryReasons",
+          "score",
+          "trustScore",
+          "lifecycleStage"
+        ],
+        "title": "DiscoveryCandidate",
+        "type": "object"
+      },
+      "DiscoveryFunnelCounts": {
+        "properties": {
+          "analyzed": {
+            "title": "Analyzed",
+            "type": "integer"
+          },
+          "discovered": {
+            "title": "Discovered",
+            "type": "integer"
+          },
+          "published": {
+            "title": "Published",
+            "type": "integer"
+          },
+          "qualified": {
+            "title": "Qualified",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "discovered",
+          "analyzed",
+          "qualified",
+          "suppressed",
+          "published"
+        ],
+        "title": "DiscoveryFunnelCounts",
+        "type": "object"
+      },
+      "DiscoveryHistoryPoint": {
+        "properties": {
+          "analyzedCount": {
+            "title": "Analyzedcount",
+            "type": "integer"
+          },
+          "discoveredCount": {
+            "title": "Discoveredcount",
+            "type": "integer"
+          },
+          "publishedCount": {
+            "title": "Publishedcount",
+            "type": "integer"
+          },
+          "qualifiedCount": {
+            "title": "Qualifiedcount",
+            "type": "integer"
+          },
+          "scanDate": {
+            "format": "date",
+            "title": "Scandate",
+            "type": "string"
+          },
+          "suppressedCount": {
+            "title": "Suppressedcount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scanDate",
+          "discoveredCount",
+          "analyzedCount",
+          "qualifiedCount",
+          "suppressedCount",
+          "publishedCount"
+        ],
+        "title": "DiscoveryHistoryPoint",
+        "type": "object"
+      },
       "DiscoveryItem": {
         "properties": {
           "companyName": {
@@ -929,6 +1152,114 @@
           "status"
         ],
         "title": "DiscoveryItem",
+        "type": "object"
+      },
+      "DiscoverySourceEffectiveness": {
+        "description": "Per-source discovery effectiveness, reprojected verbatim from\nEPIC-M1.28's `app.discovery_effectiveness.DiscoverySourceFunnel` --\nno new scoring/verdict logic, just camelCase field names for the API.",
+        "properties": {
+          "analyzedCount": {
+            "title": "Analyzedcount",
+            "type": "integer"
+          },
+          "discoveredCount": {
+            "title": "Discoveredcount",
+            "type": "integer"
+          },
+          "evaluatedCount": {
+            "title": "Evaluatedcount",
+            "type": "integer"
+          },
+          "failureCount": {
+            "title": "Failurecount",
+            "type": "integer"
+          },
+          "openCount": {
+            "title": "Opencount",
+            "type": "integer"
+          },
+          "qualifiedCount": {
+            "title": "Qualifiedcount",
+            "type": "integer"
+          },
+          "rejectedCount": {
+            "title": "Rejectedcount",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "successCount": {
+            "title": "Successcount",
+            "type": "integer"
+          },
+          "successRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Successrate"
+          },
+          "unevaluableCount": {
+            "title": "Unevaluablecount",
+            "type": "integer"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "discoveredCount",
+          "analyzedCount",
+          "rejectedCount",
+          "qualifiedCount",
+          "evaluatedCount",
+          "successCount",
+          "failureCount",
+          "unevaluableCount",
+          "openCount",
+          "successRate",
+          "verdict"
+        ],
+        "title": "DiscoverySourceEffectiveness",
+        "type": "object"
+      },
+      "DiscoverySummary": {
+        "properties": {
+          "asOf": {
+            "format": "date-time",
+            "title": "Asof",
+            "type": "string"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/DiscoveryFunnelCounts"
+          },
+          "effectivenessBySource": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoverySourceEffectiveness"
+            },
+            "title": "Effectivenessbysource",
+            "type": "array"
+          },
+          "effectivenessReportVersion": {
+            "title": "Effectivenessreportversion",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asOf",
+          "counts",
+          "effectivenessBySource",
+          "effectivenessReportVersion"
+        ],
+        "title": "DiscoverySummary",
         "type": "object"
       },
       "DisplayPreferences": {
@@ -2596,6 +2927,22 @@
         "title": "SuccessEnvelope[DashboardSnapshot]",
         "type": "object"
       },
+      "SuccessEnvelope_DiscoverySummary_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/DiscoverySummary"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[DiscoverySummary]",
+        "type": "object"
+      },
       "SuccessEnvelope_EventItem_": {
         "properties": {
           "data": {
@@ -2850,6 +3197,26 @@
           "meta"
         ],
         "title": "SuccessEnvelope[VersionResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_list_DiscoveryHistoryPoint__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryHistoryPoint"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[list[DiscoveryHistoryPoint]]",
         "type": "object"
       },
       "SuccessEnvelope_list_TimelineItem__": {
@@ -3969,6 +4336,273 @@
           }
         },
         "summary": "Get Discoveries",
+        "tags": [
+          "discoveries"
+        ]
+      }
+    },
+    "/api/v1/discovery/candidates": {
+      "get": {
+        "operationId": "get_discovery_candidates_api_v1_discovery_candidates_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Market"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "industry",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Industry"
+            }
+          },
+          {
+            "description": "LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED (the \"size\" filter -- same bucket vocabulary as M1.139's `marketCapBucket`, per EPIC-M3.6's own `marketCap` field name)",
+            "in": "query",
+            "name": "marketCap",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "LARGE_CAP|MID_CAP|SMALL_CAP|UNCLASSIFIED (the \"size\" filter -- same bucket vocabulary as M1.139's `marketCapBucket`, per EPIC-M3.6's own `marketCap` field name)",
+              "title": "Marketcap"
+            }
+          },
+          {
+            "description": "CHATGPT|DAILY_UNIVERSE_SCAN|WATCHLIST",
+            "in": "query",
+            "name": "discoveryBasis",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "CHATGPT|DAILY_UNIVERSE_SCAN|WATCHLIST",
+              "title": "Discoverybasis"
+            }
+          },
+          {
+            "description": "Inclusive discoveredAt lower bound (date)",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive discoveredAt lower bound (date)",
+              "title": "From"
+            }
+          },
+          {
+            "description": "Inclusive discoveredAt upper bound (date)",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive discoveredAt upper bound (date)",
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_DiscoveryCandidate_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Discovery Candidates",
+        "tags": [
+          "discoveries"
+        ]
+      }
+    },
+    "/api/v1/discovery/history": {
+      "get": {
+        "operationId": "get_discovery_history_endpoint_api_v1_discovery_history_get",
+        "parameters": [
+          {
+            "description": "Timeline length, in scan days",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "Timeline length, in scan days",
+              "maximum": 180,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_DiscoveryHistoryPoint__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Discovery History Endpoint",
+        "tags": [
+          "discoveries"
+        ]
+      }
+    },
+    "/api/v1/discovery/summary": {
+      "get": {
+        "operationId": "get_discovery_summary_endpoint_api_v1_discovery_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_DiscoverySummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Discovery Summary Endpoint",
         "tags": [
           "discoveries"
         ]

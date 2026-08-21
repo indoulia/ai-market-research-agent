@@ -72,3 +72,18 @@ def require_active_session(
 
 def require_bearer_subject(auth_session: AuthSession = Depends(require_active_session)) -> str:
     return auth_session.user_id
+
+
+def get_optional_active_session(
+    authorization: str | None = Header(default=None), db: OrmSession = Depends(get_db)
+) -> AuthSession | None:
+    """Like `require_active_session`, but never raises: `None` for a
+    missing/invalid/expired token instead of an error. EPIC-M3.6 uses this
+    to gate `suppressionReason` on `GET /api/v1/discovery/candidates` to an
+    authenticated caller only, without forcing every caller of that
+    (otherwise public) endpoint to authenticate."""
+    token = get_optional_bearer_subject(authorization)
+    if not token:
+        return None
+    status, auth_session = get_session_status(db, token, at=datetime.now(timezone.utc))
+    return auth_session if status == STATUS_VALID else None
