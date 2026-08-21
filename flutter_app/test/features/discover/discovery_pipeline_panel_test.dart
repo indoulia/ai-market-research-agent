@@ -34,8 +34,10 @@ class _FakePipelineRepository extends DiscoveriesRepository {
       history;
 }
 
-Widget _wrap(Widget child) =>
-    MaterialApp(theme: MraTheme.light(), home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(
+  theme: MraTheme.light(),
+  home: Scaffold(body: child),
+);
 
 void main() {
   testWidgets('renders funnel counts, timeline and effectiveness', (

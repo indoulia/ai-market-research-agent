@@ -260,7 +260,9 @@ void main() {
     (tester) async {
       final repo = _FakeDiscoveriesRepository(
         () async => DiscoveriesPage(
-          items: [DiscoveryItem.fromJson(_rawItem(publishedRecommendationId: 9))],
+          items: [
+            DiscoveryItem.fromJson(_rawItem(publishedRecommendationId: 9)),
+          ],
           nextCursor: null,
         ),
       );

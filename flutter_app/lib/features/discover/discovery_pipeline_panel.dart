@@ -17,8 +17,7 @@ class DiscoveryPipelinePanel extends StatefulWidget {
   const DiscoveryPipelinePanel({super.key, required this.repository});
 
   @override
-  State<DiscoveryPipelinePanel> createState() =>
-      _DiscoveryPipelinePanelState();
+  State<DiscoveryPipelinePanel> createState() => _DiscoveryPipelinePanelState();
 }
 
 class _DiscoveryPipelinePanelState extends State<DiscoveryPipelinePanel> {
@@ -95,10 +94,18 @@ class _FunnelRow extends StatelessWidget {
     return MraCard(
       child: Row(
         children: [
-          Expanded(child: _FunnelStat(label: 'Discovered', value: counts.discovered)),
-          Expanded(child: _FunnelStat(label: 'Analyzed', value: counts.analyzed)),
-          Expanded(child: _FunnelStat(label: 'Qualified', value: counts.qualified)),
-          Expanded(child: _FunnelStat(label: 'Published', value: counts.published)),
+          Expanded(
+            child: _FunnelStat(label: 'Discovered', value: counts.discovered),
+          ),
+          Expanded(
+            child: _FunnelStat(label: 'Analyzed', value: counts.analyzed),
+          ),
+          Expanded(
+            child: _FunnelStat(label: 'Qualified', value: counts.qualified),
+          ),
+          Expanded(
+            child: _FunnelStat(label: 'Published', value: counts.published),
+          ),
         ],
       ),
     );
