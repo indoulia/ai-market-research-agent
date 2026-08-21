@@ -1,7 +1,7 @@
 # EPIC-M1.109 — Sector & Peer Relative Intelligence
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -19,7 +19,7 @@ M1.34, M1.96, M1.99, M1.101.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #182 (`a9c60aa`).
 
 **Implementation:**
 - `app/sector_relative_intelligence.py`: a new, versioned (`SECTOR_RELATIVE_VERSION = "SRI-001"`) module.
