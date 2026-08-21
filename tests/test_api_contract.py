@@ -65,7 +65,7 @@ def test_bootstrap_reports_contract_and_capabilities(client):
     assert data["apiVersion"] == "v1"
     assert data["contractVersion"]
     assert data["capabilities"] == {
-        "recommendations": False,
+        "recommendations": True,
         "discovery": False,
         "marketSummary": False,
         "news": False,

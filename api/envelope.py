@@ -25,6 +25,10 @@ def paginated(items: list[Any], *, page: int, page_size: int, total_items: int) 
     return {"data": items, "meta": _meta({"page": page, "pageSize": page_size, "totalItems": total_items, "totalPages": total_pages})}
 
 
+def cursor_paginated(items: list[Any], *, page_size: int, next_cursor: str | None) -> dict[str, Any]:
+    return {"data": items, "meta": _meta({"pageSize": page_size, "nextCursor": next_cursor})}
+
+
 def error_body(exc: ApiError) -> dict[str, Any]:
     return {
         "error": {

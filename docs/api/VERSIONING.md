@@ -28,12 +28,30 @@ Every response is one of:
 
 ## Pagination, sorting, filtering
 
-- `page` (1-indexed, default 1), `pageSize` (default 20, max 100).
-- `sort`: comma-separated fields, `-` prefix for descending. Endpoints
-  reject unknown sort fields with `MRA_VALIDATION_FAILED` rather than
-  ignoring them.
-- Filters are individual query params, documented per endpoint. Unknown
-  filter params are rejected the same way.
+Two pagination styles are supported, chosen per endpoint by what the data
+actually needs — never mixed on the same endpoint:
+
+- **Page-based** (`api/pagination.py::PageParams`): `page` (1-indexed,
+  default 1), `pageSize` (default 20, max 100). `meta` carries `page`,
+  `pageSize`, `totalItems`, `totalPages`. Use for bounded, rarely-changing
+  collections where "jump to page N" and a total count are useful.
+- **Cursor-based** (`api/envelope.py::cursor_paginated`, first used by
+  M1.135's `/recommendations`): `pageSize` plus an opaque `cursor` from
+  the previous page's `meta.nextCursor`. `meta` carries `pageSize` and
+  `nextCursor` (`null` on the last page) — no `page`/`totalItems`, since
+  those aren't cheap or stable for a live-ranked feed. Use for a
+  server-ranked/live feed where new rows can appear between requests and
+  results must not shift or duplicate across pages (AC: "pagination is
+  stable during a query session").
+
+Sorting: `sort=<field>` (single field per M1.135; a future multi-field
+list endpoint may extend this to comma-separated, `-` prefix for
+descending — not yet needed) plus a separate `direction=asc|desc` for
+cursor-paginated endpoints. Endpoints reject unknown sort fields with
+`MRA_VALIDATION_FAILED` rather than ignoring them.
+
+Filters are individual query params, documented per endpoint. Unknown
+filter params are rejected the same way.
 
 ## Errors
 
