@@ -68,8 +68,7 @@ class OpportunityExplorerScreen extends StatefulWidget {
       _OpportunityExplorerScreenState();
 }
 
-class _OpportunityExplorerScreenState
-    extends State<OpportunityExplorerScreen> {
+class _OpportunityExplorerScreenState extends State<OpportunityExplorerScreen> {
   late final OpportunitiesRepository _repository;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -627,12 +626,11 @@ class _OpportunityExplorerScreenState
       ),
       Text('+${item.upsidePct.toStringAsFixed(1)}%'),
       Text(item.score.toStringAsFixed(0)),
-      Text(item.trustScore == null ? 'N/A' : item.trustScore!.toStringAsFixed(2)),
-      _freshnessChip(item.evidenceFreshness),
       Text(
-        _relativeLabel(item.updatedAt),
-        style: theme.textTheme.labelSmall,
+        item.trustScore == null ? 'N/A' : item.trustScore!.toStringAsFixed(2),
       ),
+      _freshnessChip(item.evidenceFreshness),
+      Text(_relativeLabel(item.updatedAt), style: theme.textTheme.labelSmall),
     ];
   }
 

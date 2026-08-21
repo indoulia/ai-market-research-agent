@@ -51,7 +51,8 @@ class OpportunitiesPage {
 class OpportunitiesRepository {
   final ApiClient _client;
 
-  OpportunitiesRepository({ApiClient? client}) : _client = client ?? ApiClient();
+  OpportunitiesRepository({ApiClient? client})
+    : _client = client ?? ApiClient();
 
   Future<OpportunitiesPage> fetchPage({
     String? market,
@@ -99,7 +100,9 @@ class OpportunitiesRepository {
       page: body['page'] as int,
       pageSize: body['pageSize'] as int,
       total: body['total'] as int,
-      asOf: body['asOf'] == null ? null : DateTime.parse(body['asOf'] as String),
+      asOf: body['asOf'] == null
+          ? null
+          : DateTime.parse(body['asOf'] as String),
     );
   }
 }

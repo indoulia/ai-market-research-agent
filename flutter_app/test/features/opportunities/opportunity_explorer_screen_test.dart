@@ -121,7 +121,10 @@ class _FakeRepository extends OpportunitiesRepository {
 }
 
 Widget _wrap(Widget child) {
-  return MaterialApp(theme: MraTheme.light(), home: Scaffold(body: child));
+  return MaterialApp(
+    theme: MraTheme.light(),
+    home: Scaffold(body: child),
+  );
 }
 
 OpportunitiesPage _pageOf(
@@ -171,7 +174,8 @@ void main() {
     tester,
   ) async {
     final repo = _FakeRepository(
-      (_) async => _pageOf([_item(id: 1), _item(id: 2, symbol: 'INFY')], total: 2),
+      (_) async =>
+          _pageOf([_item(id: 1), _item(id: 2, symbol: 'INFY')], total: 2),
     );
     await tester.pumpWidget(_wrap(OpportunityExplorerScreen(repository: repo)));
     await tester.pumpAndSettle();
