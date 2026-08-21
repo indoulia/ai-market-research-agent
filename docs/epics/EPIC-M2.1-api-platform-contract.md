@@ -1,9 +1,14 @@
 # EPIC-M2.1 — MRA API Platform & Contract Foundation [API]
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** SUPERSEDED BY M3.1
+**Execution Status:** NOT_EXECUTED
 **Priority:** P0
 **Parallel Track:** API
+
+> **2026-08-22 — superseded, not implemented (explicit user decision).** `EPIC-M3.1-mra-application-platform-foundation.md`
+> recreates this same API contract + Flutter design system + app shell foundation as part of the combined M3.1-M3.15
+> vertical-slice roadmap (see `EPIC-M3-ROADMAP-NOTE.md`). Implementing this EPIC would duplicate that foundation work.
+> M3 is the authoritative application/UI roadmap going forward. This file is preserved for history, not deleted.
 
 ## Objective
 Establish the stable API foundation consumed by Flutter Web, Android and iOS without coupling UI code to internal MRA services or database schemas.

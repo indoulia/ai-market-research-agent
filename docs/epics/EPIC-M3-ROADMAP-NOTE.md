@@ -37,6 +37,17 @@ Foundation, Flutter Design System, Recommendations API and Query, etc.)
 are unaffected by this change and continue to be executed under their
 existing numbers.
 
+**Also resolved (2026-08-22, explicit user decision): `M2.1`-`M2.3` vs `M3.1`.**
+A third, still-earlier foundation track (`EPIC-M2.1-api-platform-contract.md`,
+`EPIC-M2.2-flutter-design-system.md`, `EPIC-M2.3-app-shell-navigation-responsive-layout.md`)
+defines the same API contract + Flutter design system + app shell concerns that
+`EPIC-M3.1-mra-application-platform-foundation.md` recreates as part of the combined
+roadmap above. None of the three M2.x docs were ever implemented. Per the user's
+explicit decision, **M3 is authoritative going forward**: `M2.1`-`M2.3` are marked
+`SUPERSEDED BY M3.1` in their own files (not deleted, preserved for history) and will
+not be implemented. `M3.1` is implemented as the real foundation; `M3.2`-`M3.15` build
+on it sequentially.
+
 **Separately, a pre-existing, already-documented pattern** (unrelated to
 this collision) has some earlier EPIC numbers with two files — an
 unapproved draft plus a completed/approved duplicate (e.g. `M1.4`,
