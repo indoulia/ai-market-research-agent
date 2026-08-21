@@ -635,3 +635,17 @@ class UserAllocationLimit(Base):
     effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     limit_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MultiHorizonResolution(Base):
+    __tablename__ = "multi_horizon_resolutions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    primary_prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    primary_horizon_days: Mapped[int] = mapped_column(Integer)
+    conflicting_prediction_ids: Mapped[list] = mapped_column(JSON)
+    has_conflict: Mapped[bool] = mapped_column(Boolean)
+    resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolution_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
