@@ -1,7 +1,7 @@
 # EPIC-M1.102 — Regime Transition & Uncertainty Intelligence
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -28,7 +28,7 @@ Next: M1.103.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #154 (`70d2fa6`).
 
 **Implementation:**
 - `app/regime_transition_intelligence.py`: a new, versioned (`REGIME_TRANSITION_VERSION = "RTI-001"`) module. Never reclassifies a regime itself — reads M1.26's already-computed `MarketRegime` only.
