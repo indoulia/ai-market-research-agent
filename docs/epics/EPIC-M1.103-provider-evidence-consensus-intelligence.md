@@ -1,7 +1,7 @@
 # EPIC-M1.103 — Provider & Evidence Consensus Intelligence
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -29,7 +29,7 @@ Next: Future prediction-quality enhancements.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #157 (`44b01a4`).
 
 **Implementation:**
 - `app/provider_evidence_consensus.py`: a new, versioned (`CONSENSUS_VERSION = "PEC-001"`) module. M1.65 explicitly documented that no real second source existed for the same fact when it was written; M1.91 changed that for fundamental (`alpha-vantage` alongside `yahoo-finance`) and news/event (`finnhub` alongside `yahoo-finance`) data — this is the first module to actually compare what two independent providers reported about the same fact.
