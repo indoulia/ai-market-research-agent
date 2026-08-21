@@ -1,8 +1,8 @@
 # EPIC-M1.149 — Operational Discovery Scan & Baseline Signal Execution
 
 **Track:** M1 / Operational Discovery
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED, PR OPEN
+**Status:** DONE
+**Execution Status:** DONE (merged via PR #271)
 **Priority:** P0
 
 ## Objective
