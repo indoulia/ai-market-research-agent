@@ -1,4 +1,4 @@
-# EPIC-M1.134 — Opportunity Explorer
+# EPIC-M3.3 — Opportunity Explorer
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION
@@ -32,7 +32,7 @@ Response:
 - `asOf`
 - `filters`
 
-Items expose the same canonical recommendation summary contract as M1.133.
+Items expose the same canonical recommendation summary contract as M3.2.
 
 ## Acceptance Criteria
 - Filtering and sorting are server-side.

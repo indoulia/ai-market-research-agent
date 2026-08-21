@@ -1,4 +1,4 @@
-# EPIC-M1.132 — MRA Application Platform Foundation
+# EPIC-M3.1 — MRA Application Platform Foundation
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION

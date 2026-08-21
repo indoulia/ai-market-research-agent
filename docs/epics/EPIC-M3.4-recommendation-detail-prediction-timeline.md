@@ -1,4 +1,4 @@
-# EPIC-M1.135 — Recommendation Detail & Prediction Timeline
+# EPIC-M3.4 — Recommendation Detail & Prediction Timeline
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION

@@ -1,4 +1,4 @@
-# EPIC-M1.133 — Market Overview & Home Dashboard
+# EPIC-M3.2 — Market Overview & Home Dashboard
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION
