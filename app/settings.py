@@ -8,6 +8,12 @@ class Settings(BaseSettings):
     upstox_instruments_url: str = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz"
     app_env: str = "development"
     log_level: str = "INFO"
+    # EPIC-M1.145: comma-separated origins allowed to call /api/v1 from a
+    # browser (e.g. the Flutter web build). "*" is safe as a default here
+    # because this API authenticates via a Bearer token, never cookies --
+    # no cross-site-cookie exposure to guard against -- but a deployment
+    # can still lock this down via env var.
+    cors_allowed_origins: str = "*"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

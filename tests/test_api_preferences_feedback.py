@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.auth_session import create_session
 from app.db import Base
 from app.discovery import SOURCE_CHATGPT, record_discovery, route_discovery_through_pipeline
 from app.models import DailyCandidateScan, Prediction, ScanCandidate, Stock
@@ -48,8 +49,12 @@ def client(session):
         app.dependency_overrides.clear()
 
 
-def _auth(token="user-1"):
-    return {"Authorization": f"Bearer {token}"}
+def _auth(session, user_id="user-1"):
+    # EPIC-M1.145: the bearer token must be a real, live AuthSession now --
+    # a self-asserted string is no longer accepted (see api/deps.py::
+    # require_active_session).
+    auth_session = create_session(session, user_id=user_id, issued_at=AS_OF)
+    return {"Authorization": f"Bearer {auth_session.session_token}"}
 
 
 def _make_recommendation(session, *, symbol="AAA"):
@@ -86,8 +91,8 @@ def test_preferences_requires_auth(client):
     assert response.json()["error"]["code"] == "MRA_UNAUTHENTICATED"
 
 
-def test_preferences_defaults_for_new_user(client):
-    response = client.get("/api/v1/preferences", headers=_auth())
+def test_preferences_defaults_for_new_user(client, session):
+    response = client.get("/api/v1/preferences", headers=_auth(session))
     assert response.status_code == 200
     data = response.json()["data"]
     assert data["defaultHorizon"] == 1  # SHORT band's lower bound, never-set default
@@ -97,7 +102,8 @@ def test_preferences_defaults_for_new_user(client):
     assert data["riskPreference"] == "MEDIUM"
 
 
-def test_put_preferences_round_trips(client):
+def test_put_preferences_round_trips(client, session):
+    headers = _auth(session)
     body = {
         "defaultHorizon": 5,
         "markets": ["NSE"],
@@ -109,10 +115,10 @@ def test_put_preferences_round_trips(client):
         "displayPreferences": {"theme": "dark"},
         "riskPreference": "HIGH",
     }
-    put_response = client.put("/api/v1/preferences", json=body, headers=_auth())
+    put_response = client.put("/api/v1/preferences", json=body, headers=headers)
     assert put_response.status_code == 200
 
-    get_response = client.get("/api/v1/preferences", headers=_auth())
+    get_response = client.get("/api/v1/preferences", headers=headers)
     data = get_response.json()["data"]
     assert data["defaultHorizon"] == 5
     assert data["markets"] == ["NSE"]
@@ -125,16 +131,16 @@ def test_put_preferences_round_trips(client):
     assert data["riskPreference"] == "HIGH"
 
 
-def test_put_preferences_invalid_horizon_rejected(client):
+def test_put_preferences_invalid_horizon_rejected(client, session):
     body = {"defaultHorizon": 2}  # not in VALID_HORIZON_DAYS (1,3,5,7)
-    response = client.put("/api/v1/preferences", json=body, headers=_auth())
+    response = client.put("/api/v1/preferences", json=body, headers=_auth(session))
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
 
 
-def test_preferences_are_isolated_per_user(client):
-    client.put("/api/v1/preferences", json={"defaultHorizon": 7, "watchlist": ["ZZZ"]}, headers=_auth("user-a"))
-    response = client.get("/api/v1/preferences", headers=_auth("user-b"))
+def test_preferences_are_isolated_per_user(client, session):
+    client.put("/api/v1/preferences", json={"defaultHorizon": 7, "watchlist": ["ZZZ"]}, headers=_auth(session, "user-a"))
+    response = client.get("/api/v1/preferences", headers=_auth(session, "user-b"))
     data = response.json()["data"]
     assert data["watchlist"] == []
     assert data["defaultHorizon"] == 1
@@ -148,7 +154,7 @@ def test_feedback_accepted_useful(client, session):
     response = client.post(
         f"/api/v1/recommendations/{generation.id}/feedback",
         json={"type": "useful", "comment": "great call", "predictionVersion": prediction.model_version},
-        headers=_auth(),
+        headers=_auth(session),
     )
     assert response.status_code == 200
     data = response.json()["data"]
@@ -162,7 +168,7 @@ def test_feedback_target_type_is_queued_for_learning(client, session):
     response = client.post(
         f"/api/v1/recommendations/{generation.id}/feedback",
         json={"type": "target_too_high", "predictionVersion": prediction.model_version},
-        headers=_auth(),
+        headers=_auth(session),
     )
     assert response.json()["data"]["learningImpact"] == "queued"
 
@@ -172,7 +178,7 @@ def test_feedback_unknown_type_rejected(client, session):
     response = client.post(
         f"/api/v1/recommendations/{generation.id}/feedback",
         json={"type": "bogus", "predictionVersion": prediction.model_version},
-        headers=_auth(),
+        headers=_auth(session),
     )
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
@@ -183,17 +189,17 @@ def test_feedback_stale_prediction_version_rejected(client, session):
     response = client.post(
         f"/api/v1/recommendations/{generation.id}/feedback",
         json={"type": "useful", "predictionVersion": "some-old-version"},
-        headers=_auth(),
+        headers=_auth(session),
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "MRA_STALE_PREDICTION_VERSION"
 
 
-def test_feedback_not_found_recommendation(client):
+def test_feedback_not_found_recommendation(client, session):
     response = client.post(
         "/api/v1/recommendations/999999/feedback",
         json={"type": "useful", "predictionVersion": "v1"},
-        headers=_auth(),
+        headers=_auth(session),
     )
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "MRA_NOT_FOUND"
@@ -201,7 +207,7 @@ def test_feedback_not_found_recommendation(client):
 
 def test_feedback_duplicate_idempotency_key_returns_same_feedback(client, session):
     prediction, generation = _make_recommendation(session)
-    headers = {**_auth(), "Idempotency-Key": "client-req-1"}
+    headers = {**_auth(session), "Idempotency-Key": "client-req-1"}
     body = {"type": "useful", "predictionVersion": prediction.model_version}
 
     first = client.post(f"/api/v1/recommendations/{generation.id}/feedback", json=body, headers=headers)
@@ -217,8 +223,8 @@ def test_feedback_without_idempotency_key_creates_separate_records(client, sessi
     prediction, generation = _make_recommendation(session)
     body = {"type": "useful", "predictionVersion": prediction.model_version}
 
-    client.post(f"/api/v1/recommendations/{generation.id}/feedback", json=body, headers=_auth())
-    client.post(f"/api/v1/recommendations/{generation.id}/feedback", json=body, headers=_auth())
+    client.post(f"/api/v1/recommendations/{generation.id}/feedback", json=body, headers=_auth(session))
+    client.post(f"/api/v1/recommendations/{generation.id}/feedback", json=body, headers=_auth(session))
 
     from app.recommendation_feedback import get_feedback_for_prediction
     assert len(get_feedback_for_prediction(session, prediction.id)) == 2
