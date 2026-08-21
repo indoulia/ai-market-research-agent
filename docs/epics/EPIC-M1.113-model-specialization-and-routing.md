@@ -1,7 +1,7 @@
 # EPIC-M1.113 — Model Specialization & Capability Routing
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -20,7 +20,7 @@ M1.79, M1.100, M1.101, M1.104, M1.108, M1.109.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #204 (`98aa7c4`).
 
 **Implementation:**
 - `app/model_specialization_routing.py`: a new, versioned (`SPECIALIZATION_ROUTING_VERSION = "MSR-001"`) module.
