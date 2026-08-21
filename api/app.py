@@ -9,6 +9,7 @@ from app.settings import settings
 
 from .exception_handlers import register_exception_handlers
 from .middleware import RequestContextMiddleware
+from .request_logging import configure_request_logging
 from .routers import auth, bootstrap, discovery, health, market, news_events, preferences, recommendation_detail, recommendations
 from .versioning import API_PREFIX
 
@@ -31,6 +32,7 @@ def register_api(app: FastAPI) -> None:
     (e.g. the legacy ``/health`` and ``/api/models`` endpoints) are left
     untouched; they are not part of the ``/api/v1`` contract.
     """
+    configure_request_logging()
     origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()]
     app.add_middleware(
         CORSMiddleware,

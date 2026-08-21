@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -10,6 +12,7 @@ from .envelope import error_body
 from .errors import ApiError, RateLimitedError
 from .rate_limit import client_key, default_limiter
 from .request_context import REQUEST_ID_HEADER, new_request_id, set_request_id
+from .request_logging import log_request
 from .versioning import API_PREFIX
 
 
@@ -32,6 +35,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
         request_id = request.headers.get(REQUEST_ID_HEADER) or new_request_id()
         set_request_id(request_id)
+        started_at = time.monotonic()
 
         try:
             default_limiter.check(client_key(request.client.host if request.client else None, None))
@@ -40,11 +44,23 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             response.headers[REQUEST_ID_HEADER] = request_id
             if isinstance(exc, RateLimitedError):
                 response.headers["Retry-After"] = str(exc.retry_after_seconds)
+            self._log(request, request_id, response.status_code, started_at)
             return response
 
         response: Response = await call_next(request)
         response.headers[REQUEST_ID_HEADER] = request_id
+        self._log(request, request_id, response.status_code, started_at)
         return response
+
+    @staticmethod
+    def _log(request: Request, request_id: str, status_code: int, started_at: float) -> None:
+        log_request(
+            request_id=request_id,
+            method=request.method,
+            route=request.url.path,
+            status_code=status_code,
+            duration_ms=(time.monotonic() - started_at) * 1000,
+        )
 
 
 def jsonable_error(exc: ApiError) -> dict:
