@@ -1168,3 +1168,30 @@ class CorporateAction(Base):
     action_version: Mapped[str] = mapped_column(String(32))
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BiasGuardCheck(Base):
+    __tablename__ = "bias_guard_checks"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "workflow_type", "checked_at", name="uq_bias_guard_prediction_workflow_checked_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    workflow_type: Mapped[str] = mapped_column(String(32))
+    verdict: Mapped[str] = mapped_column(String(16))
+    reason_codes: Mapped[list] = mapped_column(JSON)
+    evidence: Mapped[dict] = mapped_column(JSON)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    guard_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BiasGuardOverride(Base):
+    __tablename__ = "bias_guard_overrides"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    check_id: Mapped[int] = mapped_column(ForeignKey("bias_guard_checks.id"), unique=True)
+    justification: Mapped[str] = mapped_column(String(1024))
+    authorized_by: Mapped[str] = mapped_column(String(128))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    override_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
