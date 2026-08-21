@@ -211,13 +211,17 @@ Map<String, dynamic> _detailJson({int id = 42, String symbol = 'TATASTEEL'}) =>
       'liquidity': 'HIGH',
       'providerEvidence': ['fundamental', 'technical'],
       'status': 'ISSUED',
+      'evidenceFreshness': 'FRESH',
       'predictionVersion': _detailPredictionVersion,
     };
 
-final _historyJson = [
+final _timelineJson = [
   {
-    'timestamp': _now,
     'version': 1,
+    'timestamp': _now,
+    'reason': 'INITIAL_PREDICTION',
+    'changeSummary': 'Initial prediction issued.',
+    'affectedMetrics': <String>[],
     'price': '165.00',
     'targetPrice': '176.50',
     'stopLoss': '163.00',
@@ -225,9 +229,6 @@ final _historyJson = [
     'score': '82',
     'confidence': '71',
     'trustScore': '65',
-    'triggerType': 'INITIAL',
-    'triggerEventId': null,
-    'changeSummary': 'Initial prediction issued.',
   },
 ];
 
@@ -307,8 +308,8 @@ _ScriptedHttpClient _happyPathServer() {
   );
   server.onStatic(
     'GET',
-    '/api/v1/recommendations/42/history',
-    _Resp(200, _envelope(_historyJson)),
+    '/api/v1/recommendations/42/timeline',
+    _Resp(200, _envelope(_timelineJson)),
   );
   server.onStatic(
     'GET',
@@ -412,7 +413,10 @@ void main() {
       find.text('Quarterly results beat estimates.'),
       findsOneWidget,
     ); // the event
-    expect(find.textContaining('v1 · INITIAL'), findsOneWidget); // history
+    expect(
+      find.textContaining('v1 · INITIAL_PREDICTION'),
+      findsOneWidget,
+    ); // prediction-version timeline
 
     // -> feedback. The detail screen is a long scrollable page — bring
     // the feedback section into the (small) test viewport first.

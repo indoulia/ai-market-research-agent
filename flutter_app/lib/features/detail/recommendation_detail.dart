@@ -35,6 +35,11 @@ class RecommendationDetail {
   final List<String> providerEvidence;
   final String status;
 
+  /// EPIC-M3.4 — same "FRESH"/"STALE"/"UNKNOWN" vocabulary as
+  /// `RecommendationCard.evidenceFreshness` (M1.144); only `"STALE"` is
+  /// surfaced as a badge, matching that established convention.
+  final String evidenceFreshness;
+
   /// Opaque version-tag bundle (model/feature/consensus/etc.) — passed
   /// through unparsed to EPIC-M1.141's feedback submission, which must
   /// reference "the exact recommendation version visible to the user"
@@ -71,6 +76,7 @@ class RecommendationDetail {
     required this.liquidity,
     required this.providerEvidence,
     required this.status,
+    required this.evidenceFreshness,
     required this.predictionVersion,
   });
 
@@ -111,6 +117,7 @@ class RecommendationDetail {
       liquidity: json['liquidity'] as String,
       providerEvidence: (json['providerEvidence'] as List).cast<String>(),
       status: json['status'] as String,
+      evidenceFreshness: json['evidenceFreshness'] as String,
       predictionVersion: json['predictionVersion'] as Map<String, dynamic>,
     );
   }

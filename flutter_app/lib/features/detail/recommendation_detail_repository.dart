@@ -3,6 +3,7 @@ import 'event_item.dart';
 import 'history_item.dart';
 import 'recommendation_detail.dart';
 import 'recommendation_outcome.dart';
+import 'timeline_item.dart';
 
 class HistoryPage {
   final List<RecommendationHistoryItem> items;
@@ -79,5 +80,15 @@ class RecommendationDetailRepository {
     return RecommendationOutcome.fromJson(
       response.data as Map<String, dynamic>,
     );
+  }
+
+  /// EPIC-M3.4 — the full, ordered prediction-version timeline (not
+  /// paginated: it is a small, bounded, single-recommendation sequence).
+  Future<List<RecommendationTimelineItem>> fetchTimeline(int id) async {
+    final response = await _client.get('/recommendations/$id/timeline');
+    return (response.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(RecommendationTimelineItem.fromJson)
+        .toList();
   }
 }

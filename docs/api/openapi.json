@@ -739,6 +739,100 @@
         "title": "DisplayPreferences",
         "type": "object"
       },
+      "EvidenceResponse": {
+        "description": "EPIC-M3.4: the fundamental/technical/market/news/event evidence\nsections plus provider provenance, as their own contract -- the same\nvalues already embedded in `RecommendationDetail`, projected out so a\ncaller only interested in evidence doesn't have to fetch the full\ndetail payload.",
+        "properties": {
+          "events": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Events"
+          },
+          "evidenceStrength": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidencestrength"
+          },
+          "fundamental": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fundamental"
+          },
+          "liquidity": {
+            "title": "Liquidity",
+            "type": "string"
+          },
+          "market": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market"
+          },
+          "news": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "News"
+          },
+          "providerEvidence": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Providerevidence",
+            "type": "array"
+          },
+          "technical": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technical"
+          }
+        },
+        "required": [
+          "fundamental",
+          "technical",
+          "market",
+          "news",
+          "events",
+          "evidenceStrength",
+          "liquidity",
+          "providerEvidence"
+        ],
+        "title": "EvidenceResponse",
+        "type": "object"
+      },
       "FeedbackRequest": {
         "properties": {
           "comment": {
@@ -1730,6 +1824,10 @@
             ],
             "title": "Events"
           },
+          "evidenceFreshness": {
+            "title": "Evidencefreshness",
+            "type": "string"
+          },
           "evidenceStrength": {
             "anyOf": [
               {
@@ -1922,7 +2020,8 @@
           "benchmarkRelative",
           "liquidity",
           "providerEvidence",
-          "status"
+          "status",
+          "evidenceFreshness"
         ],
         "title": "RecommendationDetail",
         "type": "object"
@@ -2277,6 +2376,22 @@
         "title": "SuccessEnvelope[DashboardSnapshot]",
         "type": "object"
       },
+      "SuccessEnvelope_EvidenceResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EvidenceResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[EvidenceResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_FeedbackResponse_": {
         "properties": {
           "data": {
@@ -2499,6 +2614,120 @@
           "meta"
         ],
         "title": "SuccessEnvelope[VersionResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_list_TimelineItem__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TimelineItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[list[TimelineItem]]",
+        "type": "object"
+      },
+      "TimelineItem": {
+        "description": "EPIC-M3.4: full, ordered prediction-version timeline -- the\noriginal prediction plus every immutable revision, each carrying its\nown reason and the specific metrics it changed. Distinct from\n`/history` (paginated, revisions-only) by always including version 1\n(the original) so a caller can reconstruct the *entire* lifecycle in\none call, not just what changed after it.",
+        "properties": {
+          "affectedMetrics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affectedmetrics",
+            "type": "array"
+          },
+          "changeSummary": {
+            "title": "Changesummary",
+            "type": "string"
+          },
+          "confidence": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "price": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Price",
+            "type": "string"
+          },
+          "probability": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Probability",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "stopLoss": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Stoploss",
+            "type": "string"
+          },
+          "targetPrice": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Targetprice",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "timestamp",
+          "reason",
+          "changeSummary",
+          "affectedMetrics",
+          "price",
+          "targetPrice",
+          "stopLoss",
+          "probability",
+          "score",
+          "confidence",
+          "trustScore"
+        ],
+        "title": "TimelineItem",
         "type": "object"
       },
       "TimeseriesPoint": {
@@ -4589,6 +4818,49 @@
         ]
       }
     },
+    "/api/v1/recommendations/{recommendationId}/evidence": {
+      "get": {
+        "description": "EPIC-M3.4: fundamental/technical/market/news/event evidence plus\nprovider provenance, as their own contract.",
+        "operationId": "get_recommendation_evidence_api_v1_recommendations__recommendationId__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recommendationId",
+            "required": true,
+            "schema": {
+              "title": "Recommendationid",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_EvidenceResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recommendation Evidence",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
     "/api/v1/recommendations/{recommendationId}/feedback": {
       "post": {
         "operationId": "post_recommendation_feedback_api_v1_recommendations__recommendationId__feedback_post",
@@ -4814,6 +5086,49 @@
           }
         },
         "summary": "Get Recommendation Outcome",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/api/v1/recommendations/{recommendationId}/timeline": {
+      "get": {
+        "description": "EPIC-M3.4: the full, ordered prediction-version timeline (original\n+ every revision), each with its reason and affected metrics.",
+        "operationId": "get_recommendation_timeline_api_v1_recommendations__recommendationId__timeline_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recommendationId",
+            "required": true,
+            "schema": {
+              "title": "Recommendationid",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_TimelineItem__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Recommendation Timeline",
         "tags": [
           "recommendations"
         ]
