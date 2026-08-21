@@ -766,3 +766,44 @@ class ModelRegressionCheck(Base):
     checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     detection_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Experiment(Base):
+    __tablename__ = "experiments"
+    __table_args__ = (UniqueConstraint("name", name="uq_experiment_name"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128))
+    hypothesis: Mapped[str] = mapped_column(String(2048))
+    experiment_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ExperimentArm(Base):
+    __tablename__ = "experiment_arms"
+    __table_args__ = (UniqueConstraint("experiment_id", "arm_name", name="uq_experiment_arm_name"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    experiment_id: Mapped[int] = mapped_column(ForeignKey("experiments.id"))
+    arm_name: Mapped[str] = mapped_column(String(64))
+    model_version: Mapped[str] = mapped_column(String(64))
+    window_label: Mapped[str] = mapped_column(String(128))
+    window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    horizon_days_filter: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ExperimentResult(Base):
+    __tablename__ = "experiment_results"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    experiment_arm_id: Mapped[int] = mapped_column(ForeignKey("experiment_arms.id"))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    accuracy: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    avg_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    avg_drawdown: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    consistency_stdev: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    arm_config_snapshot: Mapped[dict] = mapped_column(JSON)
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    framework_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
