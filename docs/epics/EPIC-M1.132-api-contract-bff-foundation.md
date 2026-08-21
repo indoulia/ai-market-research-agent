@@ -1,8 +1,8 @@
 # EPIC-M1.132 — API Contract & BFF Foundation
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #147, commit ee4f05e)
 **Priority:** P0
 
 ## Objective
