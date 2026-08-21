@@ -33,7 +33,7 @@ from typing import Callable
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .discovery import SOURCE_DAILY_UNIVERSE_SCAN, record_discovery
+from .discovery import SOURCE_DAILY_UNIVERSE_SCAN, record_discovery, route_discovery_through_pipeline
 from .models import (
     DailyCandidateScan,
     DiscoveryRecord,
@@ -41,7 +41,6 @@ from .models import (
     RecommendationSelection,
     ScanCandidate,
 )
-from .recommendation_generator import generate_recommendation_for_candidate
 from .recommendation_selection import DEFAULT_DAILY_LIMIT, MIN_SCORE_FOR_SELECTION, select_recommendations_for_scan
 from .scan import UNIVERSE_VERSION, SignalProvider, run_daily_candidate_scan
 
@@ -102,11 +101,16 @@ def run_scheduled_discovery_scan(
     summary = run_daily_candidate_scan(session, scan_date, signal_provider, universe_version=universe_version)
 
     discovery_records = record_discovery_for_scan(session, summary.scan, as_of_timestamp)
+    discovery_by_stock_id = {discovery.stock_id: discovery for discovery in discovery_records}
 
+    # Route through `route_discovery_through_pipeline` (not `generate_recommendation_for_candidate`
+    # directly) so the daily-scan path links `DiscoveryRecord.recommendation_generation_id` back to
+    # its generation exactly like every other discovery source already does -- several analysis
+    # modules inner-join on this field and were silently dropping daily-scan-sourced recommendations.
     generations = tuple(
-        generate_recommendation_for_candidate(
+        route_discovery_through_pipeline(
             session,
-            candidate,
+            discovery_by_stock_id[candidate.stock_id],
             as_of_timestamp=as_of_timestamp,
             entry_price=entry_price_for(candidate.stock_id),
             target_return=target_return,

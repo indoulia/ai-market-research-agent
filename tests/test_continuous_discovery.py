@@ -97,7 +97,8 @@ def test_scheduled_scan_routes_a_qualifying_candidate_through_generation_and_sel
     assert result.selections[0].selected is True
     discovery = next(d for d in result.discovery_records if d.stock_id == stock.id)
     assert discovery.source == SOURCE_DAILY_UNIVERSE_SCAN
-    assert discovery.recommendation_generation_id is None  # discovery itself never links to the generation
+    # discovery links back to its generation, same as every other discovery source
+    assert discovery.recommendation_generation_id == result.generations[0].id
 
 
 def test_ineligible_candidate_gets_a_discovery_record_but_no_generation(session):
