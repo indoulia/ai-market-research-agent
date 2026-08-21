@@ -1,8 +1,8 @@
 # EPIC-M1.140 — Discovery, Market, News & Events UI
 
 **Track:** UI
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
