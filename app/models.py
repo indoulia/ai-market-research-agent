@@ -1548,6 +1548,41 @@ class SetupCombinationReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class SectorRelativeAssessment(Base):
+    __tablename__ = "sector_relative_assessments"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_sector_relative_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    sector: Mapped[str] = mapped_column(String(128))
+    peer_group_size: Mapped[int] = mapped_column(Integer)
+    peer_stock_ids: Mapped[list] = mapped_column(JSON)
+    target_momentum: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    peer_mean_momentum: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    peer_momentum_stdev: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    relative_momentum_zscore: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    assessment_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SectorPerformanceReport(Base):
+    __tablename__ = "sector_performance_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    sector: Mapped[str] = mapped_column(String(128), index=True)
+    window_label: Mapped[str] = mapped_column(String(128))
+    sector_sample_count: Mapped[int] = mapped_column(Integer)
+    sector_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    baseline_sample_count: Mapped[int] = mapped_column(Integer)
+    baseline_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
