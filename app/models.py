@@ -1336,3 +1336,60 @@ class IndependentConfirmationDecision(Base):
     confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     confirmation_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FeatureReferenceDistribution(Base):
+    __tablename__ = "feature_reference_distributions"
+    __table_args__ = (
+        UniqueConstraint("model_version", "feature_name", name="uq_feature_reference_model_feature"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    feature_name: Mapped[str] = mapped_column(String(64))
+    window_label: Mapped[str] = mapped_column(String(128))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    mean: Mapped[Decimal] = mapped_column(Numeric(18, 8))
+    stdev: Mapped[Decimal] = mapped_column(Numeric(18, 8))
+    registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    reference_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FeatureDriftAssessment(Base):
+    __tablename__ = "feature_drift_assessments"
+    __table_args__ = (
+        UniqueConstraint("model_version", "feature_name", "evaluated_at", name="uq_feature_drift_model_feature_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    feature_name: Mapped[str] = mapped_column(String(64))
+    monitoring_window_label: Mapped[str] = mapped_column(String(128))
+    monitoring_sample_count: Mapped[int] = mapped_column(Integer)
+    monitoring_mean: Mapped[Decimal | None] = mapped_column(Numeric(18, 8))
+    drift_magnitude: Mapped[Decimal | None] = mapped_column(Numeric(18, 8))
+    verdict: Mapped[str] = mapped_column(String(32))
+    trust_reduction_recommended: Mapped[bool] = mapped_column(Boolean)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    drift_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CoverageDriftAssessment(Base):
+    __tablename__ = "coverage_drift_assessments"
+    __table_args__ = (
+        UniqueConstraint("model_version", "evaluated_at", name="uq_coverage_drift_model_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    reference_window_label: Mapped[str] = mapped_column(String(128))
+    monitoring_window_label: Mapped[str] = mapped_column(String(128))
+    reference_sample_count: Mapped[int] = mapped_column(Integer)
+    monitoring_sample_count: Mapped[int] = mapped_column(Integer)
+    reference_coverage_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    monitoring_coverage_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    coverage_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    trust_reduction_recommended: Mapped[bool] = mapped_column(Boolean)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    drift_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
