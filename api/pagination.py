@@ -11,6 +11,9 @@ Convention (documented in docs/api/VERSIONING.md):
 
 from __future__ import annotations
 
+import base64
+import binascii
+
 from fastapi import Query
 
 from .errors import ValidationError
@@ -56,3 +59,26 @@ def parse_sort(sort: str | None, allowed_fields: set[str]) -> list[tuple[str, bo
             )
         clauses.append((field, descending))
     return clauses
+
+
+def encode_offset_cursor(offset: int) -> str:
+    """Opaque cursor over an offset into an already-sorted, in-memory list.
+
+    Only appropriate for a small, per-resource, effectively-immutable
+    sequence (e.g. one recommendation's own revision/event history) where
+    "stable during a query session" holds trivially because nothing about
+    *that resource's own* history is ever inserted out of order or
+    mutated -- unlike a large, live, globally-ranked feed, which needs
+    real keyset pagination (see `api/services/recommendations.py`).
+    """
+    return base64.urlsafe_b64encode(str(offset).encode("ascii")).decode("ascii")
+
+
+def decode_offset_cursor(cursor: str) -> int:
+    try:
+        offset = int(base64.urlsafe_b64decode(cursor.encode("ascii")).decode("ascii"))
+    except (ValueError, UnicodeDecodeError, binascii.Error) as exc:
+        raise ValidationError("Invalid cursor.", field_errors={"cursor": "malformed"}) from exc
+    if offset < 0:
+        raise ValidationError("Invalid cursor.", field_errors={"cursor": "malformed"})
+    return offset
