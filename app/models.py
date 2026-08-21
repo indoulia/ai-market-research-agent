@@ -1583,6 +1583,38 @@ class SectorPerformanceReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class PredictionLifecycleSnapshot(Base):
+    __tablename__ = "prediction_lifecycle_snapshots"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_prediction_lifecycle_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    state: Mapped[str] = mapped_column(String(32))
+    previous_state: Mapped[str | None] = mapped_column(String(32))
+    reason: Mapped[str] = mapped_column(String(256))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    lifecycle_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CapacityControlDecision(Base):
+    __tablename__ = "capacity_control_decisions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_capacity_control_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    rank_position: Mapped[int | None] = mapped_column(Integer)
+    capacity_limit: Mapped[int] = mapped_column(Integer)
+    included: Mapped[bool] = mapped_column(Boolean)
+    exclusion_reason: Mapped[str | None] = mapped_column(String(64))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    capacity_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
