@@ -952,6 +952,23 @@ class DailyPredictionSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class HorizonRegimeTrust(Base):
+    __tablename__ = "horizon_regime_trusts"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    segment_type: Mapped[str] = mapped_column(String(16))
+    horizon_days: Mapped[int | None] = mapped_column(Integer)
+    regime: Mapped[str | None] = mapped_column(String(32))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    success_rate_standard_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    is_low_trust: Mapped[bool] = mapped_column(Boolean)
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    trust_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class NewsEventRecord(Base):
     __tablename__ = "news_event_records"
     __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
