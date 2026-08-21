@@ -1,11 +1,11 @@
 import 'package:go_router/go_router.dart';
 
 import '../features/dashboard/dashboard_screen.dart';
+import '../features/detail/recommendation_detail_screen.dart';
 import '../gallery/gallery_screen.dart';
 import 'app_destination.dart';
 import 'app_shell_scaffold.dart';
 import 'placeholder_screen.dart';
-import 'recommendation_detail_placeholder_screen.dart';
 import 'settings_screen.dart';
 
 /// EPIC-M1.134 — route table. One [StatefulShellRoute] branch per primary
@@ -32,10 +32,9 @@ GoRouter buildAppRouter() => GoRouter(
               routes: [
                 GoRoute(
                   path: 'recommendation/:id',
-                  builder: (context, state) =>
-                      RecommendationDetailPlaceholderScreen(
-                        recommendationId: state.pathParameters['id']!,
-                      ),
+                  builder: (context, state) => RecommendationDetailScreen(
+                    recommendationId: int.parse(state.pathParameters['id']!),
+                  ),
                 ),
               ],
             ),
