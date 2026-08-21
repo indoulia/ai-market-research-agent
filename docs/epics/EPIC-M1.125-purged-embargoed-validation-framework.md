@@ -1,7 +1,7 @@
 # EPIC-M1.125 — Purged & Embargoed Financial Validation Framework
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETE
 **Priority:** P0
 
 ## Objective
@@ -34,7 +34,7 @@ M1.95, M1.97, M1.100, M1.115.
 
 ## Implementation
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #230 (`8db885e`).
 
 `app/purged_embargo_validation.py` adds purge/embargo semantics on top of M1.25's `EvaluationWindow`:
 
