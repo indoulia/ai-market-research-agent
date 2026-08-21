@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import String, Integer, BigInteger, Boolean, Date, DateTime, Numeric, ForeignKey, JSON, UniqueConstraint, func
+from sqlalchemy import String, Integer, BigInteger, Boolean, Date, DateTime, Numeric, ForeignKey, Index, JSON, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from .db import Base
 
@@ -933,6 +933,22 @@ class PredictionTrustScore(Base):
     reasons: Mapped[list] = mapped_column(JSON)
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     trust_score_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DailyPredictionSnapshot(Base):
+    __tablename__ = "daily_prediction_snapshots"
+    __table_args__ = (
+        Index("ix_daily_prediction_snapshots_prediction_date", "prediction_id", "snapshot_date"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    recommendation_decision_trace_id: Mapped[int | None] = mapped_column(ForeignKey("recommendation_decision_traces.id"))
+    prediction_trust_score_id: Mapped[int | None] = mapped_column(ForeignKey("prediction_trust_scores.id"))
+    snapshot_date: Mapped[date] = mapped_column(Date)
+    is_canonical: Mapped[bool] = mapped_column(Boolean)
+    snapshotted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    snapshot_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
