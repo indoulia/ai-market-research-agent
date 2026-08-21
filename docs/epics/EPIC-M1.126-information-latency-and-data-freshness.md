@@ -1,7 +1,7 @@
 # EPIC-M1.126 — Information Latency & Data Freshness Intelligence
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -30,7 +30,7 @@ M1.90, M1.93, M1.105, M1.118, M1.120.
 ## Completion Report
 
 ### Status
-Implemented, tested, PR pending. Branch `autonomous/epic-m1-126`.
+Implemented, tested, merged via PR #244.
 
 ### What was built
 - `app/information_latency.py` (ILT-001/LDR-001):
