@@ -1,7 +1,7 @@
 # EPIC-M1.130 — Prediction Abstention Quality & Opportunity Suppression Learning
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -31,7 +31,7 @@ Do not introduce negative/cautious recommendations to the user-facing feed.
 
 ## Completion Report
 
-**Status:** VALIDATING — implemented, tests green, PR open (not yet merged).
+**Status:** DONE — merged to main via PR #222 (`45373f1`).
 
 **Implementation:**
 - `app/abstention_quality.py`: a new, versioned (`ABSTENTION_QUALITY_VERSION = "AQR-001"`) module, and a new immutable report table `segment_abstention_quality_reports` (migration `0095_abstention_quality.py`, chained after a `0094_merge_0093_heads` alembic merge migration — this branch and EPIC-M1.116's both chained onto `0092_reproducibility_audit` and landed on main as sibling heads within the same window, the same collision `0089_merge_0088_heads` already documented).
