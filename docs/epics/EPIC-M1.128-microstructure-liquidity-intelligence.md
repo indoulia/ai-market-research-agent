@@ -1,7 +1,7 @@
 # EPIC-M1.128 — Market Microstructure & Liquidity Intelligence
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETE
 **Priority:** P1
 
 ## Objective
@@ -28,6 +28,8 @@ Improve short-horizon recommendation quality by incorporating liquidity, tradabi
 M1.98, M1.99, M1.96, M1.121.
 
 ## Implementation
+
+**Status:** DONE — merged to main via PR #249 (`68606eb`).
 
 `app/microstructure_liquidity.py` reuses `discovery_segmentation.classify_liquidity_bucket` (the same `volume_ratio_20d` thresholds M1.34/M1.98 already use) and adds the microstructure evidence they didn't capture:
 
