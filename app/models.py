@@ -591,3 +591,25 @@ class LearningPipelinePromotionDecision(Base):
     approver: Mapped[str] = mapped_column(String(128))
     gate_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PositionRiskAssessment(Base):
+    __tablename__ = "position_risk_assessments"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "assessment_rule_version", name="uq_position_risk_prediction_version"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    recommendation_publication_id: Mapped[int] = mapped_column(ForeignKey("recommendation_publications.id"))
+    risk_percentage: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    reward_percentage: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    reward_risk_ratio: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    atr_percent: Mapped[Decimal] = mapped_column(Numeric(12, 6))
+    risk_in_atr_units: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    reward_in_atr_units: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    horizon_consistent: Mapped[bool] = mapped_column(Boolean)
+    inconsistency_reason: Mapped[str | None] = mapped_column(String(64))
+    assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    assessment_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
