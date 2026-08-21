@@ -11,6 +11,7 @@ Map<String, dynamic> _item({
   int id = 1,
   String symbol = 'TATASTEEL',
   double? trustScore = 65,
+  String evidenceFreshness = 'FRESH',
 }) {
   return {
     'id': id,
@@ -34,7 +35,7 @@ Map<String, dynamic> _item({
     'newsSummary': null,
     'eventSummary': null,
     'marketSummary': null,
-    'evidenceFreshness': 'FRESH',
+    'evidenceFreshness': evidenceFreshness,
     'status': 'ISSUED',
     'predictionVersion': {
       'modelVersion': '1',
@@ -182,6 +183,32 @@ void main() {
 
     expect(find.text('N/A'), findsOneWidget);
   });
+
+  testWidgets(
+    'EPIC-M1.144: a STALE evidenceFreshness renders a stale-evidence badge',
+    (tester) async {
+      final repo = _FakeRepository(
+        () async => _pageOf([_item(evidenceFreshness: 'STALE')]),
+      );
+      await tester.pumpWidget(_wrap(DashboardScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stale evidence'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'EPIC-M1.144: FRESH evidenceFreshness renders no stale-evidence badge',
+    (tester) async {
+      final repo = _FakeRepository(
+        () async => _pageOf([_item(evidenceFreshness: 'FRESH')]),
+      );
+      await tester.pumpWidget(_wrap(DashboardScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Stale evidence'), findsNothing);
+    },
+  );
 
   testWidgets('tapping a card pushes the recommendation detail route', (
     tester,

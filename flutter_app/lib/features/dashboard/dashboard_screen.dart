@@ -335,6 +335,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // history.
         priceHistory: [r.price ?? 0, r.price ?? 0],
         lastUpdatedLabel: _relativeLabel(r.updatedAt),
+        evidenceFreshness: r.evidenceFreshness,
       ),
       onTap: () => context.push('/home/recommendation/${r.id}'),
     );

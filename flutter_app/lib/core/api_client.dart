@@ -11,7 +11,18 @@ import 'api_exception.dart';
 class ApiClient {
   final http.Client _http;
 
-  ApiClient({http.Client? httpClient}) : _http = httpClient ?? http.Client();
+  ApiClient({http.Client? httpClient})
+    : _http = httpClient ?? debugHttpClientOverride ?? http.Client();
+
+  /// EPIC-M1.144 — test-only global transport override, mirroring the
+  /// [bearerToken]/[onSessionExpired] "wire it centrally, not
+  /// per-repository" pattern. Every repository/screen in this app builds a
+  /// bare `ApiClient()` (never threading an [http.Client] through), so
+  /// route-level end-to-end tests that exercise the real router/screens —
+  /// not a screen-isolated fake repository — need one seam to redirect
+  /// every one of those default clients at a single scripted transport.
+  /// Must never be set outside a test; production code never touches this.
+  static http.Client? debugHttpClientOverride;
 
   /// EPIC-M1.146 — the current session's bearer token, attached to every
   /// request as `Authorization: Bearer <token>` when set. A static field
