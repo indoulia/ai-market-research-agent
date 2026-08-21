@@ -87,7 +87,7 @@ def _make_qualified(session, scan, stock, *, discover=True):
     return session.get(Prediction, generation.prediction_id)
 
 
-def test_fundamental_and_event_are_always_unavailable(session):
+def test_fundamental_without_ingested_data_and_event_are_unavailable(session):
     scan = _make_scan(session)
     stock = _make_priced_stock(session, "AAA")
     prediction = _make_qualified(session, scan, stock)
@@ -107,6 +107,75 @@ def test_every_category_is_captured_or_explicitly_unavailable(session):
     snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
 
     assert {item.evidence_category for item in snapshot} == set(ALL_EVIDENCE_CATEGORIES)
+
+
+def test_fundamental_evidence_is_available_when_ingested_and_fresh(session):
+    from app.fundamental_data.ingest import FUNDAMENTAL_INGESTION_VERSION
+    from app.models import FundamentalDataRecord
+
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "BBB")
+    session.add(FundamentalDataRecord(
+        stock_id=stock.id, source="yahoo-finance", period_end_date=None, revenue=Decimal("1000"),
+        net_income=Decimal("100"), eps=Decimal("2.5"), gross_margin=Decimal("0.4"), operating_margin=None,
+        net_margin=None, debt_to_equity=None, free_cash_flow=None, pe_ratio=None, price_to_book=None,
+        published_at=AS_OF - timedelta(days=10), fetched_at=AS_OF - timedelta(days=10),
+        ingestion_rule_version=FUNDAMENTAL_INGESTION_VERSION,
+    ))
+    session.commit()
+    prediction = _make_qualified(session, scan, stock)
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    fundamental = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_FUNDAMENTAL]
+    assert fundamental.status == STATUS_AVAILABLE
+    assert fundamental.source == "yahoo-finance"
+    assert "revenue=1000" in fundamental.reference
+
+
+def test_fundamental_evidence_is_stale_beyond_the_freshness_window(session):
+    from app.fundamental_data.ingest import FUNDAMENTAL_INGESTION_VERSION
+    from app.models import FundamentalDataRecord
+
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "CCC")
+    session.add(FundamentalDataRecord(
+        stock_id=stock.id, source="yahoo-finance", period_end_date=None, revenue=Decimal("1000"),
+        net_income=None, eps=None, gross_margin=None, operating_margin=None, net_margin=None,
+        debt_to_equity=None, free_cash_flow=None, pe_ratio=None, price_to_book=None,
+        published_at=AS_OF - timedelta(days=200), fetched_at=AS_OF - timedelta(days=200),
+        ingestion_rule_version=FUNDAMENTAL_INGESTION_VERSION,
+    ))
+    session.commit()
+    prediction = _make_qualified(session, scan, stock)
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    fundamental = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_FUNDAMENTAL]
+    assert fundamental.status == STATUS_STALE
+    assert fundamental.is_stale is True
+
+
+def test_fundamental_evidence_ignores_data_published_after_the_decision(session):
+    from app.fundamental_data.ingest import FUNDAMENTAL_INGESTION_VERSION
+    from app.models import FundamentalDataRecord
+
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "DDD")
+    session.add(FundamentalDataRecord(
+        stock_id=stock.id, source="yahoo-finance", period_end_date=None, revenue=Decimal("5000"),
+        net_income=None, eps=None, gross_margin=None, operating_margin=None, net_margin=None,
+        debt_to_equity=None, free_cash_flow=None, pe_ratio=None, price_to_book=None,
+        published_at=AS_OF + timedelta(days=5), fetched_at=AS_OF + timedelta(days=5),
+        ingestion_rule_version=FUNDAMENTAL_INGESTION_VERSION,
+    ))
+    session.commit()
+    prediction = _make_qualified(session, scan, stock)
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    fundamental = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_FUNDAMENTAL]
+    assert fundamental.status == STATUS_UNAVAILABLE
     assert all(item.status in (STATUS_AVAILABLE, STATUS_STALE, STATUS_UNAVAILABLE) for item in snapshot)
     assert all(item.snapshot_rule_version == EVIDENCE_SNAPSHOT_VERSION for item in snapshot)
 

@@ -852,3 +852,25 @@ class UserDecision(Base):
     decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     journal_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FundamentalDataRecord(Base):
+    __tablename__ = "fundamental_data_records"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    source: Mapped[str] = mapped_column(String(64))
+    period_end_date: Mapped[date | None] = mapped_column(Date)
+    revenue: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    net_income: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    eps: Mapped[Decimal | None] = mapped_column(Numeric(12, 4))
+    gross_margin: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    operating_margin: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    net_margin: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    debt_to_equity: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    free_cash_flow: Mapped[Decimal | None] = mapped_column(Numeric(20, 2))
+    pe_ratio: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    price_to_book: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ingestion_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -7,8 +7,7 @@ the decision was made.
 This repo has real, already-ingested data for only some of these
 categories. Following M1.35's own honest-partial-coverage stance (that
 module's `DATA_TYPE_FUNDAMENTAL`/`DATA_TYPE_NEWS_EVENT` are named policy
-constants with no real ingestion pipeline behind them yet), this module
-never fabricates evidence a category doesn't have:
+constants), this module never fabricates evidence a category doesn't have:
 
 - **Technical/volume**: real, always available for any qualified
   recommendation -- sourced directly from the `ScanCandidate` M1.13 already
@@ -21,11 +20,15 @@ never fabricates evidence a category doesn't have:
   the one genuine qualitative narrative this platform records about why a
   candidate was surfaced; exposed here as "news evidence" rather than
   fabricating a news-article feed that doesn't exist.
-- **Fundamental** and **event**: no ingestion pipeline exists for either in
-  this repo, so both are always recorded `UNAVAILABLE` -- an honest,
-  explicit statement of what the system did not know, never a fabricated
-  value (AC: "every recommendation records all required evidence categories
-  or an explicit unavailable state").
+- **Fundamental**: real when available, as of EPIC-M1.72 -- M1.72's own
+  point-in-time-safe `get_latest_fundamental_record` (never a plain
+  "latest row" query, which would leak a future revision into a past
+  decision), freshness checked via M1.35's `check_fundamental_data_freshness`.
+- **Event**: no ingestion pipeline exists for this category in this repo,
+  so it is always recorded `UNAVAILABLE` -- an honest, explicit statement
+  of what the system did not know, never a fabricated value (AC: "every
+  recommendation records all required evidence categories or an explicit
+  unavailable state").
 
 One immutable row per `(prediction_id, evidence_category)` -- captured once,
 never re-derived or overwritten (AC: "historical snapshots cannot be
@@ -38,6 +41,7 @@ from datetime import datetime, time, timezone
 from sqlalchemy import event, inspect, select
 from sqlalchemy.orm import Session
 
+from .fundamental_data import get_latest_fundamental_record
 from .models import (
     DailyCandidateScan,
     DiscoveryRecord,
@@ -48,7 +52,14 @@ from .models import (
     ScanCandidate,
     Stock,
 )
-from .refresh_policy import DATA_TYPE_MARKET, DATA_TYPE_NEWS_EVENT, REASON_MISSING_DATA, check_market_data_freshness, is_data_fresh
+from .refresh_policy import (
+    DATA_TYPE_MARKET,
+    DATA_TYPE_NEWS_EVENT,
+    REASON_MISSING_DATA,
+    check_fundamental_data_freshness,
+    check_market_data_freshness,
+    is_data_fresh,
+)
 
 EVIDENCE_SNAPSHOT_VERSION = "RES-001"
 
@@ -108,7 +119,29 @@ def _unavailable() -> dict:
 
 
 def _fundamental_evidence(session: Session, prediction: Prediction) -> dict:
-    return _unavailable()
+    record = get_latest_fundamental_record(session, prediction.stock_id, as_of_timestamp=prediction.as_of_timestamp)
+    if record is None:
+        return _unavailable()
+
+    check = check_fundamental_data_freshness(session, prediction.stock_id, prediction.as_of_timestamp)
+    parts = [
+        f"{label}={value}"
+        for label, value in (
+            ("revenue", record.revenue), ("net_income", record.net_income), ("eps", record.eps),
+            ("gross_margin", record.gross_margin), ("operating_margin", record.operating_margin),
+            ("net_margin", record.net_margin), ("debt_to_equity", record.debt_to_equity),
+            ("free_cash_flow", record.free_cash_flow), ("pe_ratio", record.pe_ratio),
+            ("price_to_book", record.price_to_book),
+        )
+        if value is not None
+    ]
+    return dict(
+        status=STATUS_STALE if not check.is_fresh else STATUS_AVAILABLE,
+        source=record.source,
+        reference="; ".join(parts) if parts else None,
+        evidence_timestamp=record.published_at,
+        is_stale=not check.is_fresh,
+    )
 
 
 def _event_evidence(session: Session, prediction: Prediction) -> dict:
