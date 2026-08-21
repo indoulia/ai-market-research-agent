@@ -1,3 +1,4 @@
+from .finnhub import FinnhubCredentialsError, FinnhubError, FinnhubNewsClient
 from .ingest import (
     EVENT_TYPE_CORPORATE_EVENT,
     EVENT_TYPE_NEWS_STORY,
@@ -13,6 +14,9 @@ from .yahoo import RawNewsItem, YahooNewsClient, YahooNewsError
 __all__ = [
     "EVENT_TYPE_CORPORATE_EVENT",
     "EVENT_TYPE_NEWS_STORY",
+    "FinnhubCredentialsError",
+    "FinnhubError",
+    "FinnhubNewsClient",
     "MATERIALITY_HIGH",
     "MATERIALITY_LOW",
     "NewsEventProvider",
