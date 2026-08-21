@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/detail/recommendation_detail_screen.dart';
+import '../features/discover/discover_screen.dart';
+import '../features/market/market_screen.dart';
 import '../gallery/gallery_screen.dart';
 import 'app_destination.dart';
 import 'app_shell_scaffold.dart';
@@ -44,9 +46,15 @@ GoRouter buildAppRouter() => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[1].path,
-              builder: (context, state) => DestinationPlaceholderScreen(
-                destination: kAppDestinations[1],
-              ),
+              builder: (context, state) => const DiscoverScreen(),
+              routes: [
+                GoRoute(
+                  path: 'recommendation/:id',
+                  builder: (context, state) => RecommendationDetailScreen(
+                    recommendationId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -64,9 +72,15 @@ GoRouter buildAppRouter() => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[3].path,
-              builder: (context, state) => DestinationPlaceholderScreen(
-                destination: kAppDestinations[3],
-              ),
+              builder: (context, state) => const MarketScreen(),
+              routes: [
+                GoRoute(
+                  path: 'recommendation/:id',
+                  builder: (context, state) => RecommendationDetailScreen(
+                    recommendationId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
