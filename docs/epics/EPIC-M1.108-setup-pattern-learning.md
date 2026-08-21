@@ -1,7 +1,7 @@
 # EPIC-M1.108 — Setup & Signal-Combination Learning
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -19,7 +19,7 @@ M1.85, M1.86, M1.100, M1.104.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #179 (`73a32e5`).
 
 **Implementation:**
 - `app/setup_combination_learning.py`: a new, versioned (`SETUP_COMBINATION_VERSION = "SCL-001"`) module.
