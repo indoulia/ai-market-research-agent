@@ -1052,3 +1052,24 @@ class PredictionQualityBenchmarkReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     benchmark_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PredictionStabilityAssessment(Base):
+    __tablename__ = "prediction_stability_assessments"
+    __table_args__ = (
+        UniqueConstraint("original_prediction_id", "assessed_at", name="uq_stability_prediction_assessed_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    original_prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    revision_count: Mapped[int] = mapped_column(Integer)
+    max_score_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    max_confidence_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    unexplained_revision_count: Mapped[int] = mapped_column(Integer)
+    stability_verdict: Mapped[str] = mapped_column(String(32))
+    model_agreement_verdict: Mapped[str] = mapped_column(String(32))
+    model_agreement_score_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    stability_backed_by_outcomes: Mapped[bool] = mapped_column(Boolean)
+    trust_reduction_recommended: Mapped[bool] = mapped_column(Boolean)
+    assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    assessment_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
