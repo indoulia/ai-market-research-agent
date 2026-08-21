@@ -84,4 +84,30 @@ void main() {
       expect(find.textContaining('queued for learning'), findsOneWidget);
     },
   );
+
+  testWidgets('switching to the System tab shows the system health screen', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) =>
+              const Scaffold(body: PreferencesSettingsScreen()),
+        ),
+      ],
+      initialLocation: '/settings',
+    );
+    await tester.pumpWidget(
+      MaterialApp.router(theme: MraTheme.light(), routerConfig: router),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(Tab, 'System'));
+    await tester.pumpAndSettle();
+
+    // No server in the test environment, so the screen lands on its error
+    // state rather than a loaded snapshot.
+    expect(find.text('Retry'), findsOneWidget);
+  });
 }

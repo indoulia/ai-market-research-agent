@@ -44,6 +44,10 @@ FLUTTER_DEPENDENT_PATHS = [
     "/api/v1/tracking/predictions",
     "/api/v1/tracking/breakdown",
     "/api/v1/tracking/timeseries",
+    "/api/v1/system/health",
+    "/api/v1/system/providers",
+    "/api/v1/system/data-freshness",
+    "/api/v1/system/events",
 ]
 
 

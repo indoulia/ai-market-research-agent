@@ -557,6 +557,26 @@
         "title": "CursorEnvelope[RecommendationSummary]",
         "type": "object"
       },
+      "CursorEnvelope_SystemEventItem_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SystemEventItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[SystemEventItem]",
+        "type": "object"
+      },
       "CursorEnvelope_TrackedPrediction_": {
         "properties": {
           "data": {
@@ -940,6 +960,54 @@
           "newsAsOf"
         ],
         "title": "DataFreshness",
+        "type": "object"
+      },
+      "DataFreshnessItem": {
+        "properties": {
+          "ageSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ageseconds"
+          },
+          "capability": {
+            "title": "Capability",
+            "type": "string"
+          },
+          "isFresh": {
+            "title": "Isfresh",
+            "type": "boolean"
+          },
+          "lastSuccessAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastsuccessat"
+          },
+          "thresholdSeconds": {
+            "title": "Thresholdseconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "capability",
+          "lastSuccessAt",
+          "ageSeconds",
+          "thresholdSeconds",
+          "isFresh"
+        ],
+        "title": "DataFreshnessItem",
         "type": "object"
       },
       "DiscoveryCandidate": {
@@ -1603,6 +1671,37 @@
           "learningImpact"
         ],
         "title": "FeedbackResponse",
+        "type": "object"
+      },
+      "Freshness": {
+        "description": "How stale the newest successful fetch is against M1.35's own\n`FRESHNESS_POLICY` threshold for this capability -- never a fabricated\nsingle number across capabilities with different real cadences.",
+        "properties": {
+          "ageSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ageseconds"
+          },
+          "isFresh": {
+            "title": "Isfresh",
+            "type": "boolean"
+          },
+          "thresholdSeconds": {
+            "title": "Thresholdseconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ageSeconds",
+          "thresholdSeconds",
+          "isFresh"
+        ],
+        "title": "Freshness",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -2968,6 +3067,89 @@
         "title": "PromotionCounts",
         "type": "object"
       },
+      "ProviderStatus": {
+        "properties": {
+          "capability": {
+            "title": "Capability",
+            "type": "string"
+          },
+          "failureRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failurerate"
+          },
+          "fallbackActive": {
+            "title": "Fallbackactive",
+            "type": "boolean"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "lastSuccessAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastsuccessat"
+          },
+          "latencyMs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latencyms"
+          },
+          "providerId": {
+            "title": "Providerid",
+            "type": "string"
+          },
+          "qualityScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualityscore"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "providerId",
+          "capability",
+          "status",
+          "lastSuccessAt",
+          "latencyMs",
+          "freshness",
+          "failureRate",
+          "fallbackActive",
+          "qualityScore"
+        ],
+        "title": "ProviderStatus",
+        "type": "object"
+      },
       "RecommendationDetail": {
         "properties": {
           "asOf": {
@@ -3827,6 +4009,22 @@
         "title": "SuccessEnvelope[SessionResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_SystemHealthResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SystemHealthResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[SystemHealthResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_TimeseriesResponse_": {
         "properties": {
           "data": {
@@ -3891,6 +4089,26 @@
         "title": "SuccessEnvelope[VersionResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_list_DataFreshnessItem__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DataFreshnessItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[list[DataFreshnessItem]]",
+        "type": "object"
+      },
       "SuccessEnvelope_list_DiscoveryHistoryPoint__": {
         "properties": {
           "data": {
@@ -3951,6 +4169,26 @@
         "title": "SuccessEnvelope[list[LearningHistoryEntry]]",
         "type": "object"
       },
+      "SuccessEnvelope_list_ProviderStatus__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderStatus"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[list[ProviderStatus]]",
+        "type": "object"
+      },
       "SuccessEnvelope_list_TimelineItem__": {
         "properties": {
           "data": {
@@ -3969,6 +4207,111 @@
           "meta"
         ],
         "title": "SuccessEnvelope[list[TimelineItem]]",
+        "type": "object"
+      },
+      "SystemEventItem": {
+        "properties": {
+          "capability": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capability"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "title": "Occurredat",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "severity",
+          "capability",
+          "exchange",
+          "description",
+          "occurredAt"
+        ],
+        "title": "SystemEventItem",
+        "type": "object"
+      },
+      "SystemHealthResponse": {
+        "properties": {
+          "activeOutageCount": {
+            "title": "Activeoutagecount",
+            "type": "integer"
+          },
+          "apiVersion": {
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "checkedAt": {
+            "format": "date-time",
+            "title": "Checkedat",
+            "type": "string"
+          },
+          "databaseOk": {
+            "title": "Databaseok",
+            "type": "boolean"
+          },
+          "marketSession": {
+            "title": "Marketsession",
+            "type": "string"
+          },
+          "providerStatusCounts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Providerstatuscounts",
+            "type": "object"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "checkedAt",
+          "apiVersion",
+          "databaseOk",
+          "providerStatusCounts",
+          "activeOutageCount",
+          "marketSession"
+        ],
+        "title": "SystemHealthResponse",
         "type": "object"
       },
       "TimelineItem": {
@@ -7311,6 +7654,130 @@
         "summary": "Get Recommendation Timeline",
         "tags": [
           "recommendations"
+        ]
+      }
+    },
+    "/api/v1/system/data-freshness": {
+      "get": {
+        "operationId": "get_data_freshness_endpoint_api_v1_system_data_freshness_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_DataFreshnessItem__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Data Freshness Endpoint",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/events": {
+      "get": {
+        "operationId": "get_events_api_v1_system_events_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_SystemEventItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Events",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/health": {
+      "get": {
+        "operationId": "get_health_api_v1_system_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_SystemHealthResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Health",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/providers": {
+      "get": {
+        "operationId": "get_providers_api_v1_system_providers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_ProviderStatus__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Providers",
+        "tags": [
+          "system"
         ]
       }
     },
