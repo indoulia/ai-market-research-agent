@@ -98,7 +98,7 @@ class _MarketOverviewScreenState extends State<MarketOverviewScreen> {
                   Expanded(
                     child: KpiStatCard(
                       label: 'Advance/Decline',
-                      value: summary.advanceDecline ?? '—',
+                      value: summary.advanceDecline?.toStringAsFixed(2) ?? '—',
                       icon: Icons.compare_arrows,
                     ),
                   ),
