@@ -1,7 +1,7 @@
 # EPIC-M1.117 — End-to-End Prediction Validation Gate
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -34,7 +34,7 @@ M1.117 is the evidence gate for declaring the MRA prediction engine production-r
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #225.
 
 **Implementation:**
 - `app/production_readiness_gate.py`: a new, versioned (`READINESS_GATE_VERSION = "PRG-117-001"`) module. Deliberately recomputes almost nothing — it composes already-persisted evidence from M1.67 (regression), M1.82 (benchmark), M1.88 (learning hypotheses), M1.97 (bias guard), M1.101/M1.114 (drift/outage continuity) and M1.115 (reproducibility) into six checks, one per this EPIC's own Acceptance Criteria bullet.
