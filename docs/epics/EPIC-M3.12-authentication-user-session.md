@@ -1,4 +1,4 @@
-# EPIC-M1.143 — Authentication & User Session
+# EPIC-M3.12 — Authentication & User Session
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION

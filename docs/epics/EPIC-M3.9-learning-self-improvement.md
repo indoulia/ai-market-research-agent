@@ -1,4 +1,4 @@
-# EPIC-M1.140 — Learning & Self-Improvement
+# EPIC-M3.9 — Learning & Self-Improvement
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION

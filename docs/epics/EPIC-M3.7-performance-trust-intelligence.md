@@ -1,4 +1,4 @@
-# EPIC-M1.138 — Performance & Trust Intelligence
+# EPIC-M3.7 — Performance & Trust Intelligence
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION

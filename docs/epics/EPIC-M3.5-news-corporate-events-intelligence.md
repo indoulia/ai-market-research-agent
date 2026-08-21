@@ -1,4 +1,4 @@
-# EPIC-M1.136 — News & Corporate Events Intelligence
+# EPIC-M3.5 — News & Corporate Events Intelligence
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION

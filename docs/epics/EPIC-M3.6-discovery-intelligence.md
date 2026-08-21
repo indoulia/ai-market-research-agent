@@ -1,4 +1,4 @@
-# EPIC-M1.137 — Discovery Intelligence
+# EPIC-M3.6 — Discovery Intelligence
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION
