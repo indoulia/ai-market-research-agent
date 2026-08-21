@@ -2107,3 +2107,35 @@ class MarketUnexpectedClosure(Base):
     source: Mapped[str] = mapped_column(String(64))
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class InformationLatencyAssessment(Base):
+    __tablename__ = "information_latency_assessments"
+    __table_args__ = (UniqueConstraint("prediction_id", "evaluated_at", name="uq_information_latency_prediction_evaluated_at"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    sla_multiplier: Mapped[Decimal] = mapped_column(Numeric(6, 4))
+    category_latency_seconds: Mapped[dict] = mapped_column(JSON)
+    sla_violations: Mapped[list] = mapped_column(JSON)
+    suppress_eligibility: Mapped[bool] = mapped_column(Boolean)
+    reasons: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    latency_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class LatencyDegradationReport(Base):
+    __tablename__ = "latency_degradation_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    data_type: Mapped[str] = mapped_column(String(32))
+    window_label: Mapped[str] = mapped_column(String(128))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    average_latency_seconds: Mapped[Decimal | None] = mapped_column(Numeric(14, 3))
+    baseline_sample_count: Mapped[int] = mapped_column(Integer)
+    baseline_average_latency_seconds: Mapped[Decimal | None] = mapped_column(Numeric(14, 3))
+    degradation_ratio: Mapped[Decimal | None] = mapped_column(Numeric(10, 4))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
