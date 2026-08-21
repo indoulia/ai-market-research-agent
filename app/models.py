@@ -1210,3 +1210,25 @@ class ExecutionCostAssessment(Base):
     cost_model_version: Mapped[str] = mapped_column(String(32))
     assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PositiveOpportunityRanking(Base):
+    __tablename__ = "positive_opportunity_rankings"
+    __table_args__ = (UniqueConstraint("prediction_id", "evaluated_at", name="uq_opportunity_ranking_prediction_evaluated_at"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    composite_score: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    expected_return_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    probability_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    trust_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    reward_risk_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    evidence_quality_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    stability_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    rank_position: Mapped[int | None] = mapped_column(Integer)
+    included: Mapped[bool] = mapped_column(Boolean)
+    exclusion_reason: Mapped[str | None] = mapped_column(String(64))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ranking_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
