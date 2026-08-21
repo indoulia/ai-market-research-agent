@@ -3,73 +3,101 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_exception.dart';
 import '../../design_system/design_system.dart';
+import 'dashboard_repository.dart';
+import 'dashboard_snapshot.dart';
 import 'recommendation.dart';
 import 'recommendations_repository.dart';
 
 enum _LoadState { loading, error, loaded }
 
-/// EPIC-M1.136 — the primary MRA screen. Consumes EPIC-M1.135's
-/// `GET /api/v1/recommendations` only — no client-side ranking/business
-/// logic beyond display formatting (M1.135 AC: "Flutter consumes this
-/// exact contract; no UI-side business ranking").
+const _bucketOptions = [
+  MraFilterOption('ALL', 'All sizes'),
+  MraFilterOption('LARGE_CAP', 'Large cap'),
+  MraFilterOption('MID_CAP', 'Mid cap'),
+  MraFilterOption('SMALL_CAP', 'Small cap'),
+];
+
+const _marketOptions = [
+  MraFilterOption('ALL', 'All markets'),
+  MraFilterOption('NSE', 'NSE'),
+];
+
+/// One row of the opportunities grid, unified so it can come from either
+/// the initial `/dashboard/snapshot` request or a follow-on
+/// `/recommendations` page (see [_DashboardScreenState._loadMore]).
+class _OpportunityRow {
+  final int id;
+  final RecommendationCardData card;
+  const _OpportunityRow(this.id, this.card);
+}
+
+/// EPIC-M3.2 — the Home destination: a compact "what is the market doing,
+/// what are the best positive opportunities, what changed" first screen.
+/// Consumes EPIC-M3.2's `GET /api/v1/dashboard/snapshot` for all core
+/// content in one request (AC), falling back to EPIC-M1.135's
+/// `/recommendations` only for scrolling past the snapshot's own top-N
+/// opportunities.
 class DashboardScreen extends StatefulWidget {
+  final DashboardRepository? dashboardRepository;
   final RecommendationsRepository? repository;
 
-  const DashboardScreen({super.key, this.repository});
+  const DashboardScreen({super.key, this.dashboardRepository, this.repository});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  late final DashboardRepository _dashboardRepository;
   late final RecommendationsRepository _repository;
-  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _sectorController = TextEditingController();
+
+  static const int _limit = 12;
 
   _LoadState _state = _LoadState.loading;
-  List<Recommendation> _items = const [];
+  DashboardSnapshot? _snapshot;
+  List<_OpportunityRow> _extraRows = const [];
   String? _nextCursor;
+  bool _bootstrappedCursor = false;
   bool _loadingMore = false;
-  DateTime? _lastUpdated;
   ApiException? _error;
+
   int? _selectedHorizon;
-  RecommendationSort _sort = RecommendationSort.score;
+  String _market = 'ALL';
+  String _sizeBucket = 'ALL';
+  String? _sector;
 
   @override
   void initState() {
     super.initState();
+    _dashboardRepository = widget.dashboardRepository ?? DashboardRepository();
     _repository = widget.repository ?? RecommendationsRepository();
-    _scrollController.addListener(_onScroll);
     _load();
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _sectorController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_nextCursor == null || _loadingMore || _state != _LoadState.loaded) {
-      return;
-    }
-    final threshold = _scrollController.position.maxScrollExtent - 400;
-    if (_scrollController.position.pixels >= threshold) {
-      _loadMore();
-    }
-  }
+  bool get _canLoadMore => !_bootstrappedCursor || _nextCursor != null;
 
   Future<void> _load() async {
     setState(() => _state = _LoadState.loading);
     try {
-      final page = await _repository.fetchPage(
+      final snapshot = await _dashboardRepository.fetchSnapshot(
+        market: _market == 'ALL' ? null : _market,
         horizonDays: _selectedHorizon,
-        sort: _sort,
+        sector: _sector,
+        marketCapBucket: _sizeBucket == 'ALL' ? null : _sizeBucket,
+        limit: _limit,
       );
       setState(() {
-        _items = page.items;
-        _nextCursor = page.nextCursor;
-        _lastUpdated = page.asOfServerTime;
+        _snapshot = snapshot;
+        _extraRows = const [];
+        _nextCursor = null;
+        _bootstrappedCursor = false;
         _state = _LoadState.loaded;
       });
     } catch (e) {
@@ -81,35 +109,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadMore() async {
+    if (_loadingMore || _snapshot == null) return;
     setState(() => _loadingMore = true);
     try {
+      if (!_bootstrappedCursor) {
+        // The snapshot's `topOpportunities` has no cursor of its own -- one
+        // "bootstrap" call to the identically-sorted/filtered
+        // `/recommendations` page 1 recovers the pagination cursor.
+        // Duplicate rows (guaranteed, since it's the exact same query) are
+        // filtered out; if that leaves nothing new, fall straight through
+        // to the real next page so this doesn't cost the user an empty tap.
+        final page = await _repository.fetchPage(
+          horizonDays: _selectedHorizon,
+          market: _market == 'ALL' ? null : _market,
+          sector: _sector,
+          marketCapBucket: _sizeBucket == 'ALL' ? null : _sizeBucket,
+          sort: RecommendationSort.score,
+          pageSize: _limit,
+        );
+        _bootstrappedCursor = true;
+        _nextCursor = page.nextCursor;
+        final seenIds = {
+          ..._snapshot!.topOpportunities.map((o) => o.id),
+          ..._extraRows.map((r) => r.id),
+        };
+        final fresh = page.items.where((r) => !seenIds.contains(r.id));
+        if (fresh.isNotEmpty) {
+          setState(() {
+            _extraRows = [..._extraRows, ...fresh.map(_rowFromRecommendation)];
+            _loadingMore = false;
+          });
+          return;
+        }
+      }
+      if (_nextCursor == null) {
+        setState(() => _loadingMore = false);
+        return;
+      }
       final page = await _repository.fetchPage(
         horizonDays: _selectedHorizon,
-        sort: _sort,
+        market: _market == 'ALL' ? null : _market,
+        sector: _sector,
+        marketCapBucket: _sizeBucket == 'ALL' ? null : _sizeBucket,
+        sort: RecommendationSort.score,
+        pageSize: _limit,
         cursor: _nextCursor,
       );
       setState(() {
-        _items = [..._items, ...page.items];
+        _extraRows = [..._extraRows, ...page.items.map(_rowFromRecommendation)];
         _nextCursor = page.nextCursor;
         _loadingMore = false;
       });
     } catch (_) {
-      // A load-more failure keeps the already-loaded page visible; the user
+      // A load-more failure keeps what's already loaded visible; the user
       // can retry by scrolling again. Only the initial load surfaces a
       // full-screen error state.
       setState(() => _loadingMore = false);
     }
   }
 
-  void _onHorizonChanged(int days) {
-    setState(() => _selectedHorizon = days);
-    _load();
-  }
-
-  void _onSortChanged(RecommendationSort sort) {
-    setState(() => _sort = sort);
-    _load();
-  }
+  void _onFiltersChanged() => _load();
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +178,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return RefreshIndicator(
           onRefresh: _load,
           child: CustomScrollView(
-            controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(child: _buildHeader(context)),
               ..._buildBody(context, windowClass),
@@ -132,8 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
-    final avgTrust = _averageOf(_items.map((r) => r.trustScore));
-    final avgConfidence = _averageOf(_items.map((r) => r.confidence));
+    final snapshot = _snapshot;
 
     return Padding(
       padding: const EdgeInsets.all(MraSpacing.lg),
@@ -145,19 +202,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 flex: 3,
                 child: Text(
-                  'Recommendations',
+                  'Dashboard',
                   style: theme.textTheme.headlineSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // EPIC-M1.143: also flexible (not just the title) — at
-              // extreme text-scale/narrow-width combinations this label's
-              // own intrinsic width could overflow the row on its own.
-              if (_lastUpdated != null)
+              if (snapshot != null)
                 Flexible(
                   child: Text(
-                    'Updated ${_relativeLabel(_lastUpdated!)}',
+                    'Updated ${_relativeLabel(snapshot.marketAsOf)}',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -173,53 +227,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: MraSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: KpiStatCard(
-                  label: 'Opportunities',
-                  value: _items.length.toString(),
-                  icon: Icons.trending_up,
-                ),
-              ),
-              const SizedBox(width: MraSpacing.sm),
-              Expanded(
-                child: KpiStatCard(
-                  label: 'Avg Trust',
-                  value: avgTrust == null ? '—' : avgTrust.round().toString(),
-                  icon: Icons.verified_outlined,
-                ),
-              ),
-              const SizedBox(width: MraSpacing.sm),
-              Expanded(
-                child: KpiStatCard(
-                  label: 'Avg Confidence',
-                  value: avgConfidence == null
-                      ? '—'
-                      : avgConfidence.round().toString(),
-                  icon: Icons.insights_outlined,
-                ),
-              ),
+          if (snapshot != null) ...[
+            const SizedBox(height: MraSpacing.md),
+            _MarketStatusRow(snapshot: snapshot),
+            const SizedBox(height: MraSpacing.md),
+            _TrustSummaryCard(summary: snapshot.trustSummary),
+            if (snapshot.importantEvents.isNotEmpty) ...[
+              const SizedBox(height: MraSpacing.md),
+              _EventsStrip(events: snapshot.importantEvents),
             ],
-          ),
+            if (snapshot.recentChanges.isNotEmpty) ...[
+              const SizedBox(height: MraSpacing.md),
+              _RecentChangesCard(items: snapshot.recentChanges),
+            ],
+          ],
           const SizedBox(height: MraSpacing.lg),
           HorizonSelector(
             horizonsDays: const [1, 3, 5, 7],
             selectedDays: _selectedHorizon ?? 3,
-            onChanged: _onHorizonChanged,
+            onChanged: (days) {
+              setState(() => _selectedHorizon = days);
+              _onFiltersChanged();
+            },
           ),
-          const SizedBox(height: MraSpacing.md),
+          const SizedBox(height: MraSpacing.sm),
           MraFilterBar(
-            options: const [
-              MraFilterOption('score', 'Score'),
-              MraFilterOption('trust', 'Trust'),
-              MraFilterOption('upside', 'Upside'),
-            ],
-            selectedIds: {_sort.name},
-            onToggle: (id) => _onSortChanged(
-              RecommendationSort.values.firstWhere((s) => s.name == id),
+            options: _marketOptions,
+            selectedIds: {_market},
+            onToggle: (id) {
+              setState(() => _market = id);
+              _onFiltersChanged();
+            },
+          ),
+          const SizedBox(height: MraSpacing.sm),
+          MraFilterBar(
+            options: _bucketOptions,
+            selectedIds: {_sizeBucket},
+            onToggle: (id) {
+              setState(() => _sizeBucket = id);
+              _onFiltersChanged();
+            },
+          ),
+          const SizedBox(height: MraSpacing.sm),
+          TextField(
+            controller: _sectorController,
+            textInputAction: TextInputAction.search,
+            style: theme.textTheme.bodyMedium,
+            decoration: InputDecoration(
+              hintText: 'Filter by sector',
+              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
+              suffixIcon: (_sector == null)
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      tooltip: 'Clear sector filter',
+                      onPressed: () {
+                        _sectorController.clear();
+                        setState(() => _sector = null);
+                        _onFiltersChanged();
+                      },
+                    ),
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerHigh,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              isDense: true,
             ),
+            onSubmitted: (value) {
+              setState(
+                () => _sector = value.trim().isEmpty ? null : value.trim(),
+              );
+              _onFiltersChanged();
+            },
           ),
         ],
       ),
@@ -254,7 +339,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ];
       case _LoadState.loaded:
-        if (_items.isEmpty) {
+        final topRows = _snapshot!.topOpportunities
+            .map(_rowFromOpportunity)
+            .toList();
+        final rows = [...topRows, ..._extraRows];
+        if (rows.isEmpty) {
           return [
             const SliverFillRemaining(
               hasScrollBody: false,
@@ -274,11 +363,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
             sliver: columns == 1
                 ? SliverList.separated(
-                    itemCount: _items.length,
+                    itemCount: rows.length,
                     separatorBuilder: (_, _) =>
                         const SizedBox(height: MraSpacing.md),
                     itemBuilder: (context, index) =>
-                        _buildCard(context, _items[index]),
+                        _buildCard(context, rows[index]),
                   )
                 : SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -288,8 +377,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       mainAxisExtent: 340,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildCard(context, _items[index]),
-                      childCount: _items.length,
+                      (context, index) => _buildCard(context, rows[index]),
+                      childCount: rows.length,
                     ),
                   ),
           ),
@@ -303,12 +392,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         height: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : (_nextCursor == null
-                          ? Text(
+                    : (_canLoadMore
+                          ? TextButton(
+                              onPressed: _loadMore,
+                              child: const Text('Load more opportunities'),
+                            )
+                          : Text(
                               'You’re all caught up',
                               style: Theme.of(context).textTheme.labelSmall,
-                            )
-                          : const SizedBox.shrink()),
+                            )),
               ),
             ),
           ),
@@ -316,9 +408,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildCard(BuildContext context, Recommendation r) {
+  Widget _buildCard(BuildContext context, _OpportunityRow row) {
     return RecommendationCard(
-      data: RecommendationCardData(
+      data: row.card,
+      onTap: () => context.push('/home/recommendation/${row.id}'),
+    );
+  }
+
+  static _OpportunityRow _rowFromOpportunity(DashboardOpportunity o) {
+    return _OpportunityRow(
+      o.id,
+      RecommendationCardData(
+        symbol: o.symbol,
+        companyName: o.name,
+        currentPrice: o.price,
+        // The snapshot's leaner opportunity shape (EPIC-M3.2's own field
+        // list) doesn't carry day change-% or evidence freshness -- both
+        // are honestly omitted rather than fabricated; the full detail
+        // screen (reachable via this card's own tap) still has them.
+        changePercent: null,
+        horizonDays: o.horizon,
+        targetPrice: o.targetPrice,
+        stopLossPrice: o.stopLoss,
+        upsidePercent: o.upsidePercent,
+        score: o.score,
+        confidence: o.confidence,
+        trust: o.trustScore,
+        priceHistory: [o.price ?? 0, o.price ?? 0],
+        lastUpdatedLabel: _relativeLabel(o.updatedAt),
+        evidenceFreshness: null,
+      ),
+    );
+  }
+
+  static _OpportunityRow _rowFromRecommendation(Recommendation r) {
+    return _OpportunityRow(
+      r.id,
+      RecommendationCardData(
         symbol: r.symbol,
         companyName: r.companyName,
         currentPrice: r.price,
@@ -330,21 +456,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         score: r.score,
         confidence: r.confidence,
         trust: r.trustScore,
-        // M1.135 doesn't return historical prices for the card sparkline —
-        // flat line is an honest "no trend data" rendering, not fabricated
-        // history.
         priceHistory: [r.price ?? 0, r.price ?? 0],
         lastUpdatedLabel: _relativeLabel(r.updatedAt),
         evidenceFreshness: r.evidenceFreshness,
       ),
-      onTap: () => context.push('/home/recommendation/${r.id}'),
     );
-  }
-
-  static double? _averageOf(Iterable<double?> values) {
-    final nonNull = values.whereType<double>().toList();
-    if (nonNull.isEmpty) return null;
-    return nonNull.reduce((a, b) => a + b) / nonNull.length;
   }
 
   static String _relativeLabel(DateTime time) {
@@ -353,5 +469,185 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
+  }
+}
+
+/// Compact market-status header: regime + freshness. `marketStatus`
+/// "UNKNOWN" is a real, honest gap (no market-calendar module exists yet,
+/// M1.139) -- rendered as a neutral chip, never guessed from wall-clock
+/// time.
+class _MarketStatusRow extends StatelessWidget {
+  final DashboardSnapshot snapshot;
+  const _MarketStatusRow({required this.snapshot});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: MraSpacing.sm,
+      runSpacing: MraSpacing.sm,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        MraChip(
+          label: snapshot.marketStatus == 'UNKNOWN'
+              ? 'Market status unavailable'
+              : snapshot.marketStatus,
+          tone: MraChipTone.neutral,
+          icon: Icons.storefront_outlined,
+        ),
+        if (snapshot.marketRegime != null)
+          MraChip(
+            label: snapshot.marketRegime!,
+            tone: MraChipTone.info,
+            icon: Icons.show_chart,
+          ),
+      ],
+    );
+  }
+}
+
+/// EPIC-M3.2's trust/performance summary widget -- a compact projection of
+/// M1.147's tracking summary via the snapshot's `trustSummary`.
+class _TrustSummaryCard extends StatelessWidget {
+  final DashboardTrustSummary summary;
+  const _TrustSummaryCard({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final trust = summary.trustScore;
+    final delta = summary.trustDelta;
+    return MraCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: MraSpacing.lg,
+        vertical: MraSpacing.md,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.verified_outlined,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: MraSpacing.sm),
+          Expanded(
+            child: Text(
+              trust == null
+                  ? 'Trust: not enough evaluated history yet'
+                  : 'Trust: ${(trust * 100).round()}%'
+                        '${delta == null ? '' : (delta >= 0 ? ' (+${(delta * 100).toStringAsFixed(1)})' : ' (${(delta * 100).toStringAsFixed(1)})')}',
+              style: theme.textTheme.bodyMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (summary.smallSample)
+            const MraChip(label: 'Small sample', tone: MraChipTone.warning),
+        ],
+      ),
+    );
+  }
+}
+
+/// Important events/news strip -- a compact horizontal row so it never
+/// dominates the screen (AC).
+class _EventsStrip extends StatelessWidget {
+  final List<DashboardEvent> events;
+  const _EventsStrip({required this.events});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      height: 64,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: events.length,
+        separatorBuilder: (_, _) => const SizedBox(width: MraSpacing.sm),
+        itemBuilder: (context, index) {
+          final event = events[index];
+          return SizedBox(
+            width: 220,
+            child: MraCard(
+              padding: const EdgeInsets.symmetric(
+                horizontal: MraSpacing.md,
+                vertical: MraSpacing.sm,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${event.symbol} · ${event.title}',
+                    style: theme.textTheme.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    event.source,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Recently-changed-recommendations widget -- the same open, positive-only
+/// feed the opportunities grid shows, ordered by recency of update rather
+/// than score (see `api/services/dashboard.py`'s own doc comment on why
+/// there is no separate lifecycle-history source for this).
+class _RecentChangesCard extends StatelessWidget {
+  final List<DashboardOpportunity> items;
+  const _RecentChangesCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final shown = items.take(5).toList();
+    return MraCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: MraSpacing.lg,
+        vertical: MraSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Recently changed', style: theme.textTheme.titleSmall),
+          const SizedBox(height: MraSpacing.sm),
+          for (final item in shown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${item.symbol} · ${item.status}',
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    _DashboardScreenState._relativeLabel(item.updatedAt),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

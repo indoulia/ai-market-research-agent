@@ -123,6 +123,54 @@ Map<String, dynamic> _recommendationJson({
   'updatedAt': _now,
 };
 
+/// EPIC-M3.2 — the Home destination's initial "core content" request. One
+/// opportunity mirroring [_recommendationJson]'s values so the existing
+/// exact-value semantics assertions (target/SL/confidence/trust) still
+/// hold against the leaner `DashboardOpportunity` shape.
+Map<String, dynamic> _dashboardSnapshotJson({
+  List<Map<String, dynamic>> topOpportunities = const [],
+}) => {
+  'marketStatus': 'UNKNOWN',
+  'asOf': _now,
+  'marketRegime': null,
+  'indices': [],
+  'topOpportunities': topOpportunities,
+  'importantEvents': [],
+  'recentChanges': topOpportunities,
+  'trustSummary': {
+    'trustScore': '0.7',
+    'trustDelta': null,
+    'calibrationScore': null,
+    'sampleSize': 0,
+    'smallSample': true,
+    'modelVersion': null,
+  },
+  'dataFreshness': {
+    'opportunitiesAsOf': _now,
+    'marketAsOf': _now,
+    'newsAsOf': null,
+  },
+};
+
+Map<String, dynamic> _opportunityJson({
+  int id = 42,
+  String symbol = 'TATASTEEL',
+}) => {
+  'id': id,
+  'symbol': symbol,
+  'name': 'Tata Steel Ltd.',
+  'price': '168.35',
+  'targetPrice': '176.50',
+  'stopLoss': '163.00',
+  'horizon': 3,
+  'upsidePercent': '4.8',
+  'score': '82',
+  'confidence': '71',
+  'trustScore': '65',
+  'status': 'ISSUED',
+  'updatedAt': _now,
+};
+
 final _detailPredictionVersion = {
   'modelVersion': 'v1',
   'featureVersion': '1',
@@ -243,6 +291,14 @@ _ScriptedHttpClient _happyPathServer() {
     'GET',
     '/api/v1/recommendations',
     _Resp(200, _envelope([_recommendationJson()])),
+  );
+  server.onStatic(
+    'GET',
+    '/api/v1/dashboard/snapshot',
+    _Resp(
+      200,
+      _envelope(_dashboardSnapshotJson(topOpportunities: [_opportunityJson()])),
+    ),
   );
   server.onStatic(
     'GET',
@@ -407,7 +463,7 @@ void main() {
       );
       server.onStatic(
         'GET',
-        '/api/v1/recommendations',
+        '/api/v1/dashboard/snapshot',
         _Resp(
           401,
           _errorBody('MRA_SESSION_EXPIRED', 'Your session has expired.'),
@@ -442,7 +498,7 @@ void main() {
     );
     server.onStatic(
       'GET',
-      '/api/v1/recommendations',
+      '/api/v1/dashboard/snapshot',
       _Resp(
         429,
         _errorBody(
@@ -505,8 +561,8 @@ void main() {
       final server = _happyPathServer();
       server.onStatic(
         'GET',
-        '/api/v1/recommendations',
-        _Resp(200, _envelope(const [])),
+        '/api/v1/dashboard/snapshot',
+        _Resp(200, _envelope(_dashboardSnapshotJson())),
       );
       ApiClient.debugHttpClientOverride = server;
 
@@ -536,7 +592,7 @@ void main() {
         '/api/v1/auth/session',
         _Resp(200, _envelope(_authSessionJson)),
       );
-      server.on('GET', '/api/v1/recommendations', (_) {
+      server.on('GET', '/api/v1/dashboard/snapshot', (_) {
         throw const SocketExceptionStub('provider unavailable');
       });
       ApiClient.debugHttpClientOverride = server;
