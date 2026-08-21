@@ -35,6 +35,12 @@ class RecommendationDetail {
   final List<String> providerEvidence;
   final String status;
 
+  /// Opaque version-tag bundle (model/feature/consensus/etc.) — passed
+  /// through unparsed to EPIC-M1.141's feedback submission, which must
+  /// reference "the exact recommendation version visible to the user"
+  /// (M1.142 AC) without this UI needing to interpret its internals.
+  final Map<String, dynamic> predictionVersion;
+
   const RecommendationDetail({
     required this.id,
     required this.symbol,
@@ -65,6 +71,7 @@ class RecommendationDetail {
     required this.liquidity,
     required this.providerEvidence,
     required this.status,
+    required this.predictionVersion,
   });
 
   static double? _decimalOrNull(dynamic v) =>
@@ -104,6 +111,7 @@ class RecommendationDetail {
       liquidity: json['liquidity'] as String,
       providerEvidence: (json['providerEvidence'] as List).cast<String>(),
       status: json['status'] as String,
+      predictionVersion: json['predictionVersion'] as Map<String, dynamic>,
     );
   }
 }
