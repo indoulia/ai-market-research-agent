@@ -1,6 +1,185 @@
 {
   "components": {
     "schemas": {
+      "ActivePrediction": {
+        "properties": {
+          "companyName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Companyname"
+          },
+          "confidence": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confidence",
+            "type": "string"
+          },
+          "distanceToStopLossPercent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distancetostoplosspercent"
+          },
+          "distanceToTargetPercent": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distancetotargetpercent"
+          },
+          "exchange": {
+            "title": "Exchange",
+            "type": "string"
+          },
+          "horizon": {
+            "title": "Horizon",
+            "type": "integer"
+          },
+          "lastPriceAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastpriceat"
+          },
+          "lastRevisionAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastrevisionat"
+          },
+          "nextEvaluationAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextevaluationat"
+          },
+          "predictionId": {
+            "title": "Predictionid",
+            "type": "integer"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          },
+          "remainingTradingDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remainingtradingdays"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "stopLoss": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Stoploss",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "targetPrice": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Targetprice",
+            "type": "string"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
+          }
+        },
+        "required": [
+          "predictionId",
+          "symbol",
+          "companyName",
+          "exchange",
+          "price",
+          "targetPrice",
+          "stopLoss",
+          "horizon",
+          "remainingTradingDays",
+          "distanceToTargetPercent",
+          "distanceToStopLossPercent",
+          "score",
+          "confidence",
+          "trustScore",
+          "status",
+          "lastPriceAt",
+          "lastRevisionAt",
+          "nextEvaluationAt"
+        ],
+        "title": "ActivePrediction",
+        "type": "object"
+      },
       "ApiCapabilities": {
         "properties": {
           "analytics": {
@@ -158,6 +337,26 @@
           "items"
         ],
         "title": "BreakdownResponse",
+        "type": "object"
+      },
+      "CursorEnvelope_ActivePrediction_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ActivePrediction"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[ActivePrediction]",
         "type": "object"
       },
       "CursorEnvelope_DiscoveryItem_": {
@@ -2315,6 +2514,22 @@
           "expiresAt"
         ],
         "title": "SessionResponse",
+        "type": "object"
+      },
+      "SuccessEnvelope_ActivePrediction_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ActivePrediction"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[ActivePrediction]",
         "type": "object"
       },
       "SuccessEnvelope_ApiCapabilities_": {
@@ -4566,6 +4781,109 @@
         "summary": "Get Opportunities",
         "tags": [
           "opportunities"
+        ]
+      }
+    },
+    "/api/v1/predictions/active": {
+      "get": {
+        "operationId": "get_active_predictions_api_v1_predictions_active_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_ActivePrediction_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Active Predictions",
+        "tags": [
+          "predictions"
+        ]
+      }
+    },
+    "/api/v1/predictions/active/{predictionId}": {
+      "get": {
+        "operationId": "get_active_prediction_detail_api_v1_predictions_active__predictionId__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "predictionId",
+            "required": true,
+            "schema": {
+              "title": "Predictionid",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_ActivePrediction_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Active Prediction Detail",
+        "tags": [
+          "predictions"
         ]
       }
     },

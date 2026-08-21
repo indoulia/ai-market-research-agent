@@ -1,4 +1,5 @@
 import '../../core/api_client.dart';
+import 'active_prediction.dart';
 import 'tracked_prediction.dart';
 import 'tracking_breakdown.dart';
 import 'tracking_summary.dart';
@@ -12,6 +13,15 @@ class TrackedPredictionsPage {
   final String? nextCursor;
 
   const TrackedPredictionsPage({required this.items, required this.nextCursor});
+}
+
+/// EPIC-M3.8 — one cursor-paginated page of [ActivePrediction]s
+/// (`GET /predictions/active`).
+class ActivePredictionsPage {
+  final List<ActivePrediction> items;
+  final String? nextCursor;
+
+  const ActivePredictionsPage({required this.items, required this.nextCursor});
 }
 
 /// EPIC-M1.148 — repository boundary over EPIC-M1.147's real, merged
@@ -71,5 +81,35 @@ class TrackingRepository {
       items: items,
       nextCursor: response.meta['nextCursor'] as String?,
     );
+  }
+
+  /// EPIC-M3.8 — `GET /predictions/active`: the compact live-monitoring
+  /// feed (current price/target/SL distances, horizon remaining, Trust,
+  /// M1.119-sourced status). Distinct from [fetchPredictions] above
+  /// (EPIC-M1.147's historical predicted-vs-realized track record).
+  Future<ActivePredictionsPage> fetchActivePredictions({
+    String? cursor,
+    int pageSize = 10,
+  }) async {
+    final response = await _client.get(
+      '/predictions/active',
+      query: {'pageSize': pageSize.toString(), 'cursor': ?cursor},
+    );
+    final items = (response.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(ActivePrediction.fromJson)
+        .toList();
+    return ActivePredictionsPage(
+      items: items,
+      nextCursor: response.meta['nextCursor'] as String?,
+    );
+  }
+
+  /// EPIC-M3.8 — `GET /predictions/active/{predictionId}`: a fresh, single
+  /// re-fetch for the detail view (drill-down from the live feed always
+  /// re-reads server freshness rather than reusing the list's snapshot).
+  Future<ActivePrediction> fetchActivePrediction(int predictionId) async {
+    final response = await _client.get('/predictions/active/$predictionId');
+    return ActivePrediction.fromJson(response.data as Map<String, dynamic>);
   }
 }
