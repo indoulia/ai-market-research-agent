@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: market-agent-web
+  namespace: market-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: market-agent-web
+  template:
+    metadata:
+      labels:
+        app: market-agent-web
+    spec:
+      containers:
+        - name: web
+          image: market-agent-web:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: market-agent-web
+  namespace: market-agent
+spec:
+  selector:
+    app: market-agent-web
+  ports:
+    - port: 80
+      targetPort: 80
