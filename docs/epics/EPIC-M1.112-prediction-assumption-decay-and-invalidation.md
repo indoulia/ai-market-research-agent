@@ -1,7 +1,7 @@
 # EPIC-M1.112 — Prediction Assumption Decay & Invalidation
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -20,7 +20,7 @@ M1.65, M1.105, M1.106, M1.110.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #197 (`0d7b84d`).
 
 **Implementation:**
 - `app/assumption_decay_tracker.py`: a new, versioned (`DECAY_RULE_VERSION = "ADT-001"`) module.
