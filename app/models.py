@@ -1914,3 +1914,21 @@ class OrchestrationExecution(Base):
     failure_reason: Mapped[str | None] = mapped_column(String(256))
     orchestration_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PredictionOutcomeEvent(Base):
+    __tablename__ = "prediction_outcome_events"
+    __table_args__ = (
+        Index("ix_prediction_outcome_events_prediction_id", "prediction_id"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    state: Mapped[str] = mapped_column(String(32))
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    observed_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    provider: Mapped[str | None] = mapped_column(String(64))
+    prediction_version: Mapped[str] = mapped_column(String(64))
+    evidence: Mapped[dict] = mapped_column(JSON)
+    monitor_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
