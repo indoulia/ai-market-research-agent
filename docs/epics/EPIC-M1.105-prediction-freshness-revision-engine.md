@@ -1,7 +1,7 @@
 # EPIC-M1.105 — Prediction Freshness & Revision Engine
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -20,7 +20,7 @@ M1.54, M1.62, M1.78, M1.101, M1.103.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #165 (`65b81b8`).
 
 **Implementation:**
 - `app/prediction_freshness_engine.py`: a new, versioned (`FRESHNESS_ENGINE_VERSION = "PFE-001"`) module composing M1.62's already-merged `revalidate_recommendation` (`UNCHANGED`/`UPDATED`/`WITHDRAWN`/`EXPIRED`, reused unchanged and itself idempotent) with the two newer evidence sources M1.62 predates and has no way to know about: M1.101's per-feature/coverage drift `trust_reduction_recommended` signals, and M1.103's fundamental provider `MATERIAL_DISAGREEMENT` verdict for the same stock.
