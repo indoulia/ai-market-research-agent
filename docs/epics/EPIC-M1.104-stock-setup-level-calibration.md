@@ -1,7 +1,7 @@
 # EPIC-M1.104 — Stock & Setup-Level Calibration
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -19,7 +19,7 @@ M1.75, M1.77, M1.79, M1.82, M1.100.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #163 (`3aa8703`).
 
 **Implementation:**
 - `app/segment_calibration.py`: a new, versioned (`SEGMENT_CALIBRATION_VERSION = "SGC-001"`) module. Reuses M1.82's own `SEGMENT_SECTOR`/`SEGMENT_MARKET_CAP`/`SEGMENT_HORIZON` names and `discovery_segmentation.classify_market_cap_bucket`, and M1.85's own SMA20-distance/volume-ratio bucket thresholds for the new `SEGMENT_SETUP` combination, and M1.11's own calibration verdict vocabulary/`MATERIAL_ERROR_THRESHOLD`/`MIN_SAMPLE_SIZE` — nothing redefined.
