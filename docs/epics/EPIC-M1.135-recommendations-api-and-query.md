@@ -1,8 +1,8 @@
 # EPIC-M1.135 — Recommendations Query API
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #156, commit 0463ba8)
 **Priority:** P0
 
 ## Objective
