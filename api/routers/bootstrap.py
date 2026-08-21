@@ -22,10 +22,10 @@ router = APIRouter(prefix="/app", tags=["app"])
 # Flipped to True as each dependent API epic merges into main.
 CAPABILITIES = ApiCapabilities(
     recommendations=True,
-    discovery=False,
-    marketSummary=False,
-    news=False,
-    events=False,
+    discovery=True,
+    marketSummary=True,
+    news=True,
+    events=True,
     feedback=False,
     preferences=False,
     auth=False,

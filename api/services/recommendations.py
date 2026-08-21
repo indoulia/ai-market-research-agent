@@ -31,18 +31,13 @@ session").
 
 from __future__ import annotations
 
-import base64
-import binascii
-import json
 from dataclasses import dataclass
-from datetime import datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
-from sqlalchemy import and_, case, func, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
 from app.confidence_quality import CONFIDENCE_QUALITY_VERSION
-from app.discovery_segmentation import BUCKET_UNCLASSIFIED, MARKET_CAP_BUCKET_THRESHOLDS
 from app.lifecycle import OPEN_STATES
 from app.models import (
     ConfidenceQualityClassification,
@@ -69,6 +64,8 @@ from .context_summaries import (
     market_summary,
     news_summary,
 )
+from .keyset import decode_cursor, encode_cursor, keyset_predicate
+from .segmentation import market_cap_bucket_expr
 
 SORT_FIELDS = ("score", "trust", "upside", "confidence", "updatedAt")
 DIRECTIONS = ("asc", "desc")
@@ -95,16 +92,6 @@ class RecommendationPage:
     next_cursor: str | None
 
 
-def _market_cap_bucket_expr():
-    """SQL equivalent of `app.discovery_segmentation.classify_market_cap_bucket`,
-    reusing its canonical thresholds/vocabulary (bug fix from EPIC-M1.135: this
-    module originally invented its own absolute-currency thresholds, silently
-    incompatible with `Stock.market_cap`'s actual INR-crore unit -- see M1.137's
-    completion report)."""
-    return case(
-        *[(Stock.market_cap >= threshold, bucket) for threshold, bucket in MARKET_CAP_BUCKET_THRESHOLDS],
-        else_=BUCKET_UNCLASSIFIED,
-    )
 
 
 def _sort_expr(sort: str, *, publication, trust, lifecycle):
@@ -119,59 +106,6 @@ def _sort_expr(sort: str, *, publication, trust, lifecycle):
     if sort == "updatedAt":
         return func.coalesce(lifecycle.last_checked_at, lifecycle.created_at)
     raise ValidationError(f"Unknown sort field '{sort}'.", field_errors={"sort": f"must be one of {SORT_FIELDS}"})
-
-
-def _encode_cursor(sort_value, row_id: int) -> str:
-    if isinstance(sort_value, datetime):
-        serialized = sort_value.isoformat()
-    elif isinstance(sort_value, Decimal):
-        serialized = str(sort_value)
-    elif sort_value is None:
-        serialized = None
-    else:
-        serialized = str(sort_value)
-    raw = json.dumps({"v": serialized, "id": row_id}, separators=(",", ":")).encode("utf-8")
-    return base64.urlsafe_b64encode(raw).decode("ascii")
-
-
-def _decode_cursor(cursor: str, sort: str) -> tuple[object, int]:
-    try:
-        raw = base64.urlsafe_b64decode(cursor.encode("ascii"))
-        payload = json.loads(raw)
-        value, row_id = payload["v"], int(payload["id"])
-    except (ValueError, KeyError, TypeError, binascii.Error, json.JSONDecodeError) as exc:
-        raise ValidationError("Invalid cursor.", field_errors={"cursor": "malformed"}) from exc
-
-    if value is None:
-        return None, row_id
-    try:
-        if sort == "updatedAt":
-            return datetime.fromisoformat(value), row_id
-        return Decimal(value), row_id
-    except (ValueError, InvalidOperation) as exc:
-        raise ValidationError("Invalid cursor.", field_errors={"cursor": "malformed"}) from exc
-
-
-def _keyset_predicate(sort_expr, id_col, cursor_value, cursor_id: int, *, descending: bool):
-    # The `id_col != cursor_id` guard is load-bearing, not defensive
-    # decoration: SQLite stores Numeric columns as raw floats, and
-    # SQLAlchemy quantizes the *Python* Decimal it hands back to the
-    # column's declared scale (6 places) -- so the cursor's sort value
-    # (derived from that quantized Decimal) can differ from the row's
-    # true stored value by less than one part in a million. That's
-    # normally invisible, but it means the previous page's own boundary
-    # row can spuriously satisfy `sort_expr < cursor_value` again on the
-    # next page. Excluding the boundary row's id explicitly closes that
-    # hole regardless of the comparison outcome.
-    if descending:
-        return and_(
-            or_(sort_expr < cursor_value, and_(sort_expr == cursor_value, id_col < cursor_id)),
-            id_col != cursor_id,
-        )
-    return and_(
-        or_(sort_expr > cursor_value, and_(sort_expr == cursor_value, id_col > cursor_id)),
-        id_col != cursor_id,
-    )
 
 
 def list_recommendations(session: Session, query: RecommendationQuery) -> RecommendationPage:
@@ -262,7 +196,7 @@ def list_recommendations(session: Session, query: RecommendationQuery) -> Recomm
     if query.industry is not None:
         stmt = stmt.where(Stock.industry == query.industry)
     if query.market_cap_bucket is not None:
-        stmt = stmt.where(_market_cap_bucket_expr() == query.market_cap_bucket)
+        stmt = stmt.where(market_cap_bucket_expr(Stock.market_cap) == query.market_cap_bucket)
     if query.min_score is not None:
         stmt = stmt.where(PositiveOpportunityRanking.composite_score >= query.min_score)
     if query.min_trust is not None:
@@ -273,9 +207,9 @@ def list_recommendations(session: Session, query: RecommendationQuery) -> Recomm
     id_col = RecommendationGeneration.id
 
     if query.cursor:
-        cursor_value, cursor_id = _decode_cursor(query.cursor, query.sort)
+        cursor_value, cursor_id = decode_cursor(query.cursor, is_datetime=query.sort == "updatedAt")
         if cursor_value is not None:
-            stmt = stmt.where(_keyset_predicate(sort_expr, id_col, cursor_value, cursor_id, descending=descending))
+            stmt = stmt.where(keyset_predicate(sort_expr, id_col, cursor_value, cursor_id, descending=descending))
 
     order_expr = sort_expr.desc() if descending else sort_expr.asc()
     id_order = id_col.desc() if descending else id_col.asc()
@@ -340,6 +274,6 @@ def list_recommendations(session: Session, query: RecommendationQuery) -> Recomm
             "confidence": last["confidence"],
             "updatedAt": last["last_checked_at"] or last["lifecycle_created_at"],
         }[query.sort]
-        next_cursor = _encode_cursor(last_sort_value, last["recommendation_id"])
+        next_cursor = encode_cursor(last_sort_value, last["recommendation_id"])
 
     return RecommendationPage(items=items, next_cursor=next_cursor)
