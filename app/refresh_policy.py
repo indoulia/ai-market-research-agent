@@ -173,6 +173,7 @@ def record_fetch_attempt(
     source_timestamp: datetime | None,
     success: bool,
     failure_reason: str | None = None,
+    provider_id: str | None = None,
 ) -> DataFetchAttempt:
     """Record one refresh attempt. Avoids an unnecessary duplicate fetch
     (scope item: "avoid unnecessary duplicate fetches"): if the most recent
@@ -180,7 +181,13 @@ def record_fetch_attempt(
     as of `requested_at` under this data type's own policy, that existing
     attempt is returned unchanged rather than recording a redundant one.
     Every recorded attempt (successful or failed) is immutable once created
-    -- there is no update path in this module at all, only inserts."""
+    -- there is no update path in this module at all, only inserts.
+
+    `provider_id` (EPIC-M1.93) is optional and additive: callers that
+    identify which concrete adapter made the attempt (its `source`, per
+    M1.90's provider contract) should pass it so quality/reliability can be
+    segmented per provider, not just per data type; existing callers that
+    omit it are unaffected."""
     if data_type not in FRESHNESS_POLICY:
         raise UnsupportedDataTypeError(f"no freshness policy defined for data type: {data_type}")
 
@@ -206,6 +213,7 @@ def record_fetch_attempt(
         success=success,
         failure_reason=failure_reason,
         refresh_policy_version=REFRESH_POLICY_VERSION,
+        provider_id=provider_id,
     )
     session.add(attempt)
     session.commit()

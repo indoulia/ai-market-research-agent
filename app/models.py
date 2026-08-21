@@ -290,6 +290,7 @@ class DataFetchAttempt(Base):
     success: Mapped[bool] = mapped_column(Boolean)
     failure_reason: Mapped[str | None] = mapped_column(String(128))
     refresh_policy_version: Mapped[str] = mapped_column(String(32))
+    provider_id: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
