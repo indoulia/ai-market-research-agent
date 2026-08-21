@@ -138,6 +138,20 @@ def test_put_preferences_invalid_horizon_rejected(client, session):
     assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
 
 
+def test_put_preferences_rejects_oversized_tag_list(client, session):
+    body = {"defaultHorizon": 1, "watchlist": [f"SYM{i}" for i in range(201)]}
+    response = client.put("/api/v1/preferences", json=body, headers=_auth(session))
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
+
+
+def test_put_preferences_rejects_oversized_tag_string(client, session):
+    body = {"defaultHorizon": 1, "watchlist": ["X" * 65]}
+    response = client.put("/api/v1/preferences", json=body, headers=_auth(session))
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
+
+
 def test_preferences_are_isolated_per_user(client, session):
     client.put("/api/v1/preferences", json={"defaultHorizon": 7, "watchlist": ["ZZZ"]}, headers=_auth(session, "user-a"))
     response = client.get("/api/v1/preferences", headers=_auth(session, "user-b"))
@@ -193,6 +207,17 @@ def test_feedback_stale_prediction_version_rejected(client, session):
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "MRA_STALE_PREDICTION_VERSION"
+
+
+def test_feedback_rejects_oversized_comment(client, session):
+    prediction, generation = _make_recommendation(session)
+    response = client.post(
+        f"/api/v1/recommendations/{generation.id}/feedback",
+        json={"type": "useful", "comment": "x" * 2001, "predictionVersion": prediction.model_version},
+        headers=_auth(session),
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
 
 
 def test_feedback_not_found_recommendation(client, session):
