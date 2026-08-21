@@ -161,3 +161,44 @@ def test_rate_limiter_resets_after_window():
     limiter = RateLimiter(limit=1, window_seconds=10)
     limiter.check("caller-b", now=0.0)
     limiter.check("caller-b", now=11.0)  # new window, should not raise
+
+
+def test_rate_limiter_evicts_stale_keys_so_memory_does_not_grow_unbounded():
+    """Found in the 2026-08-21 QA/integration audit: `_hits` previously kept an
+    entry forever for every distinct key ever seen. Once a key's window has
+    expired, later `check()` calls for OTHER keys should reclaim it."""
+    limiter = RateLimiter(limit=10, window_seconds=60)
+    for i in range(500):
+        limiter.check(f"caller-{i}", now=0.0)
+    assert limiter.tracked_key_count() == 500
+
+    # All 500 windows are now expired; touching one new key should sweep them.
+    limiter.check("caller-new", now=1000.0)
+    assert limiter.tracked_key_count() == 1
+
+
+def test_rate_limiter_caps_tracked_keys_even_within_a_single_live_window():
+    """Backstop for many distinct keys arriving within one still-live window
+    (expiry-based eviction alone can't bound this case)."""
+    limiter = RateLimiter(limit=10, window_seconds=60, max_tracked_keys=100)
+    for i in range(150):
+        limiter.check(f"caller-{i}", now=0.0)
+    assert limiter.tracked_key_count() == 100
+
+
+def test_rate_limiter_eviction_does_not_disturb_an_active_caller_within_the_cap():
+    limiter = RateLimiter(limit=5, window_seconds=60, max_tracked_keys=3)
+    limiter.check("keep-me", now=0.0)
+    limiter.check("keep-me", now=1.0)
+    limiter.check("other-1", now=2.0)
+    limiter.check("other-2", now=3.0)
+
+    limiter.check("keep-me", now=4.0)  # re-touching moves it to most-recently-used
+    limiter.check("other-3", now=5.0)  # pushes the map to 4 entries -> evicts oldest untouched
+
+    assert limiter.tracked_key_count() == 3
+    # "keep-me" was touched most recently among the original three, so it survives
+    # and its count (3 checks so far) is preserved rather than reset.
+    with pytest.raises(Exception):
+        for _ in range(3):
+            limiter.check("keep-me", now=5.0)
