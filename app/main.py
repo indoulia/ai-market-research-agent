@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 from .db import SessionLocal
+from api.app import register_api
 
 app = FastAPI(title="Market Agent M1", version="0.1.0")
+register_api(app)
 
 @app.get("/health")
 def health():

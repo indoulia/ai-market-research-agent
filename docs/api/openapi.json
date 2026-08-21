@@ -1,0 +1,253 @@
+{
+  "components": {
+    "schemas": {
+      "ApiCapabilities": {
+        "properties": {
+          "analytics": {
+            "title": "Analytics",
+            "type": "boolean"
+          },
+          "auth": {
+            "title": "Auth",
+            "type": "boolean"
+          },
+          "discovery": {
+            "title": "Discovery",
+            "type": "boolean"
+          },
+          "events": {
+            "title": "Events",
+            "type": "boolean"
+          },
+          "feedback": {
+            "title": "Feedback",
+            "type": "boolean"
+          },
+          "marketSummary": {
+            "title": "Marketsummary",
+            "type": "boolean"
+          },
+          "news": {
+            "title": "News",
+            "type": "boolean"
+          },
+          "preferences": {
+            "title": "Preferences",
+            "type": "boolean"
+          },
+          "recommendations": {
+            "title": "Recommendations",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "recommendations",
+          "discovery",
+          "marketSummary",
+          "news",
+          "events",
+          "feedback",
+          "preferences",
+          "auth",
+          "analytics"
+        ],
+        "title": "ApiCapabilities",
+        "type": "object"
+      },
+      "BootstrapResponse": {
+        "properties": {
+          "apiVersion": {
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/ApiCapabilities"
+          },
+          "contractVersion": {
+            "title": "Contractversion",
+            "type": "string"
+          },
+          "serverTime": {
+            "$ref": "#/components/schemas/ServerTime"
+          }
+        },
+        "required": [
+          "apiVersion",
+          "contractVersion",
+          "serverTime",
+          "capabilities"
+        ],
+        "title": "BootstrapResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "apiVersion": {
+            "title": "Apiversion",
+            "type": "string"
+          },
+          "component": {
+            "title": "Component",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "component",
+          "apiVersion"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "Meta": {
+        "properties": {
+          "requestId": {
+            "title": "Requestid",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "requestId",
+          "timestamp"
+        ],
+        "title": "Meta",
+        "type": "object"
+      },
+      "ServerTime": {
+        "properties": {
+          "utc": {
+            "title": "Utc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "utc"
+        ],
+        "title": "ServerTime",
+        "type": "object"
+      },
+      "SuccessEnvelope_BootstrapResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BootstrapResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[BootstrapResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_HealthResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/HealthResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[HealthResponse]",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Market Agent M1",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/models": {
+      "get": {
+        "operationId": "models_api_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Models"
+      }
+    },
+    "/api/v1/app/bootstrap": {
+      "get": {
+        "operationId": "get_bootstrap_api_v1_app_bootstrap_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_BootstrapResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Bootstrap",
+        "tags": [
+          "app"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "get_health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_HealthResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    }
+  }
+}
