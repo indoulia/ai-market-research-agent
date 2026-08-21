@@ -1,7 +1,8 @@
 # EPIC-M1.81 — Positive-Only Recommendation Gate & Abstention
 
-**Status:** READY_FOR_APPROVAL
-**Execution Status:** NOT_READY
+**Status:** APPROVED
+**Execution Status:** READY_FOR_EXECUTION
+**Approved By:** User
 **Priority:** P0
 
 ## Objective
