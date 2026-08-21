@@ -35,6 +35,7 @@ from app.opportunity_ranking import rank_positive_opportunities
 from app.outcomes import evaluate_recommendation
 from app.positive_recommendation_gate import evaluate_positive_gate
 from app.prediction_freshness_engine import FRESHNESS_ENGINE_VERSION, TRIGGER_FEATURE_DRIFT_DETECTED
+from app.prediction_lifecycle_capacity import STATE_ACTIVE, STATE_CREATED
 from app.prediction_trust_score import PREDICTION_TRUST_SCORE_VERSION
 from app.recommendation_revision import REASON_MATERIAL_EVIDENCE_CHANGE, create_recommendation_revision
 
@@ -153,13 +154,36 @@ def test_detail_returns_full_field_shape(client, session):
     data = response.json()["data"]
     assert data["id"] == generation.id
     assert data["symbol"] == "AAA"
-    assert data["status"] == STATE_ISSUED
+    # M1.110's classifier is now authoritative (see api/services/recommendation_detail.py):
+    # a RecommendationLifecycle row existing with no outcome/revalidation/revision yet
+    # classifies as ACTIVE, regardless of that row's own internal M1.15 state value.
+    assert data["status"] == STATE_ACTIVE
     assert data["evidenceStrength"] == STATE_SUFFICIENT
     assert data["trustScore"] == "0.90000000"
     assert data["liquidity"] == "NORMAL"  # volume_ratio_20d=1.10 -> NORMAL bucket
     assert data["benchmarkRelative"] is None  # M1.129 not implemented -- honest gap
     assert data["providerEvidence"] == []  # no RecommendationDecisionTrace captured in this test
     assert Decimal(data["targetPrice"]) > Decimal(data["entryPrice"])
+
+
+def test_detail_status_is_deterministic_regardless_of_lifecycle_row_presence(client, session):
+    """Found in the 2026-08-21 QA/integration audit: `status` previously read
+    `lifecycle.state if lifecycle else active.status` -- two different vocabularies
+    depending on incidental RecommendationLifecycle row presence. Two predictions in
+    the identical real state (no outcome/revalidation/revision yet) must report the
+    same status whether or not a RecommendationLifecycle row happens to exist."""
+    stock = _make_stock(session, symbol="NOLC")
+    prediction, generation, scan = _make_prediction(session, stock)
+    # deliberately no evidence/trust/gate/ranking/lifecycle rows at all
+
+    response = client.get(f"/api/v1/recommendations/{generation.id}")
+    assert response.status_code == 200
+    assert response.json()["data"]["status"] == STATE_CREATED
+
+    _add_lifecycle(session, generation)  # now a RecommendationLifecycle row exists
+
+    response = client.get(f"/api/v1/recommendations/{generation.id}")
+    assert response.json()["data"]["status"] == STATE_ACTIVE
 
 
 def test_detail_reflects_active_revision_not_original(client, session):
