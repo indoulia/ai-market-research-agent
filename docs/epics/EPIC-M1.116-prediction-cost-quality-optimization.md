@@ -1,7 +1,7 @@
 # EPIC-M1.116 — Prediction Cost & Quality Optimization
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -20,7 +20,7 @@ M1.93, M1.94, M1.103, M1.114.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #216.
 
 **Implementation:**
 - `app/cost_quality_optimization.py`: a new, versioned (`COST_QUALITY_VERSION = "CQO-001"`) module.
