@@ -8,6 +8,7 @@ import '../shared/recommendation_lookup.dart';
 import 'discoveries_repository.dart';
 import 'discovery_card.dart';
 import 'discovery_item.dart';
+import 'discovery_pipeline_panel.dart';
 
 enum _LoadState { loading, error, loaded }
 
@@ -18,8 +19,17 @@ const _bucketOptions = [
   MraFilterOption('SMALL_CAP', 'Small cap'),
 ];
 
-/// EPIC-M1.140 — Discover screen: search + filter bar over EPIC-M1.139's
-/// `GET /api/v1/discoveries`.
+// EPIC-M3.6 "discovery basis" filter -- the fixed, small vocabulary of
+// `app.discovery.SOURCE_*` values, same treatment as `_bucketOptions`.
+const _basisOptions = [
+  MraFilterOption('ALL', 'Any basis'),
+  MraFilterOption('DAILY_UNIVERSE_SCAN', 'Universe scan'),
+  MraFilterOption('CHATGPT', 'AI research'),
+  MraFilterOption('WATCHLIST', 'Watchlist'),
+];
+
+/// EPIC-M1.140 / EPIC-M3.6 — Discover screen: search + filter bar +
+/// discovery-pipeline summary over `GET /api/v1/discovery/candidates`.
 class DiscoverScreen extends StatefulWidget {
   final DiscoveriesRepository? repository;
   final RecommendationsRepository? recommendationsRepository;
@@ -46,6 +56,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   bool _loadingMore = false;
   ApiException? _error;
   String _bucket = 'ALL';
+  String _basis = 'ALL';
   String _query = '';
 
   @override
@@ -81,6 +92,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     try {
       final page = await _repository.fetchPage(
         marketCapBucket: _bucket == 'ALL' ? null : _bucket,
+        discoveryBasis: _basis == 'ALL' ? null : _basis,
       );
       setState(() {
         _items = page.items;
@@ -100,6 +112,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     try {
       final page = await _repository.fetchPage(
         marketCapBucket: _bucket == 'ALL' ? null : _bucket,
+        discoveryBasis: _basis == 'ALL' ? null : _basis,
         cursor: _nextCursor,
       );
       setState(() {
@@ -117,6 +130,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     _load();
   }
 
+  void _onBasisChanged(String id) {
+    setState(() => _basis = id);
+    _load();
+  }
+
   List<DiscoveryItem> get _filteredItems {
     if (_query.isEmpty) return _items;
     final q = _query.toLowerCase();
@@ -130,10 +148,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   }
 
   Future<void> _onCardTap(DiscoveryItem item) async {
-    final id = await findRecommendationIdBySymbol(
-      _recommendationsRepository,
-      item.symbol,
-    );
+    // EPIC-M3.6: a PUBLISHED candidate already carries its recommendation
+    // id -- no extra lookup request needed for that (the common) case.
+    final id =
+        item.publishedRecommendationId ??
+        await findRecommendationIdBySymbol(
+          _recommendationsRepository,
+          item.symbol,
+        );
     if (!mounted) return;
     if (id != null) {
       context.push('/discover/recommendation/$id');
@@ -159,6 +181,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(child: _buildHeader(context)),
+              SliverToBoxAdapter(
+                child: DiscoveryPipelinePanel(repository: _repository),
+              ),
               ..._buildBody(context, columns),
             ],
           ),
@@ -192,6 +217,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             options: _bucketOptions,
             selectedIds: {_bucket},
             onToggle: _onBucketChanged,
+          ),
+          const SizedBox(height: MraSpacing.sm),
+          MraFilterBar(
+            options: _basisOptions,
+            selectedIds: {_basis},
+            onToggle: _onBasisChanged,
           ),
         ],
       ),
