@@ -82,12 +82,22 @@ from ..schemas.recommendation_detail import (
     EVENT_TYPE_NEWS,
     EVENT_TYPE_REANALYSIS_TRIGGER,
     OUTCOME_STATUS_PENDING,
+    TIMELINE_REASON_INITIAL_PREDICTION,
     EventItem,
+    EvidenceResponse,
     HistoryItem,
     OutcomeResponse,
     RecommendationDetail,
+    TimelineItem,
 )
-from .context_summaries import event_summary, fundamental_summary, latest_market_price_pair, market_summary, news_summary
+from .context_summaries import (
+    event_summary,
+    evidence_freshness,
+    fundamental_summary,
+    latest_market_price_pair,
+    market_summary,
+    news_summary,
+)
 
 
 def _as_aware_utc(value: datetime | None) -> datetime | None:
@@ -190,6 +200,7 @@ def get_detail(session: Session, recommendation_id: int) -> RecommendationDetail
         liquidity=liquidity,
         providerEvidence=list(decision_trace.evidence_categories_snapshot) if decision_trace else [],
         status=lifecycle.state if lifecycle else active.status,
+        evidenceFreshness=evidence_freshness(session, active.id),
     )
 
 
@@ -263,6 +274,102 @@ def get_history(session: Session, recommendation_id: int, *, from_ts=None, to_ts
 
     next_cursor = encode_offset_cursor(offset + page_size) if offset + page_size < len(filtered) else None
     return HistoryPage(items=items, next_cursor=next_cursor)
+
+
+def _affected_metrics(session: Session, comparison, previous_prediction_id: int, revised_prediction_id: int) -> list[str]:
+    """Which specific metrics a revision actually moved -- lets the UI
+    answer "why did target/SL/confidence/Trust change" (M3.4 AC) without
+    re-deriving deltas itself from raw before/after values."""
+    metrics: list[str] = []
+    if comparison.opportunity_score_delta != 0:
+        metrics.append("score")
+    if comparison.confidence_delta != 0:
+        metrics.append("confidence")
+    if comparison.predicted_probability_delta != 0:
+        metrics.append("probability")
+    if comparison.target_return_delta != 0:
+        metrics.append("targetPrice")
+    if comparison.stop_return_delta != 0:
+        metrics.append("stopLoss")
+    if comparison.horizon_changed:
+        metrics.append("horizonDays")
+    if _latest_trust(session, previous_prediction_id) != _latest_trust(session, revised_prediction_id):
+        metrics.append("trustScore")
+    return metrics
+
+
+def get_timeline(session: Session, recommendation_id: int) -> list[TimelineItem]:
+    """EPIC-M3.4: the full, ordered prediction-version timeline. Unlike
+    `/history` (paginated, revisions-only), this always starts with
+    version 1 -- the original prediction, which is never itself a
+    `RecommendationRevision` row -- so a caller can reconstruct the whole
+    lifecycle (AC: "reconstruct why target/SL/confidence/Trust changed")
+    from one call. Small and bounded (a recommendation is rarely revised
+    more than a handful of times), so unlike `/history`/`/events` this is
+    not cursor-paginated."""
+    generation = _resolve_generation(session, recommendation_id)
+    original = session.get(Prediction, generation.prediction_id)
+    revisions = get_revision_history(session, generation.prediction_id)
+
+    target_price, stop_loss, _upside = _target_stop_upside(session, original)
+    items = [
+        TimelineItem(
+            version=1,
+            timestamp=generation.created_at,
+            reason=TIMELINE_REASON_INITIAL_PREDICTION,
+            changeSummary="Initial prediction.",
+            affectedMetrics=[],
+            price=original.entry_price,
+            targetPrice=target_price,
+            stopLoss=stop_loss,
+            probability=original.predicted_probability,
+            score=_latest_ranking_score(session, original.id),
+            confidence=original.confidence,
+            trustScore=_latest_trust(session, original.id),
+        )
+    ]
+    for revision in revisions:
+        comparison = compare_versions(session, revision)
+        revised = session.get(Prediction, revision.revised_prediction_id)
+        target_price, stop_loss, _upside = _target_stop_upside(session, revised)
+        items.append(
+            TimelineItem(
+                version=revision.version_number,
+                timestamp=revision.revised_at,
+                reason=revision.revision_reason,
+                changeSummary=_change_summary(comparison),
+                affectedMetrics=_affected_metrics(
+                    session, comparison, revision.previous_prediction_id, revision.revised_prediction_id
+                ),
+                price=revised.entry_price,
+                targetPrice=target_price,
+                stopLoss=stop_loss,
+                probability=revised.predicted_probability,
+                score=_latest_ranking_score(session, revised.id),
+                confidence=revised.confidence,
+                trustScore=_latest_trust(session, revised.id),
+            )
+        )
+    return items
+
+
+def get_evidence(session: Session, recommendation_id: int) -> EvidenceResponse:
+    """EPIC-M3.4: the evidence/provenance subset of `/{id}`'s detail
+    payload, as its own contract. Delegates to `get_detail` rather than
+    re-querying, so this is always exactly consistent with what the
+    detail endpoint shows -- never a second, independently-computed
+    source of truth for the same evidence fields."""
+    detail = get_detail(session, recommendation_id)
+    return EvidenceResponse(
+        fundamental=detail.fundamental,
+        technical=detail.technical,
+        market=detail.market,
+        news=detail.news,
+        events=detail.events,
+        evidenceStrength=detail.evidenceStrength,
+        liquidity=detail.liquidity,
+        providerEvidence=detail.providerEvidence,
+    )
 
 
 @dataclass

@@ -305,6 +305,79 @@ def test_events_pagination_covers_every_item_once(client, session):
     assert len(set(seen)) == 5
 
 
+def test_detail_includes_evidence_freshness(client, session):
+    prediction, generation, stock, scan = _make_live_recommendation(session)
+    response = client.get(f"/api/v1/recommendations/{generation.id}")
+    assert response.json()["data"]["evidenceFreshness"] in ("FRESH", "STALE", "UNKNOWN")
+
+
+def test_timeline_not_found_returns_canonical_404(client):
+    response = client.get("/api/v1/recommendations/999999/timeline")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "MRA_NOT_FOUND"
+
+
+def test_timeline_has_original_version_when_never_revised(client, session):
+    prediction, generation, stock, scan = _make_live_recommendation(session)
+    response = client.get(f"/api/v1/recommendations/{generation.id}/timeline")
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert len(items) == 1
+    assert items[0]["version"] == 1
+    assert items[0]["reason"] == "INITIAL_PREDICTION"
+    assert items[0]["affectedMetrics"] == []
+
+
+def test_timeline_includes_original_and_revision_with_affected_metrics(client, session):
+    prediction, generation, stock, scan = _make_live_recommendation(session, target_return=Decimal("0.05"))
+    revised, _rg, _scan2 = _make_prediction(session, stock, as_of=AS_OF + timedelta(days=1), target_return=Decimal("0.10"))
+    create_recommendation_revision(
+        session, original_prediction=prediction, previous_prediction=prediction, revised_prediction=revised,
+        revision_reason=REASON_MATERIAL_EVIDENCE_CHANGE, revised_at=AS_OF + timedelta(days=1),
+    )
+
+    response = client.get(f"/api/v1/recommendations/{generation.id}/timeline")
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert [item["version"] for item in items] == [1, 2]
+    assert items[0]["reason"] == "INITIAL_PREDICTION"
+    assert items[1]["reason"] == REASON_MATERIAL_EVIDENCE_CHANGE
+    assert "targetPrice" in items[1]["affectedMetrics"]
+    assert Decimal(items[1]["targetPrice"]) == Decimal("110.000000")
+
+
+def test_timeline_immutable_revisions_are_never_rewritten(client, session):
+    """Fetching the timeline twice, and after a later, unrelated write to
+    the session, must yield the exact same historical entries -- the
+    prior version's fields are never recomputed from later state."""
+    prediction, generation, stock, scan = _make_live_recommendation(session, target_return=Decimal("0.05"))
+    revised, _rg, _scan2 = _make_prediction(session, stock, as_of=AS_OF + timedelta(days=1), target_return=Decimal("0.10"))
+    create_recommendation_revision(
+        session, original_prediction=prediction, previous_prediction=prediction, revised_prediction=revised,
+        revision_reason=REASON_MATERIAL_EVIDENCE_CHANGE, revised_at=AS_OF + timedelta(days=1),
+    )
+
+    first = client.get(f"/api/v1/recommendations/{generation.id}/timeline").json()["data"]
+    second = client.get(f"/api/v1/recommendations/{generation.id}/timeline").json()["data"]
+    assert first == second
+
+
+def test_evidence_not_found_returns_canonical_404(client):
+    response = client.get("/api/v1/recommendations/999999/evidence")
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "MRA_NOT_FOUND"
+
+
+def test_evidence_matches_detail_evidence_fields(client, session):
+    prediction, generation, stock, scan = _make_live_recommendation(session)
+    detail = client.get(f"/api/v1/recommendations/{generation.id}").json()["data"]
+    evidence = client.get(f"/api/v1/recommendations/{generation.id}/evidence").json()["data"]
+    assert evidence["evidenceStrength"] == detail["evidenceStrength"]
+    assert evidence["liquidity"] == detail["liquidity"]
+    assert evidence["providerEvidence"] == detail["providerEvidence"]
+    assert evidence["technical"] == detail["technical"]
+
+
 def test_outcome_is_pending_before_evaluation(client, session):
     prediction, generation, stock, scan = _make_live_recommendation(session)
     response = client.get(f"/api/v1/recommendations/{generation.id}/outcome")

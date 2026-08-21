@@ -4,17 +4,18 @@ import '../../core/api_exception.dart';
 import '../../design_system/design_system.dart';
 import '../feedback/recommendation_feedback_section.dart';
 import 'event_item.dart';
-import 'history_item.dart';
 import 'price_target_chart.dart';
 import 'recommendation_detail.dart';
 import 'recommendation_detail_repository.dart';
 import 'recommendation_outcome.dart';
+import 'timeline_item.dart';
 
 enum _LoadState { loading, error, loaded }
 
-/// EPIC-M1.138 — recommendation detail & longitudinal history screen.
-/// Consumes EPIC-M1.137's four contracts exactly (detail/history/events/
-/// outcome) — no client-side re-derivation of any historical value.
+/// EPIC-M3.4 — recommendation detail, evidence & prediction-version
+/// timeline screen. Consumes EPIC-M1.137's detail/events/outcome
+/// contracts plus EPIC-M3.4's own `/timeline` contract — no client-side
+/// re-derivation of any historical value.
 class RecommendationDetailScreen extends StatefulWidget {
   final int recommendationId;
   final RecommendationDetailRepository? repository;
@@ -36,7 +37,7 @@ class _RecommendationDetailScreenState
 
   _LoadState _state = _LoadState.loading;
   RecommendationDetail? _detail;
-  List<RecommendationHistoryItem> _history = const [];
+  List<RecommendationTimelineItem> _timeline = const [];
   List<RecommendationEventItem> _events = const [];
   RecommendationOutcome? _outcome;
   ApiException? _error;
@@ -53,13 +54,13 @@ class _RecommendationDetailScreenState
     try {
       final results = await Future.wait([
         _repository.fetchDetail(widget.recommendationId),
-        _repository.fetchHistory(widget.recommendationId, pageSize: 50),
+        _repository.fetchTimeline(widget.recommendationId),
         _repository.fetchEvents(widget.recommendationId, pageSize: 20),
         _repository.fetchOutcome(widget.recommendationId),
       ]);
       setState(() {
         _detail = results[0] as RecommendationDetail;
-        _history = (results[1] as HistoryPage).items;
+        _timeline = results[1] as List<RecommendationTimelineItem>;
         _events = (results[2] as EventsPage).items;
         _outcome = results[3] as RecommendationOutcome;
         _state = _LoadState.loaded;
@@ -84,7 +85,7 @@ class _RecommendationDetailScreenState
         ),
         _LoadState.loaded => _DetailBody(
           detail: _detail!,
-          history: _history,
+          timeline: _timeline,
           events: _events,
           outcome: _outcome!,
         ),
@@ -113,13 +114,13 @@ class _LoadingBody extends StatelessWidget {
 
 class _DetailBody extends StatelessWidget {
   final RecommendationDetail detail;
-  final List<RecommendationHistoryItem> history;
+  final List<RecommendationTimelineItem> timeline;
   final List<RecommendationEventItem> events;
   final RecommendationOutcome outcome;
 
   const _DetailBody({
     required this.detail,
-    required this.history,
+    required this.timeline,
     required this.events,
     required this.outcome,
   });
@@ -136,7 +137,11 @@ class _DetailBody extends StatelessWidget {
             const SizedBox(height: MraSpacing.lg),
             _MetricGrid(detail: detail),
             const SizedBox(height: MraSpacing.lg),
-            _ChartSection(detail: detail, history: history),
+            _WhySelectedSection(detail: detail),
+            const SizedBox(height: MraSpacing.lg),
+            _WhatChangedSection(timeline: timeline),
+            const SizedBox(height: MraSpacing.lg),
+            _ChartSection(detail: detail, timeline: timeline),
             const SizedBox(height: MraSpacing.lg),
             _OutcomeSection(outcome: outcome, detail: detail),
             const SizedBox(height: MraSpacing.lg),
@@ -150,11 +155,20 @@ class _DetailBody extends StatelessWidget {
         final secondary = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _EvidencePanel(detail: detail),
+            MraExpandableSection(
+              title: 'Evidence & provider summary',
+              child: _EvidencePanel(detail: detail),
+            ),
             const SizedBox(height: MraSpacing.lg),
-            _EventsSection(events: events),
+            MraExpandableSection(
+              title: 'News & events',
+              child: _EventsSection(events: events),
+            ),
             const SizedBox(height: MraSpacing.lg),
-            _RevisionTimeline(history: history),
+            MraExpandableSection(
+              title: 'Prediction-version timeline',
+              child: _RevisionTimeline(timeline: timeline),
+            ),
           ],
         );
 
@@ -220,7 +234,24 @@ class _HeaderSection extends StatelessWidget {
               detail.currentPrice?.toStringAsFixed(2) ?? '—',
               style: MraTypography.numeric(theme.textTheme.headlineSmall!),
             ),
-            MraChip(label: detail.status, tone: MraChipTone.info),
+            Wrap(
+              spacing: MraSpacing.xs,
+              children: [
+                MraChip(label: detail.status, tone: MraChipTone.info),
+                // EPIC-M3.4 — freshness indicator, "visibly but
+                // unobtrusively" (M1.138's own UX rule): only a confirmed
+                // "STALE" evidence state renders a badge, matching
+                // `RecommendationCard.evidenceFreshness`'s established
+                // convention (M1.144) — never claims freshness it can't
+                // confirm, never hides a stale prediction's numbers.
+                if (detail.evidenceFreshness == 'STALE')
+                  const MraChip(
+                    label: 'Stale evidence',
+                    tone: MraChipTone.warning,
+                    icon: Icons.schedule,
+                  ),
+              ],
+            ),
           ],
         ),
       ],
@@ -292,18 +323,116 @@ class _MetricGrid extends StatelessWidget {
   }
 }
 
-class _ChartSection extends StatelessWidget {
+/// EPIC-M3.4 — "Why MRA selected this opportunity": a short, synthesized
+/// narrative distinct from the raw evidence panel, composed entirely from
+/// fields the detail endpoint already returns (score/probability/
+/// confidence/evidenceStrength/fundamental/technical/market/provider
+/// evidence) — no new backend field, since this platform already expresses
+/// "why" as those structured, human-readable summaries.
+class _WhySelectedSection extends StatelessWidget {
   final RecommendationDetail detail;
-  final List<RecommendationHistoryItem> history;
-  const _ChartSection({required this.detail, required this.history});
+  const _WhySelectedSection({required this.detail});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final sorted = [...history]
+    final bullets = <String>[
+      'Probability of success ${(detail.probability * 100).toStringAsFixed(0)}%'
+          ' with a composite score of ${detail.score?.toStringAsFixed(0) ?? 'N/A'}'
+          ' and ${detail.confidence.toStringAsFixed(0)}% confidence.',
+      if (detail.evidenceStrength != null)
+        'Evidence strength: ${detail.evidenceStrength}.',
+      if (detail.fundamental != null) detail.fundamental!,
+      if (detail.technical != null) detail.technical!,
+      if (detail.market != null) detail.market!,
+      if (detail.providerEvidence.isNotEmpty)
+        'Corroborated by: ${detail.providerEvidence.join(', ')}.',
+    ];
+    return MraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Why MRA selected this opportunity',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: MraSpacing.sm),
+          for (final bullet in bullets)
+            Padding(
+              padding: const EdgeInsets.only(bottom: MraSpacing.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('•  '),
+                  Expanded(
+                    child: Text(bullet, style: theme.textTheme.bodySmall),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// EPIC-M3.4 — "What changed since previous prediction": a prominent,
+/// above-the-fold callout distinct from the full revision timeline
+/// (which stays in the secondary/progressive-disclosure panel). Reads the
+/// latest `/timeline` entry rather than re-deriving a diff client-side.
+class _WhatChangedSection extends StatelessWidget {
+  final List<RecommendationTimelineItem> timeline;
+  const _WhatChangedSection({required this.timeline});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasRevisions = timeline.length > 1;
+    final latest = hasRevisions ? timeline.last : null;
+    return MraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'What changed since previous prediction',
+            style: theme.textTheme.titleMedium,
+          ),
+          const SizedBox(height: MraSpacing.sm),
+          if (latest == null)
+            Text(
+              'No revisions yet — this is the original prediction.',
+              style: theme.textTheme.bodySmall,
+            )
+          else ...[
+            Text(latest.changeSummary, style: theme.textTheme.bodySmall),
+            const SizedBox(height: MraSpacing.sm),
+            Wrap(
+              spacing: MraSpacing.sm,
+              runSpacing: MraSpacing.sm,
+              children: [
+                for (final metric in latest.affectedMetrics)
+                  MraChip(label: metric, tone: MraChipTone.info),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartSection extends StatelessWidget {
+  final RecommendationDetail detail;
+  final List<RecommendationTimelineItem> timeline;
+  const _ChartSection({required this.detail, required this.timeline});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sorted = [...timeline]
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     final points = [
-      ...sorted.map((h) => PricePoint(h.timestamp, h.price)),
+      ...sorted.map((t) => PricePoint(t.timestamp, t.price)),
       if (detail.currentPrice != null)
         PricePoint(detail.updatedAt, detail.currentPrice!),
     ];
@@ -401,35 +530,29 @@ class _EvidencePanel extends StatelessWidget {
       'News': detail.news,
       'Evidence strength': detail.evidenceStrength,
     };
-    return MraCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Evidence & provider summary',
-            style: theme.textTheme.titleMedium,
-          ),
-          const SizedBox(height: MraSpacing.md),
-          for (final entry in sections.entries)
-            if (entry.value != null) ...[
-              Text(entry.key, style: theme.textTheme.labelLarge),
-              const SizedBox(height: MraSpacing.xs),
-              Text(entry.value!, style: theme.textTheme.bodySmall),
-              const SizedBox(height: MraSpacing.md),
-            ],
-          if (detail.providerEvidence.isNotEmpty) ...[
-            Text('Providers', style: theme.textTheme.labelLarge),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final entry in sections.entries)
+          if (entry.value != null) ...[
+            Text(entry.key, style: theme.textTheme.labelLarge),
             const SizedBox(height: MraSpacing.xs),
-            Wrap(
-              spacing: MraSpacing.sm,
-              runSpacing: MraSpacing.sm,
-              children: detail.providerEvidence
-                  .map((p) => MraChip(label: p, tone: MraChipTone.neutral))
-                  .toList(),
-            ),
+            Text(entry.value!, style: theme.textTheme.bodySmall),
+            const SizedBox(height: MraSpacing.md),
           ],
+        if (detail.providerEvidence.isNotEmpty) ...[
+          Text('Providers', style: theme.textTheme.labelLarge),
+          const SizedBox(height: MraSpacing.xs),
+          Wrap(
+            spacing: MraSpacing.sm,
+            runSpacing: MraSpacing.sm,
+            children: detail.providerEvidence
+                .map((p) => MraChip(label: p, tone: MraChipTone.neutral))
+                .toList(),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -440,20 +563,16 @@ class _EventsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     if (events.isEmpty) {
-      return MraCard(
-        child: Text(
-          'No news/events recorded for this prediction yet.',
-          style: theme.textTheme.bodySmall,
-        ),
+      return Text(
+        'No news/events recorded for this prediction yet.',
+        style: Theme.of(context).textTheme.bodySmall,
       );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text('News & events', style: theme.textTheme.titleMedium),
-        const SizedBox(height: MraSpacing.md),
         for (final event in events) ...[
           NewsCard(
             headline: event.description,
@@ -468,32 +587,27 @@ class _EventsSection extends StatelessWidget {
   }
 }
 
+/// EPIC-M3.4 — the full prediction-version timeline (original + every
+/// revision), newest first, each with its reason, change summary and the
+/// specific metrics it affected.
 class _RevisionTimeline extends StatelessWidget {
-  final List<RecommendationHistoryItem> history;
-  const _RevisionTimeline({required this.history});
+  final List<RecommendationTimelineItem> timeline;
+  const _RevisionTimeline({required this.timeline});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (history.isEmpty) {
-      return MraCard(
-        child: Text(
-          'No revisions yet — this is the original prediction.',
-          style: theme.textTheme.bodySmall,
-        ),
-      );
-    }
-    final sorted = [...history]
+    final sorted = [...timeline]
       ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Revision history', style: theme.textTheme.titleMedium),
-        const SizedBox(height: MraSpacing.md),
         for (var i = 0; i < sorted.length; i++)
           TimelineEventRow(
-            title: 'v${sorted[i].version} · ${sorted[i].triggerType}',
-            subtitle: sorted[i].changeSummary,
+            title: 'v${sorted[i].version} · ${sorted[i].reason}',
+            subtitle: sorted[i].affectedMetrics.isEmpty
+                ? sorted[i].changeSummary
+                : '${sorted[i].changeSummary} (affected: ${sorted[i].affectedMetrics.join(', ')})',
             timestampLabel: _dateLabel(sorted[i].timestamp),
             isLast: i == sorted.length - 1,
           ),

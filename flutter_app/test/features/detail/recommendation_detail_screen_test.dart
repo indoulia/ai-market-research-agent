@@ -3,15 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mra_app/core/api_exception.dart';
 import 'package:mra_app/design_system/theme/mra_theme.dart';
 import 'package:mra_app/features/detail/event_item.dart';
-import 'package:mra_app/features/detail/history_item.dart';
 import 'package:mra_app/features/detail/recommendation_detail.dart';
 import 'package:mra_app/features/detail/recommendation_detail_repository.dart';
 import 'package:mra_app/features/detail/recommendation_detail_screen.dart';
 import 'package:mra_app/features/detail/recommendation_outcome.dart';
+import 'package:mra_app/features/detail/timeline_item.dart';
 
 RecommendationDetail _detail({
   double? trustScore = 65,
   String? benchmarkRelative,
+  String evidenceFreshness = 'FRESH',
 }) {
   return RecommendationDetail.fromJson({
     'id': 1,
@@ -51,13 +52,22 @@ RecommendationDetail _detail({
     'liquidity': 'HIGH',
     'providerEvidence': ['yahoo_finance'],
     'status': 'ISSUED',
+    'evidenceFreshness': evidenceFreshness,
   });
 }
 
-RecommendationHistoryItem _historyItem({int version = 1}) {
-  return RecommendationHistoryItem.fromJson({
+RecommendationTimelineItem _timelineItem({
+  int version = 1,
+  String reason = 'INITIAL_PREDICTION',
+  String changeSummary = 'Initial prediction.',
+  List<String> affectedMetrics = const [],
+}) {
+  return RecommendationTimelineItem.fromJson({
     'timestamp': '2026-08-1${version}T09:00:00Z',
     'version': version,
+    'reason': reason,
+    'changeSummary': changeSummary,
+    'affectedMetrics': affectedMetrics,
     'price': '165.00',
     'targetPrice': '176.50',
     'stopLoss': '163.00',
@@ -65,9 +75,6 @@ RecommendationHistoryItem _historyItem({int version = 1}) {
     'score': '80',
     'confidence': '70',
     'trustScore': '60',
-    'triggerType': 'REVISION',
-    'triggerEventId': null,
-    'changeSummary': 'Target raised from 170 to 176.50.',
   });
 }
 
@@ -110,16 +117,16 @@ RecommendationOutcome _targetHitOutcome() {
 
 class _FakeDetailRepository extends RecommendationDetailRepository {
   final RecommendationDetail Function()? onDetail;
-  final List<RecommendationHistoryItem> history;
+  final List<RecommendationTimelineItem> timeline;
   final List<RecommendationEventItem> events;
   final RecommendationOutcome Function()? onOutcome;
 
   _FakeDetailRepository({
     this.onDetail,
-    this.history = const [],
+    List<RecommendationTimelineItem>? timeline,
     this.events = const [],
     this.onOutcome,
-  });
+  }) : timeline = timeline ?? [_timelineItem()];
 
   @override
   Future<RecommendationDetail> fetchDetail(int id) async {
@@ -130,13 +137,8 @@ class _FakeDetailRepository extends RecommendationDetailRepository {
   }
 
   @override
-  Future<HistoryPage> fetchHistory(
-    int id, {
-    DateTime? from,
-    DateTime? to,
-    String? cursor,
-    int pageSize = 20,
-  }) async => HistoryPage(items: history, nextCursor: null);
+  Future<List<RecommendationTimelineItem>> fetchTimeline(int id) async =>
+      timeline;
 
   @override
   Future<EventsPage> fetchEvents(
@@ -186,12 +188,20 @@ void main() {
     expect(find.text('N/A'), findsOneWidget);
   });
 
-  testWidgets('renders revision timeline and events from history/events', (
+  testWidgets('renders revision timeline and events from timeline/events', (
     tester,
   ) async {
     final repo = _FakeDetailRepository(
       onDetail: _detail,
-      history: [_historyItem()],
+      timeline: [
+        _timelineItem(),
+        _timelineItem(
+          version: 2,
+          reason: 'MATERIAL_EVIDENCE_CHANGE',
+          changeSummary: 'Target raised from 170 to 176.50.',
+          affectedMetrics: ['targetPrice'],
+        ),
+      ],
       events: [_eventItem()],
     );
     await tester.pumpWidget(
@@ -199,8 +209,118 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Target raised from 170'), findsOneWidget);
+    // Appears in both the prominent "what changed" callout and the full
+    // revision timeline below — that duplication is intentional (M3.4
+    // scope: a prominent callout *and* an inspectable full timeline).
+    expect(find.textContaining('Target raised from 170'), findsWidgets);
     expect(find.text('Company announces new plant.'), findsOneWidget);
+  });
+
+  testWidgets('shows a stale-evidence badge only when evidence is STALE', (
+    tester,
+  ) async {
+    final repo = _FakeDetailRepository(
+      onDetail: () => _detail(evidenceFreshness: 'STALE'),
+    );
+    await tester.pumpWidget(
+      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stale evidence'), findsOneWidget);
+  });
+
+  testWidgets('omits the stale-evidence badge when evidence is fresh', (
+    tester,
+  ) async {
+    final repo = _FakeDetailRepository(onDetail: _detail);
+    await tester.pumpWidget(
+      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stale evidence'), findsNothing);
+  });
+
+  testWidgets('renders why-selected narrative from evidence fields', (
+    tester,
+  ) async {
+    final repo = _FakeDetailRepository(onDetail: _detail);
+    await tester.pumpWidget(
+      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Why MRA selected this opportunity'), findsOneWidget);
+    expect(find.textContaining('Probability of success'), findsOneWidget);
+    // Also appears in the (separate) evidence panel below — intentional
+    // duplication, not a rendering bug: this narrative is a synthesized
+    // summary, the evidence panel is the raw per-category detail.
+    expect(find.textContaining('Revenue growth 8% YoY.'), findsWidgets);
+  });
+
+  testWidgets('what-changed shows "no revisions" for a never-revised prediction', (
+    tester,
+  ) async {
+    final repo = _FakeDetailRepository(onDetail: _detail);
+    await tester.pumpWidget(
+      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('No revisions yet — this is the original prediction.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('what-changed shows the latest revision summary and affected metrics', (
+    tester,
+  ) async {
+    final repo = _FakeDetailRepository(
+      onDetail: _detail,
+      timeline: [
+        _timelineItem(),
+        _timelineItem(
+          version: 2,
+          reason: 'MATERIAL_EVIDENCE_CHANGE',
+          changeSummary: 'Target raised from 170 to 176.50.',
+          affectedMetrics: ['targetPrice', 'confidence'],
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('What changed since previous prediction'), findsOneWidget);
+    expect(find.textContaining('Target raised from 170'), findsWidgets);
+    expect(find.text('targetPrice'), findsOneWidget);
+    expect(find.text('confidence'), findsOneWidget);
+  });
+
+  testWidgets('evidence panel collapses and expands via progressive disclosure', (
+    tester,
+  ) async {
+    final repo = _FakeDetailRepository(onDetail: _detail);
+    await tester.pumpWidget(
+      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
+    );
+    await tester.pumpAndSettle();
+
+    // One copy in the always-visible "why selected" narrative, one in the
+    // collapsible evidence panel.
+    expect(find.textContaining('Above 50-day moving average'), findsNWidgets(2));
+
+    final evidenceHeader = find.text('Evidence & provider summary');
+    await tester.ensureVisible(evidenceHeader);
+    await tester.pumpAndSettle();
+    await tester.tap(evidenceHeader);
+    await tester.pumpAndSettle();
+
+    // Evidence panel's copy is gone; "why selected"'s copy remains.
+    expect(find.textContaining('Above 50-day moving average'), findsOneWidget);
   });
 
   testWidgets('renders target-hit outcome chip when evaluated', (tester) async {

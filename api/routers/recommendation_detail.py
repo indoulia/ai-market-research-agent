@@ -12,9 +12,9 @@ from ..envelope import cursor_paginated, success
 from ..pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from ..schemas.common import CursorEnvelope, SuccessEnvelope
 from ..schemas.feedback import FeedbackRequest, FeedbackResponse
-from ..schemas.recommendation_detail import EventItem, HistoryItem, OutcomeResponse, RecommendationDetail
+from ..schemas.recommendation_detail import EventItem, EvidenceResponse, HistoryItem, OutcomeResponse, RecommendationDetail, TimelineItem
 from ..services.feedback import submit_recommendation_feedback
-from ..services.recommendation_detail import get_detail, get_events, get_history, get_outcome
+from ..services.recommendation_detail import get_detail, get_evidence, get_events, get_history, get_outcome, get_timeline
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
 
@@ -46,6 +46,20 @@ def get_recommendation_events(
 ):
     page = get_events(db, recommendationId, cursor=cursor, page_size=pageSize)
     return cursor_paginated(page.items, page_size=pageSize, next_cursor=page.next_cursor)
+
+
+@router.get("/{recommendationId}/timeline", response_model=SuccessEnvelope[list[TimelineItem]])
+def get_recommendation_timeline(recommendationId: int, db: Session = Depends(get_db)):
+    """EPIC-M3.4: the full, ordered prediction-version timeline (original
+    + every revision), each with its reason and affected metrics."""
+    return success(get_timeline(db, recommendationId))
+
+
+@router.get("/{recommendationId}/evidence", response_model=SuccessEnvelope[EvidenceResponse])
+def get_recommendation_evidence(recommendationId: int, db: Session = Depends(get_db)):
+    """EPIC-M3.4: fundamental/technical/market/news/event evidence plus
+    provider provenance, as their own contract."""
+    return success(get_evidence(db, recommendationId))
 
 
 @router.get("/{recommendationId}/outcome", response_model=SuccessEnvelope[OutcomeResponse])
