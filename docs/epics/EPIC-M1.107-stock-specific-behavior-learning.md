@@ -1,7 +1,7 @@
 # EPIC-M1.107 — Stock-Specific Behavior Learning
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -19,7 +19,7 @@ M1.79, M1.104, M1.105.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #173 (`26471d6`).
 
 **Implementation:**
 - `app/stock_behavior_learning.py`: a new, versioned (`STOCK_BEHAVIOR_VERSION = "SBL-001"`) module.
