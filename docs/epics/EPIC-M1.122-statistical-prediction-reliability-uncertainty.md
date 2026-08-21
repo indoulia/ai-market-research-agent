@@ -1,7 +1,7 @@
 # EPIC-M1.122 — Statistical Prediction Reliability & Uncertainty
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -45,7 +45,7 @@ Do not manufacture precision. When evidence is insufficient, MRA must suppress t
 
 ## Completion Report
 
-**Status:** VALIDATING — implemented, tests green, PR open (not yet merged).
+**Status:** DONE — merged to main via PR #215 (`5a36dae`).
 
 **Implementation:**
 - `app/prediction_reliability.py`: a new, versioned (`RELIABILITY_RULE_VERSION = "PRU-001"`) module, and a new immutable table `prediction_reliability_assessments` (migration `0093_prediction_reliability.py`), idempotent by `(prediction_id, assessed_at)`.
