@@ -10,6 +10,8 @@ class _FakeNewsEventsRepository extends NewsEventsRepository {
   final Future<FeedPage> Function({String? newsCursor, String? eventsCursor})
   onFetch;
   int callCount = 0;
+  bool? lastFetchNews;
+  bool? lastFetchEvents;
 
   _FakeNewsEventsRepository(this.onFetch);
 
@@ -23,6 +25,8 @@ class _FakeNewsEventsRepository extends NewsEventsRepository {
     bool fetchEvents = true,
   }) {
     callCount++;
+    lastFetchNews = fetchNews;
+    lastFetchEvents = fetchEvents;
     return onFetch(newsCursor: newsCursor, eventsCursor: eventsCursor);
   }
 }
@@ -42,16 +46,23 @@ class _EmptyRecommendationsRepository extends RecommendationsRepository {
   );
 }
 
-FeedEntry _newsEntry({String symbol = 'TATASTEEL', DateTime? timestamp}) =>
-    FeedEntry(
-      kind: FeedEntryKind.news,
-      timestamp: timestamp ?? DateTime.parse('2026-08-20T09:00:00Z'),
-      symbol: symbol,
-      headline: 'Company announces new plant.',
-      source: 'Market Wire',
-      materiality: 'HIGH',
-      evidenceId: 1,
-    );
+FeedEntry _newsEntry({
+  String symbol = 'TATASTEEL',
+  DateTime? timestamp,
+  String materiality = 'HIGH',
+  String eventType = 'NEWS_STORY',
+  String headline = 'Company announces new plant.',
+}) => FeedEntry(
+  kind: FeedEntryKind.news,
+  timestamp: timestamp ?? DateTime.parse('2026-08-20T09:00:00Z'),
+  symbol: symbol,
+  headline: headline,
+  source: 'Market Wire',
+  materiality: materiality,
+  eventType: eventType,
+  affectedSecurities: [symbol],
+  evidenceId: 1,
+);
 
 Widget _wrap(Widget child) {
   return MaterialApp.router(
@@ -173,7 +184,7 @@ void main() {
     // Manual drag-and-check loop: scrollUntilVisible/dragUntilVisible were
     // flaky in this harness once the list rebuilds mid-scroll (the target
     // element goes stale between iterations), so drive it directly.
-    final listFinder = find.byType(ListView);
+    final listFinder = find.byKey(const Key('newsEventsList'));
     for (var i = 0; i < 20; i++) {
       await tester.drag(listFinder, const Offset(0, -300));
       await tester.pump();
@@ -185,5 +196,73 @@ void main() {
 
     expect(find.textContaining('OLDEST_SECOND_PAGE'), findsOneWidget);
     expect(repo.callCount, 2);
+  });
+
+  testWidgets('EPIC-M3.5: materiality filter narrows the visible feed', (
+    tester,
+  ) async {
+    final repo = _FakeNewsEventsRepository(
+      ({newsCursor, eventsCursor}) async => FeedPage(
+        newEntries: [
+          _newsEntry(
+            symbol: 'HIGHMAT',
+            materiality: 'HIGH',
+            headline: 'High materiality story',
+          ),
+          _newsEntry(
+            symbol: 'LOWMAT',
+            materiality: 'LOW',
+            headline: 'Low materiality story',
+          ),
+        ],
+        nextNewsCursor: null,
+        nextEventsCursor: null,
+      ),
+    );
+    await tester.pumpWidget(
+      _wrap(
+        NewsEventsScreen(
+          repository: repo,
+          recommendationsRepository: _EmptyRecommendationsRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('High materiality story'), findsOneWidget);
+    expect(find.text('Low materiality story'), findsOneWidget);
+
+    await tester.tap(find.text('High'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('High materiality story'), findsOneWidget);
+    expect(find.text('Low materiality story'), findsNothing);
+  });
+
+  testWidgets('EPIC-M3.5: type filter fetches only the selected source', (
+    tester,
+  ) async {
+    final repo = _FakeNewsEventsRepository(
+      ({newsCursor, eventsCursor}) async => FeedPage(
+        newEntries: [_newsEntry()],
+        nextNewsCursor: null,
+        nextEventsCursor: null,
+      ),
+    );
+    await tester.pumpWidget(
+      _wrap(
+        NewsEventsScreen(
+          repository: repo,
+          recommendationsRepository: _EmptyRecommendationsRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Corporate actions'));
+    await tester.pumpAndSettle();
+
+    expect(repo.lastFetchNews, isFalse);
+    expect(repo.lastFetchEvents, isTrue);
   });
 }

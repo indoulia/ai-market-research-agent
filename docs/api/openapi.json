@@ -761,6 +761,10 @@
             "title": "Detectedat",
             "type": "string"
           },
+          "eventType": {
+            "title": "Eventtype",
+            "type": "string"
+          },
           "evidenceId": {
             "title": "Evidenceid",
             "type": "integer"
@@ -794,6 +798,7 @@
           "publishedAt",
           "detectedAt",
           "materiality",
+          "eventType",
           "affectedSecurities",
           "evidenceId"
         ],
@@ -1738,6 +1743,22 @@
           "meta"
         ],
         "title": "SuccessEnvelope[BreakdownResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_EventItem_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/api__schemas__news_events__EventItem"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[EventItem]",
         "type": "object"
       },
       "SuccessEnvelope_FeedbackResponse_": {
@@ -2893,6 +2914,56 @@
           },
           {
             "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "in": "query",
             "name": "direction",
             "required": false,
             "schema": {
@@ -2954,6 +3025,48 @@
           }
         },
         "summary": "Get Events",
+        "tags": [
+          "news-events"
+        ]
+      }
+    },
+    "/api/v1/events/{eventId}": {
+      "get": {
+        "operationId": "get_event_detail_api_v1_events__eventId__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eventId",
+            "required": true,
+            "schema": {
+              "title": "Eventid",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_EventItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Event Detail",
         "tags": [
           "news-events"
         ]
@@ -3149,6 +3262,72 @@
                 }
               ],
               "title": "Industry"
+            }
+          },
+          {
+            "in": "query",
+            "name": "eventType",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Eventtype"
+            }
+          },
+          {
+            "in": "query",
+            "name": "materiality",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Materiality"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
             }
           },
           {

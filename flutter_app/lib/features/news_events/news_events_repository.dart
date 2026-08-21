@@ -7,6 +7,11 @@ enum FeedEntryKind { news, corporateAction }
 /// EPIC-M1.140 — one row in the unified chronological news+events stream.
 /// Wraps either a [NewsItem] or a [MarketEventItem]; screens read [kind] to
 /// decide which fields to show rather than duplicating rendering logic.
+///
+/// EPIC-M3.5 added [eventType] (`NewsItem.eventType` for news,
+/// `MarketEventItem.type` for corporate actions — filterable via the
+/// Type filter bar) and [affectedSecurities] (rendered as chips on the
+/// card when a story is linked to more than one symbol).
 class FeedEntry {
   final FeedEntryKind kind;
   final DateTime timestamp;
@@ -14,6 +19,8 @@ class FeedEntry {
   final String headline;
   final String source;
   final String? materiality;
+  final String eventType;
+  final List<String> affectedSecurities;
   final int evidenceId;
 
   const FeedEntry({
@@ -23,6 +30,8 @@ class FeedEntry {
     required this.headline,
     required this.source,
     required this.materiality,
+    required this.eventType,
+    required this.affectedSecurities,
     required this.evidenceId,
   });
 
@@ -33,6 +42,8 @@ class FeedEntry {
     headline: n.headline,
     source: n.source,
     materiality: n.materiality,
+    eventType: n.eventType,
+    affectedSecurities: n.affectedSecurities,
     evidenceId: n.evidenceId,
   );
 
@@ -43,6 +54,8 @@ class FeedEntry {
     headline: '${e.type.replaceAll('_', ' ')}: ${e.title}',
     source: e.source,
     materiality: e.materiality,
+    eventType: e.type,
+    affectedSecurities: [e.symbol],
     evidenceId: e.evidenceId,
   );
 }

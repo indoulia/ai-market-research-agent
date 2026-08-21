@@ -14,6 +14,7 @@ class NewsItem(BaseModel):
     publishedAt: datetime
     detectedAt: datetime
     materiality: str
+    eventType: str
     affectedSecurities: list[str]
     evidenceId: int
 
