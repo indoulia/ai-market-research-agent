@@ -1510,6 +1510,29 @@ class EventTriggerRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class StockBehaviorAssessment(Base):
+    __tablename__ = "stock_behavior_assessments"
+    __table_args__ = (
+        UniqueConstraint(
+            "stock_id", "model_version", "horizon_days", "regime", "evaluated_at",
+            name="uq_stock_behavior_stock_model_horizon_regime_evaluated_at",
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    model_version: Mapped[str] = mapped_column(String(64))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    regime: Mapped[str | None] = mapped_column(String(32))
+    resolved_level: Mapped[str] = mapped_column(String(32))
+    resolved_sample_count: Mapped[int] = mapped_column(Integer)
+    observed_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    fallback_chain: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    behavior_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
