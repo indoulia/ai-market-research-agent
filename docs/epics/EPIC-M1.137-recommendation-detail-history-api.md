@@ -1,8 +1,8 @@
 # EPIC-M1.137 — Recommendation Detail, Revision & History API
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #166, commit a358be6)
 **Priority:** P0
 
 ## Objective
