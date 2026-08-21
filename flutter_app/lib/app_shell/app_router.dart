@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/dashboard/dashboard_screen.dart';
 import '../gallery/gallery_screen.dart';
 import 'app_destination.dart';
 import 'app_shell_scaffold.dart';
@@ -27,9 +28,7 @@ GoRouter buildAppRouter() => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[0].path,
-              builder: (context, state) => DestinationPlaceholderScreen(
-                destination: kAppDestinations[0],
-              ),
+              builder: (context, state) => const DashboardScreen(),
               routes: [
                 GoRoute(
                   path: 'recommendation/:id',

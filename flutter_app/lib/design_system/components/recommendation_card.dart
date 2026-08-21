@@ -13,16 +13,26 @@ import 'target_sl_badge.dart';
 /// UI-only and must not invent data access).
 class RecommendationCardData {
   final String symbol;
-  final String companyName;
-  final double currentPrice;
-  final double changePercent;
+
+  /// Null when the reference-data company name isn't available yet — the
+  /// card omits the subtitle line rather than showing an empty one.
+  final String? companyName;
+
+  /// Null when no current price is available (e.g. a stale/unpriced
+  /// symbol) — the card shows "—" and omits the change-percent row rather
+  /// than fabricating a value.
+  final double? currentPrice;
+  final double? changePercent;
   final int horizonDays;
   final double targetPrice;
   final double stopLossPrice;
   final double upsidePercent;
   final double score;
   final double confidence;
-  final double trust;
+
+  /// Null when no trust score has been computed yet — rendered as an
+  /// explicit "N/A" rather than a misleadingly low score.
+  final double? trust;
   final List<double> priceHistory;
   final String lastUpdatedLabel;
 
@@ -56,7 +66,8 @@ class RecommendationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = MraColorScheme.of(context);
-    final isUp = data.changePercent >= 0;
+    final changePercent = data.changePercent;
+    final isUp = (changePercent ?? 0) >= 0;
     final changeColor = isUp ? scheme.marketUp : scheme.marketDown;
 
     return MraCard(
@@ -73,14 +84,15 @@ class RecommendationCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(data.symbol, style: theme.textTheme.titleMedium),
-                    Text(
-                      data.companyName,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    if (data.companyName != null)
+                      Text(
+                        data.companyName!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ],
                 ),
               ),
@@ -88,26 +100,27 @@ class RecommendationCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    data.currentPrice.toStringAsFixed(2),
+                    data.currentPrice?.toStringAsFixed(2) ?? '—',
                     style: MraTypography.numeric(theme.textTheme.titleMedium!),
                   ),
-                  Row(
-                    children: [
-                      Icon(
-                        isUp ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                        size: 18,
-                        color: changeColor,
-                      ),
-                      Text(
-                        '${data.changePercent.abs().toStringAsFixed(2)}%',
-                        style: MraTypography.numeric(
-                          theme.textTheme.labelMedium!.copyWith(
-                            color: changeColor,
+                  if (changePercent != null)
+                    Row(
+                      children: [
+                        Icon(
+                          isUp ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                          size: 18,
+                          color: changeColor,
+                        ),
+                        Text(
+                          '${changePercent.abs().toStringAsFixed(2)}%',
+                          style: MraTypography.numeric(
+                            theme.textTheme.labelMedium!.copyWith(
+                              color: changeColor,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
                 ],
               ),
             ],
@@ -160,9 +173,57 @@ class RecommendationCard extends StatelessWidget {
                 kind: MraScoreKind.confidence,
                 value0to100: data.confidence,
               ),
-              ScoreIndicator(kind: MraScoreKind.trust, value0to100: data.trust),
+              if (data.trust != null)
+                ScoreIndicator(
+                  kind: MraScoreKind.trust,
+                  value0to100: data.trust!,
+                )
+              else
+                _UnavailableTrustIndicator(size: 44),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Matches [ScoreIndicator]'s circle-plus-label footprint so the row's
+/// alignment doesn't shift when trust data is absent, but renders an
+/// explicit "N/A" rather than a fabricated score.
+class _UnavailableTrustIndicator extends StatelessWidget {
+  final double size;
+
+  const _UnavailableTrustIndicator({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      label: 'Trust unavailable',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: size,
+            height: size,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: theme.colorScheme.outlineVariant),
+              ),
+              child: Center(
+                child: Text(
+                  'N/A',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: MraSpacing.xs),
+          Text('Trust', style: theme.textTheme.labelSmall),
         ],
       ),
     );

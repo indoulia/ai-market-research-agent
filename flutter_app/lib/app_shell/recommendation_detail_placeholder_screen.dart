@@ -4,7 +4,7 @@ import '../design_system/design_system.dart';
 
 /// EPIC-M1.134 — deep-linkable placeholder proving the route shape works
 /// (e.g. `/home/recommendation/TATASTEEL`) ahead of the real detail screen,
-/// which is EPIC-M3.4 (Recommendation Detail & Prediction Timeline).
+/// which is EPIC-M1.138 (Recommendation Detail & History UI).
 class RecommendationDetailPlaceholderScreen extends StatelessWidget {
   final String recommendationId;
 
@@ -19,9 +19,7 @@ class RecommendationDetailPlaceholderScreen extends StatelessWidget {
       appBar: AppBar(title: Text(recommendationId)),
       body: MraStateView.empty(
         title: recommendationId,
-        message:
-            'Built by EPIC-M3.4 Recommendation Detail & Prediction '
-            'Timeline.',
+        message: 'Built by EPIC-M1.138 Recommendation Detail & History UI.',
       ),
     );
   }

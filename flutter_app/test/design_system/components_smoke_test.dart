@@ -217,6 +217,39 @@ void main() {
       expect(find.text('Tata Steel Ltd.'), findsOneWidget);
       expect(find.textContaining('3D horizon'), findsOneWidget);
     });
+
+    testWidgets(
+      'renders honest placeholders when price/company/trust are absent',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            const RecommendationCard(
+              data: RecommendationCardData(
+                symbol: 'NEWCO',
+                companyName: null,
+                currentPrice: null,
+                changePercent: null,
+                horizonDays: 5,
+                targetPrice: 100,
+                stopLossPrice: 90,
+                upsidePercent: 2.0,
+                score: 50,
+                confidence: 40,
+                trust: null,
+                priceHistory: [1, 2, 3],
+                lastUpdatedLabel: 'Updated 1m ago',
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('NEWCO'), findsOneWidget);
+        expect(find.text('—'), findsOneWidget);
+        expect(find.text('N/A'), findsOneWidget);
+        expect(find.text('Trust'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 
   group('NewsCard', () {

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../design_system/design_system.dart';
 
 /// EPIC-M1.134 — Settings placeholder. Real preferences UI is
-/// EPIC-M3.10 (User Feedback & Preferences); this keeps a working entry
+/// EPIC-M1.142 (Feedback/Preferences UI); this keeps a working entry
 /// point to the EPIC-M1.133 component gallery for QA in the meantime.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -20,7 +20,7 @@ class SettingsScreen extends StatelessWidget {
           Text('Settings', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: MraSpacing.sm),
           Text(
-            'Built by EPIC-M3.10 User Feedback & Preferences.',
+            'Built by EPIC-M1.142 Feedback/Preferences UI.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: MraSpacing.xl),
