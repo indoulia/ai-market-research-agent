@@ -969,6 +969,30 @@ class HorizonRegimeTrust(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class PredictionCalibrationDrift(Base):
+    __tablename__ = "prediction_calibration_drifts"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    baseline_window_label: Mapped[str] = mapped_column(String(128))
+    baseline_sample_count: Mapped[int] = mapped_column(Integer)
+    monitoring_window_label: Mapped[str] = mapped_column(String(128))
+    monitoring_sample_count: Mapped[int] = mapped_column(Integer)
+    baseline_mean_predicted_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    monitoring_mean_predicted_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    distribution_drift: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    distribution_drift_detected: Mapped[bool] = mapped_column(Boolean)
+    baseline_calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    monitoring_calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    calibration_drift: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    calibration_drift_detected: Mapped[bool] = mapped_column(Boolean)
+    model_regression_check_id: Mapped[int | None] = mapped_column(ForeignKey("model_regression_checks.id"))
+    verdict: Mapped[str] = mapped_column(String(32))
+    trust_reduction_recommended: Mapped[bool] = mapped_column(Boolean)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    drift_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class NewsEventRecord(Base):
     __tablename__ = "news_event_records"
     __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
