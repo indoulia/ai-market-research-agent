@@ -1491,6 +1491,25 @@ class PredictionFreshnessDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class EventTriggerRecord(Base):
+    __tablename__ = "event_trigger_records"
+    __table_args__ = (
+        UniqueConstraint("event_type", "source_table", "source_id", name="uq_event_trigger_source"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(32))
+    source_table: Mapped[str] = mapped_column(String(64))
+    source_id: Mapped[str] = mapped_column(String(64))
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    materiality_note: Mapped[str | None] = mapped_column(String(64))
+    affected_prediction_count: Mapped[int] = mapped_column(Integer)
+    triggered_decision_ids: Mapped[list] = mapped_column(JSON)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    trigger_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
