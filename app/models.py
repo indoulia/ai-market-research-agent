@@ -1338,6 +1338,44 @@ class IndependentConfirmationDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ValidationFold(Base):
+    __tablename__ = "validation_folds"
+    __table_args__ = (
+        UniqueConstraint("model_version", "fold_index", "computed_at", name="uq_validation_fold_model_index_computed_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    fold_index: Mapped[int] = mapped_column(Integer)
+    train_window_label: Mapped[str] = mapped_column(String(128))
+    train_window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    train_window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    validation_window_label: Mapped[str] = mapped_column(String(128))
+    validation_window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    validation_window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    embargo_days: Mapped[int] = mapped_column(Integer)
+    eligible_training_prediction_ids: Mapped[list] = mapped_column(JSON)
+    excluded_prediction_ids: Mapped[list] = mapped_column(JSON)
+    exclusion_reason_counts: Mapped[dict] = mapped_column(JSON)
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    framework_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TemporalValidationPolicyDecision(Base):
+    __tablename__ = "temporal_validation_policy_decisions"
+    __table_args__ = (
+        UniqueConstraint("model_version", "evaluated_at", name="uq_temporal_validation_policy_model_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    fold_ids: Mapped[list] = mapped_column(JSON)
+    verdict: Mapped[str] = mapped_column(String(16))
+    fail_reasons: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    policy_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class FeatureReferenceDistribution(Base):
     __tablename__ = "feature_reference_distributions"
     __table_args__ = (
