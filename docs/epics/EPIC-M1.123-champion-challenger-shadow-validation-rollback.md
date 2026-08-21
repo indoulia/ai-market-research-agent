@@ -1,7 +1,7 @@
 # EPIC-M1.123 — Champion/Challenger Shadow Validation & Rollback
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -37,7 +37,7 @@ No automatic promotion based solely on a single metric or short recent streak.
 ## Completion Report
 
 ### Status
-Implemented, tested, PR pending. Branch `autonomous/epic-m1-123`.
+Implemented, tested, merged via PR #247.
 
 ### What was built
 - `app/champion_challenger_shadow.py` (SCS-001/SCC-001/CRB-001):
