@@ -914,6 +914,28 @@ class HorizonProbabilityProfile(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class PredictionTrustScore(Base):
+    __tablename__ = "prediction_trust_scores"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "computed_at", name="uq_prediction_trust_score_prediction_computed_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    overall_trust_score: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    trust_quality: Mapped[str] = mapped_column(String(32))
+    calibration_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    historical_accuracy_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    recent_performance_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    horizon_reliability_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    regime_reliability_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    evidence_quality_component: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    available_component_count: Mapped[int] = mapped_column(Integer)
+    reasons: Mapped[list] = mapped_column(JSON)
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    trust_score_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class NewsEventRecord(Base):
     __tablename__ = "news_event_records"
     __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
