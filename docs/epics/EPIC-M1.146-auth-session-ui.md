@@ -1,8 +1,8 @@
 # EPIC-M1.146 — Authentication & Session UI
 
 **Track:** UI
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETE
 **Priority:** P0
 
 ## Objective
