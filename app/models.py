@@ -1695,6 +1695,21 @@ class ProviderOutageSnapshot(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ReproducibilityAuditDecision(Base):
+    __tablename__ = "reproducibility_audit_decisions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "audited_at", name="uq_reproducibility_audit_prediction_audited_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    version_drifted_fields: Mapped[list] = mapped_column(JSON)
+    provider_drifted_categories: Mapped[list] = mapped_column(JSON)
+    reproducible: Mapped[bool] = mapped_column(Boolean)
+    audited_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    audit_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
