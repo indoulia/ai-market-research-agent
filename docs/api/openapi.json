@@ -339,6 +339,84 @@
         "title": "BreakdownResponse",
         "type": "object"
       },
+      "ChampionChallengerStatus": {
+        "properties": {
+          "challengerModelVersion": {
+            "title": "Challengermodelversion",
+            "type": "string"
+          },
+          "challengerSuccessRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challengersuccessrate"
+          },
+          "championModelVersion": {
+            "title": "Championmodelversion",
+            "type": "string"
+          },
+          "championSuccessRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Championsuccessrate"
+          },
+          "comparisonRuleVersion": {
+            "title": "Comparisonruleversion",
+            "type": "string"
+          },
+          "computedAt": {
+            "format": "date-time",
+            "title": "Computedat",
+            "type": "string"
+          },
+          "sampleCount": {
+            "title": "Samplecount",
+            "type": "integer"
+          },
+          "successRateDelta": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Successratedelta"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challengerModelVersion",
+          "championModelVersion",
+          "verdict",
+          "sampleCount",
+          "championSuccessRate",
+          "challengerSuccessRate",
+          "successRateDelta",
+          "computedAt",
+          "comparisonRuleVersion"
+        ],
+        "title": "ChampionChallengerStatus",
+        "type": "object"
+      },
       "CursorEnvelope_ActivePrediction_": {
         "properties": {
           "data": {
@@ -1363,6 +1441,34 @@
         "title": "EvidenceResponse",
         "type": "object"
       },
+      "ExperimentCounts": {
+        "properties": {
+          "insufficientSample": {
+            "title": "Insufficientsample",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "ready",
+          "insufficientSample",
+          "pending"
+        ],
+        "title": "ExperimentCounts",
+        "type": "object"
+      },
       "FeedbackRequest": {
         "properties": {
           "comment": {
@@ -1579,6 +1685,481 @@
           "changePct"
         ],
         "title": "IndexQuote",
+        "type": "object"
+      },
+      "LastLearningCycle": {
+        "properties": {
+          "cycleRuleVersion": {
+            "title": "Cycleruleversion",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "modelPromotionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelpromotionid"
+          },
+          "newOutcomesCount": {
+            "title": "Newoutcomescount",
+            "type": "integer"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "skipReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipreason"
+          },
+          "startedAt": {
+            "format": "date-time",
+            "title": "Startedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startedAt",
+          "outcome",
+          "newOutcomesCount",
+          "skipReason",
+          "modelPromotionId",
+          "cycleRuleVersion"
+        ],
+        "title": "LastLearningCycle",
+        "type": "object"
+      },
+      "LatestRollback": {
+        "properties": {
+          "decidedAt": {
+            "format": "date-time",
+            "title": "Decidedat",
+            "type": "string"
+          },
+          "restoredModelVersion": {
+            "title": "Restoredmodelversion",
+            "type": "string"
+          },
+          "rollbackRuleVersion": {
+            "title": "Rollbackruleversion",
+            "type": "string"
+          },
+          "rolledBackModelVersion": {
+            "title": "Rolledbackmodelversion",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rolledBackModelVersion",
+          "restoredModelVersion",
+          "decidedAt",
+          "rollbackRuleVersion"
+        ],
+        "title": "LatestRollback",
+        "type": "object"
+      },
+      "LearningExperiment": {
+        "properties": {
+          "arms": {
+            "items": {
+              "$ref": "#/components/schemas/LearningExperimentArm"
+            },
+            "title": "Arms",
+            "type": "array"
+          },
+          "bestArmName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bestarmname"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "feedbackCategory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbackcategory"
+          },
+          "feedbackDriven": {
+            "title": "Feedbackdriven",
+            "type": "boolean"
+          },
+          "feedbackReasonCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbackreasoncode"
+          },
+          "hypothesis": {
+            "title": "Hypothesis",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "methodologyVersion": {
+            "title": "Methodologyversion",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "hypothesis",
+          "status",
+          "createdAt",
+          "arms",
+          "bestArmName",
+          "feedbackDriven",
+          "feedbackCategory",
+          "feedbackReasonCode",
+          "methodologyVersion"
+        ],
+        "title": "LearningExperiment",
+        "type": "object"
+      },
+      "LearningExperimentArm": {
+        "properties": {
+          "accuracy": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy"
+          },
+          "armName": {
+            "title": "Armname",
+            "type": "string"
+          },
+          "horizonDaysFilter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizondaysfilter"
+          },
+          "modelVersion": {
+            "title": "Modelversion",
+            "type": "string"
+          },
+          "sampleCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Samplecount"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          },
+          "windowLabel": {
+            "title": "Windowlabel",
+            "type": "string"
+          }
+        },
+        "required": [
+          "armName",
+          "modelVersion",
+          "windowLabel",
+          "horizonDaysFilter",
+          "sampleCount",
+          "accuracy",
+          "verdict"
+        ],
+        "title": "LearningExperimentArm",
+        "type": "object"
+      },
+      "LearningHistoryEntry": {
+        "description": "One event in the unified learning-history timeline. `id` is a\ncomposite `\"<source-table>:<row id>\"` string (not a single row's own\nprimary key) since this feed merges rows from several distinct,\nindependently-keyed tables -- never a fabricated shared sequence.",
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "decisionReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decisionreason"
+          },
+          "evidenceCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidencecount"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "impact": {
+            "title": "Impact",
+            "type": "string"
+          },
+          "methodologyVersion": {
+            "title": "Methodologyversion",
+            "type": "string"
+          },
+          "modelVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelversion"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "createdAt",
+          "status",
+          "evidenceCount",
+          "methodologyVersion",
+          "impact",
+          "modelVersion",
+          "decisionReason"
+        ],
+        "title": "LearningHistoryEntry",
+        "type": "object"
+      },
+      "LearningSignalSummary": {
+        "description": "One (category, reason_code) feedback pattern, reprojected verbatim\nfrom `app.feedback_learning_signals.FeedbackSignal` -- camelCase DTO\nonly, no new scoring/verdict logic.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "distinctPredictionCount": {
+            "title": "Distinctpredictioncount",
+            "type": "integer"
+          },
+          "distinctUserCount": {
+            "title": "Distinctusercount",
+            "type": "integer"
+          },
+          "evaluatedCount": {
+            "title": "Evaluatedcount",
+            "type": "integer"
+          },
+          "reasonCode": {
+            "title": "Reasoncode",
+            "type": "string"
+          },
+          "repeatedPredictionCount": {
+            "title": "Repeatedpredictioncount",
+            "type": "integer"
+          },
+          "successRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Successrate"
+          },
+          "totalFeedbackCount": {
+            "title": "Totalfeedbackcount",
+            "type": "integer"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "reasonCode",
+          "verdict",
+          "totalFeedbackCount",
+          "distinctPredictionCount",
+          "distinctUserCount",
+          "repeatedPredictionCount",
+          "evaluatedCount",
+          "successRate"
+        ],
+        "title": "LearningSignalSummary",
+        "type": "object"
+      },
+      "LearningSummary": {
+        "properties": {
+          "asOf": {
+            "format": "date-time",
+            "title": "Asof",
+            "type": "string"
+          },
+          "championChallenger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChampionChallengerStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currentModelVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentmodelversion"
+          },
+          "experimentCounts": {
+            "$ref": "#/components/schemas/ExperimentCounts"
+          },
+          "failurePatternCount": {
+            "title": "Failurepatterncount",
+            "type": "integer"
+          },
+          "lastCycle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastLearningCycle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latestRollback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LatestRollback"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "methodologyVersion": {
+            "title": "Methodologyversion",
+            "type": "string"
+          },
+          "promotionCounts": {
+            "$ref": "#/components/schemas/PromotionCounts"
+          },
+          "recentSignals": {
+            "items": {
+              "$ref": "#/components/schemas/LearningSignalSummary"
+            },
+            "title": "Recentsignals",
+            "type": "array"
+          },
+          "rollbackCount": {
+            "title": "Rollbackcount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "asOf",
+          "currentModelVersion",
+          "lastCycle",
+          "promotionCounts",
+          "rollbackCount",
+          "latestRollback",
+          "experimentCounts",
+          "failurePatternCount",
+          "recentSignals",
+          "championChallenger",
+          "methodologyVersion"
+        ],
+        "title": "LearningSummary",
         "type": "object"
       },
       "LogoutResponse": {
@@ -2290,6 +2871,24 @@
           "defaultHorizon"
         ],
         "title": "PreferencesUpdateRequest",
+        "type": "object"
+      },
+      "PromotionCounts": {
+        "properties": {
+          "promoted": {
+            "title": "Promoted",
+            "type": "integer"
+          },
+          "rejected": {
+            "title": "Rejected",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "promoted",
+          "rejected"
+        ],
+        "title": "PromotionCounts",
         "type": "object"
       },
       "RecommendationDetail": {
@@ -3007,6 +3606,22 @@
         "title": "SuccessEnvelope[HealthResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_LearningSummary_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LearningSummary"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[LearningSummary]",
+        "type": "object"
+      },
       "SuccessEnvelope_LogoutResponse_": {
         "properties": {
           "data": {
@@ -3217,6 +3832,46 @@
           "meta"
         ],
         "title": "SuccessEnvelope[list[DiscoveryHistoryPoint]]",
+        "type": "object"
+      },
+      "SuccessEnvelope_list_LearningExperiment__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/LearningExperiment"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[list[LearningExperiment]]",
+        "type": "object"
+      },
+      "SuccessEnvelope_list_LearningHistoryEntry__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/LearningHistoryEntry"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[list[LearningHistoryEntry]]",
         "type": "object"
       },
       "SuccessEnvelope_list_TimelineItem__": {
@@ -4838,6 +5493,93 @@
         "summary": "Get Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/learning/experiments": {
+      "get": {
+        "operationId": "get_learning_experiments_endpoint_api_v1_learning_experiments_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_LearningExperiment__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Learning Experiments Endpoint",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/learning/history": {
+      "get": {
+        "operationId": "get_learning_history_endpoint_api_v1_learning_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_list_LearningHistoryEntry__"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Learning History Endpoint",
+        "tags": [
+          "learning"
+        ]
+      }
+    },
+    "/api/v1/learning/summary": {
+      "get": {
+        "operationId": "get_learning_summary_endpoint_api_v1_learning_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LearningSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Learning Summary Endpoint",
+        "tags": [
+          "learning"
         ]
       }
     },

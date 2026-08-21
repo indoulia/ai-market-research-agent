@@ -337,6 +337,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 series: _trustSeries!,
                 formatValue: _fmtPctValue,
               ),
+              const SizedBox(height: MraSpacing.sm),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/tracking/learning'),
+                  icon: const Icon(Icons.school_outlined),
+                  label: const Text('View learning insights'),
+                ),
+              ),
               const SizedBox(height: MraSpacing.lg),
               _buildSecondaryMetricSelector(),
               const SizedBox(height: MraSpacing.sm),
