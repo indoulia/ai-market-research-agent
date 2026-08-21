@@ -1803,3 +1803,15 @@ class PredictionReliabilityAssessment(Base):
     assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     reliability_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SegmentAbstentionQualityReport(Base):
+    __tablename__ = "segment_abstention_quality_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    window_label: Mapped[str] = mapped_column(String(128))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    segment_breakdown: Mapped[list] = mapped_column(JSON)
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
