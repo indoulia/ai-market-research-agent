@@ -1,8 +1,8 @@
 # EPIC-M1.138 — Recommendation Detail & Longitudinal History UI
 
 **Track:** UI
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
