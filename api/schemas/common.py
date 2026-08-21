@@ -32,6 +32,16 @@ class PaginatedEnvelope(BaseModel, Generic[T]):
     meta: PageMeta
 
 
+class CursorMeta(Meta):
+    pageSize: int
+    nextCursor: str | None = None
+
+
+class CursorEnvelope(BaseModel, Generic[T]):
+    data: list[T]
+    meta: CursorMeta
+
+
 class ErrorBody(BaseModel):
     code: str = Field(examples=["MRA_NOT_FOUND"])
     message: str
