@@ -16,6 +16,8 @@ class YahooFinanceClient:
     """Daily NSE adapter. Yahoo Finance is suitable for research, not redistribution."""
 
     source = "yahoo-finance"
+    capability = "MARKET_DATA"
+    version = "1"
 
     def __init__(self, timeout: float = 30.0) -> None:
         self.timeout = timeout
