@@ -1766,3 +1766,26 @@ class AuthSession(Base):
     previous_session_id: Mapped[int | None] = mapped_column(ForeignKey("auth_sessions.id"))
     session_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PredictionReliabilityAssessment(Base):
+    __tablename__ = "prediction_reliability_assessments"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "assessed_at", name="uq_prediction_reliability_prediction_assessed_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    resolved_segment_level: Mapped[str] = mapped_column(String(32))
+    resolved_sample_count: Mapped[int] = mapped_column(Integer)
+    observed_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    confidence_interval_lower: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    confidence_interval_upper: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    confidence_interval_half_width: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    evidence_strength: Mapped[str] = mapped_column(String(32))
+    uncertainty_source: Mapped[str | None] = mapped_column(String(32))
+    data_uncertain: Mapped[bool] = mapped_column(Boolean)
+    reliable: Mapped[bool] = mapped_column(Boolean)
+    reasons: Mapped[list] = mapped_column(JSON)
+    assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    reliability_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
