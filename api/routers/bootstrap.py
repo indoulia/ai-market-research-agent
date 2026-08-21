@@ -29,7 +29,7 @@ CAPABILITIES = ApiCapabilities(
     feedback=True,
     preferences=True,
     auth=True,
-    analytics=False,
+    analytics=True,
 )
 
 
