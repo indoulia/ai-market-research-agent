@@ -101,7 +101,18 @@ def test_pydantic_validation_error_maps_to_canonical_envelope():
     assert any(key.endswith("pageSize") for key in body["error"]["details"]["fieldErrors"])
 
 
-def test_legacy_routes_are_untouched(client):
+def test_legacy_routes_are_untouched(client, monkeypatch):
+    # app.main.health() opens its own SessionLocal() directly (it predates
+    # api.deps.get_db and isn't part of the /api/v1 contract this EPIC owns),
+    # so the `client` fixture's dependency override doesn't reach it. Point
+    # the module-level SessionLocal at an in-memory sqlite engine instead of
+    # whatever real DATABASE_URL happens to be configured in this environment.
+    import app.main as main_module
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    monkeypatch.setattr(main_module, "SessionLocal", sessionmaker(bind=engine))
+
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "component": "market-agent-m1"}
