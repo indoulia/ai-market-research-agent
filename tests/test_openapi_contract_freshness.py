@@ -25,6 +25,8 @@ CONTRACT_PATH = Path(__file__).resolve().parent.parent / "docs" / "api" / "opena
 # asserted independently of the byte-for-byte freshness check below.
 FLUTTER_DEPENDENT_PATHS = [
     "/api/v1/app/bootstrap",
+    "/api/v1/auth/login",
+    "/api/v1/auth/refresh",
     "/api/v1/auth/session",
     "/api/v1/auth/logout",
     "/api/v1/me",

@@ -285,7 +285,7 @@ _ScriptedHttpClient _happyPathServer() {
   final server = _ScriptedHttpClient();
   server.onStatic(
     'POST',
-    '/api/v1/auth/session',
+    '/api/v1/auth/login',
     _Resp(200, _envelope(_authSessionJson)),
   );
   server.onStatic(
@@ -462,7 +462,7 @@ void main() {
       final server = _ScriptedHttpClient();
       server.onStatic(
         'POST',
-        '/api/v1/auth/session',
+        '/api/v1/auth/login',
         _Resp(200, _envelope(_authSessionJson)),
       );
       server.onStatic(
@@ -497,7 +497,7 @@ void main() {
     final server = _ScriptedHttpClient();
     server.onStatic(
       'POST',
-      '/api/v1/auth/session',
+      '/api/v1/auth/login',
       _Resp(200, _envelope(_authSessionJson)),
     );
     server.onStatic(
@@ -593,7 +593,7 @@ void main() {
       final server = _ScriptedHttpClient();
       server.onStatic(
         'POST',
-        '/api/v1/auth/session',
+        '/api/v1/auth/login',
         _Resp(200, _envelope(_authSessionJson)),
       );
       server.on('GET', '/api/v1/dashboard/snapshot', (_) {

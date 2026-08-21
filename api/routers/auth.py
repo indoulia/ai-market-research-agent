@@ -1,5 +1,7 @@
-"""POST /api/v1/auth/session, POST /api/v1/auth/logout, GET /api/v1/me,
-GET /api/v1/me/permissions (EPIC-M1.145)."""
+"""POST /api/v1/auth/login, POST /api/v1/auth/refresh,
+GET /api/v1/auth/session, POST /api/v1/auth/logout, GET /api/v1/me,
+GET /api/v1/me/permissions (EPIC-M1.145, endpoint split to EPIC-M3.12's
+login/refresh/session contract)."""
 
 from __future__ import annotations
 
@@ -11,20 +13,25 @@ from app.models import AuthSession
 from ..deps import get_db, require_active_session
 from ..envelope import success
 from ..schemas.common import SuccessEnvelope
-from ..schemas.auth import LogoutResponse, PermissionsResponse, SessionRequest, SessionResponse, UserContext
-from ..services.auth import establish_or_refresh_session, get_permissions, get_user_context, logout
+from ..schemas.auth import LoginRequest, LogoutResponse, PermissionsResponse, SessionResponse, UserContext
+from ..services.auth import get_permissions, get_user_context, login, logout, refresh
 
 router = APIRouter(tags=["auth"])
 
 
-@router.post("/auth/session", response_model=SuccessEnvelope[SessionResponse])
-def post_auth_session(
-    request: SessionRequest | None = None,
-    db: Session = Depends(get_db),
-    authorization: str | None = Header(default=None),
-):
-    body = request if request is not None else SessionRequest()
-    return success(establish_or_refresh_session(db, body, authorization=authorization))
+@router.post("/auth/login", response_model=SuccessEnvelope[SessionResponse])
+def post_auth_login(request: LoginRequest, db: Session = Depends(get_db)):
+    return success(login(db, request))
+
+
+@router.post("/auth/refresh", response_model=SuccessEnvelope[SessionResponse])
+def post_auth_refresh(db: Session = Depends(get_db), authorization: str | None = Header(default=None)):
+    return success(refresh(db, authorization=authorization))
+
+
+@router.get("/auth/session", response_model=SuccessEnvelope[UserContext])
+def get_auth_session(auth_session: AuthSession = Depends(require_active_session)):
+    return success(get_user_context(auth_session))
 
 
 @router.post("/auth/logout", response_model=SuccessEnvelope[LogoutResponse])

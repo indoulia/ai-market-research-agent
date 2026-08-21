@@ -256,7 +256,8 @@ Future<void> _handle(HttpRequest request) async {
     );
   }
 
-  if (method == 'POST' && path == '/api/v1/auth/session') {
+  if (method == 'POST' &&
+      (path == '/api/v1/auth/login' || path == '/api/v1/auth/refresh')) {
     final body = await _readJsonBody(request);
     final userId = body['userId'] as String? ?? 'mock-user';
     return _writeJson(
@@ -270,6 +271,22 @@ Future<void> _handle(HttpRequest request) async {
             .toUtc()
             .add(const Duration(days: 1))
             .toIso8601String(),
+      }),
+    );
+  }
+
+  if (method == 'GET' && path == '/api/v1/auth/session') {
+    return _writeJson(
+      request.response,
+      200,
+      _envelope({
+        'userId': 'mock-user',
+        'sessionIssuedAt': _nowIso(),
+        'sessionExpiresAt': DateTime.now()
+            .toUtc()
+            .add(const Duration(days: 1))
+            .toIso8601String(),
+        'requestId': 'mock-request-id',
       }),
     );
   }
