@@ -1651,6 +1651,33 @@ class AssumptionDecayAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class SpecializationRoutingDecision(Base):
+    __tablename__ = "specialization_routing_decisions"
+    __table_args__ = (
+        UniqueConstraint(
+            "dimension", "segment_key", "specialized_model_version", "global_model_version", "computed_at",
+            name="uq_specialization_routing_segment_models_computed_at",
+        ),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    dimension: Mapped[str] = mapped_column(String(32))
+    segment_key: Mapped[str] = mapped_column(String(64))
+    specialized_model_version: Mapped[str] = mapped_column(String(64))
+    global_model_version: Mapped[str] = mapped_column(String(64))
+    candidate_count: Mapped[int] = mapped_column(Integer)
+    adjusted_margin: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    baseline_window_label: Mapped[str] = mapped_column(String(128))
+    confirmation_window_label: Mapped[str] = mapped_column(String(128))
+    baseline_verdict: Mapped[str] = mapped_column(String(32))
+    confirmation_verdict: Mapped[str] = mapped_column(String(32))
+    specialized_sample_count: Mapped[int] = mapped_column(Integer)
+    global_sample_count: Mapped[int] = mapped_column(Integer)
+    routing_verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    routing_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
