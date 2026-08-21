@@ -1,7 +1,7 @@
 # EPIC-M1.129 — Multi-Level Benchmark-Relative Opportunity Intelligence
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -27,7 +27,7 @@ M1.86, M1.98, M1.99, M1.109.
 
 ## Completion Report
 
-**Status:** implemented on branch `autonomous/epic-m1-129`, PR opened against `main`, not yet merged.
+**Status:** DONE -- merged to `main` via PR #229 (`e8ea1c4`).
 
 **Implementation:**
 - `app/benchmark_relative_alpha.py`: new, versioned (`BENCHMARK_RELATIVE_VERSION = "BRA-001"`) module.
