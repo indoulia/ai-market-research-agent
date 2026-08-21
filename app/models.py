@@ -1710,6 +1710,20 @@ class ReproducibilityAuditDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class CostQualityTradeoffReport(Base):
+    __tablename__ = "cost_quality_tradeoff_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    data_type: Mapped[str] = mapped_column(String(32), index=True)
+    provider_candidates: Mapped[list] = mapped_column(JSON)
+    recommended_provider_id: Mapped[str | None] = mapped_column(String(64))
+    best_free_provider_id: Mapped[str | None] = mapped_column(String(64))
+    quality_floor: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
