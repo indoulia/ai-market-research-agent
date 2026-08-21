@@ -1,8 +1,8 @@
 # EPIC-M1.145 — Authentication, Session & User Context API
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #196, commit 543d865)
 **Priority:** P0
 
 ## Objective
