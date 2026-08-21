@@ -1,8 +1,8 @@
 # EPIC-M1.133 — Flutter MRA Design System & Component Library
 
 **Track:** UI
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** VALIDATING
+**Execution Status:** IMPLEMENTED_PENDING_MERGE
 **Priority:** P0
 
 ## Objective
@@ -53,3 +53,21 @@ UI-only EPIC. It may proceed in parallel with API work using fixture data from M
 
 ## Dependencies
 M1.132.
+
+## Completion Report
+
+**Implemented on branch:** `autonomous/epic-m1-133` (isolated worktree, parallel to the API-track session's own M1.132 branch).
+
+**What was built:**
+- Design tokens: `lib/design_system/tokens/` — colors (semantic roles resolved per-brightness via `MraColorScheme`, plus distinct market-up/down/flat colors), spacing/radii/elevation/motion, responsive breakpoints (`MraBreakpoints`/`MraWindowClass`), typography scale with tabular-figure numeric styling for price/percentage alignment in dense grids.
+- Theme: `lib/design_system/theme/mra_theme.dart` builds light/dark `ThemeData` from those tokens (Material 3, `ColorScheme.fromSeed`) — no screen constructs its own `ThemeData`.
+- Component library (`lib/design_system/components/`): `MraCard`, `MraChip` (5 semantic tones, each pairs an optional icon with color so meaning is never color-only), `KpiStatCard`, `RecommendationCard` (presentation-only view model — does not call any API), `MraDenseTable`, `ScoreIndicator` (score/confidence/trust), `TargetSlBadge`, `HorizonSelector`, `MraFilterBar`, `MraSearchField`, `MraTabBar`, bottom-sheet/dialog helpers, `TimelineEventRow`, `NewsCard`, a dependency-free `SparklineChart` (`CustomPainter`), `SkeletonBox`/`SkeletonCard` (shimmer skipped under `MediaQuery.disableAnimations`), `MraStateView` (empty/error/offline, internally scrollable so it never overflows in a squeezed slot), `showMraToast`.
+- Component gallery (`lib/gallery/gallery_screen.dart`) demonstrating every shared component, reachable at runtime via Settings → "Design system gallery (QA)".
+
+**Tests:** `test/design_system/` — component smoke tests (every component renders and responds to interaction), a text-scaling/overflow regression test (2x `TextScaler`), a responsive-breakpoint classification test, and a theme test (light/dark both build, tones differ per brightness, reduced-motion honored). All pass: `flutter test` → 33/33 (shared suite with EPIC-M1.134, see that doc). `flutter analyze` → no issues. `dart format --set-exit-if-changed` → clean.
+
+**Real bugs found and fixed during implementation** (not just cosmetic): a `RenderFlex`/unbounded-height crash in `TimelineEventRow`'s connector line when used inside a scrolling list (fixed with `IntrinsicHeight`); a text-not-wrapped-in-Expanded overflow in `RecommendationCard`'s footer row at 2x text scale; a vertical overflow in `MraStateView` when squeezed into a short box (fixed by making it internally scrollable); a missing-onAction test bug.
+
+**Known gap, named rather than papered over:** this doc's "Design Direction"/"Responsive Rules" sections carry leftover literal citation-marker text (`citeturn0search...`) from whatever generated the original doc — cosmetic only, doesn't affect scope, left in place rather than risking a bad edit to a doc a peer session may also be reading concurrently.
+
+**Fixture/mock-data note:** built before the real OpenAPI contract (EPIC-M1.132) merged; `RecommendationCard` and friends take a plain Dart view-model (`RecommendationCardData`), so wiring real API responses in later UI epics is a mapping step, not a component rewrite.
