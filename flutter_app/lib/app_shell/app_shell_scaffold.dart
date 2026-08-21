@@ -38,13 +38,14 @@ class AppShellScaffold extends StatelessWidget {
       LogicalKeyboardKey.digit4,
       LogicalKeyboardKey.digit5,
       LogicalKeyboardKey.digit6,
+      LogicalKeyboardKey.digit7,
     ];
     return digits[oneBased - 1];
   }
 
   @override
   Widget build(BuildContext context) {
-    // Web/desktop keyboard shortcut: Alt+1..6 jumps to a destination, per
+    // Web/desktop keyboard shortcut: Alt+1..7 jumps to a destination, per
     // EPIC-M1.134's "keyboard shortcuts ... on web" shell requirement.
     return CallbackShortcuts(
       bindings: _shortcuts(),
