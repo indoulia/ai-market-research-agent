@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mra_app/app_shell/app_router.dart';
@@ -90,6 +91,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('MRA Design System Gallery'), findsOneWidget);
+  });
+
+  testWidgets('Alt+2 keyboard shortcut jumps to the Discover destination', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final router = buildAppRouter();
+    await tester.pumpWidget(_appWithRouter(router));
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/discover',
+    );
   });
 
   testWidgets('switching branches and back preserves navigation state', (

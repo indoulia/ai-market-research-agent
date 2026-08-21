@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design_system/tokens/mra_spacing.dart';
@@ -21,8 +22,37 @@ class AppShellScaffold extends StatelessWidget {
     );
   }
 
+  Map<ShortcutActivator, VoidCallback> _shortcuts() {
+    return {
+      for (var i = 0; i < kAppDestinations.length; i++)
+        SingleActivator(_digitKey(i + 1), alt: true): () =>
+            _onDestinationSelected(i),
+    };
+  }
+
+  LogicalKeyboardKey _digitKey(int oneBased) {
+    const digits = [
+      LogicalKeyboardKey.digit1,
+      LogicalKeyboardKey.digit2,
+      LogicalKeyboardKey.digit3,
+      LogicalKeyboardKey.digit4,
+      LogicalKeyboardKey.digit5,
+      LogicalKeyboardKey.digit6,
+    ];
+    return digits[oneBased - 1];
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Web/desktop keyboard shortcut: Alt+1..6 jumps to a destination, per
+    // EPIC-M1.134's "keyboard shortcuts ... on web" shell requirement.
+    return CallbackShortcuts(
+      bindings: _shortcuts(),
+      child: Focus(autofocus: true, child: _buildResponsiveShell(context)),
+    );
+  }
+
+  Widget _buildResponsiveShell(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 600;
