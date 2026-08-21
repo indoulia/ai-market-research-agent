@@ -14,10 +14,16 @@ Composes existing, already-merged domain modules -- nothing recomputed:
   - The M1.135 context-summary helpers for ``fundamental``/``news``/
     ``events``/``market``.
 
-M1.105 (freshness/revision engine), M1.119 (real-time outcome monitor),
-M1.126 (information latency) and M1.129 (benchmark-relative alpha) are
-all APPROVED but not yet implemented (see EPIC-M1.137's Dependencies
-note). Consequences, named rather than hidden:
+M1.105 (freshness/revision engine) merged after this EPIC's Dependencies
+note was written; its ``PredictionFreshnessDecision`` rows are surfaced
+in ``get_events`` as ``REANALYSIS_TRIGGER`` items alongside M1.54's
+``EvidenceRevalidationCheck`` rows -- the two are distinct, non-
+overlapping signals (evidence-staleness-per-category vs. prediction-
+level drift/disagreement/material-change) and both belong on this feed.
+
+M1.119 (real-time outcome monitor), M1.126 (information latency) and
+M1.129 (benchmark-relative alpha) are still APPROVED but not yet
+implemented. Consequences, named rather than hidden:
   - ``benchmarkRelative``/``benchmarkReturnPct`` are always ``None`` --
     no domain module computes a benchmark-relative return yet.
   - Outcome detection reflects M1.5's periodic (lifecycle-check-time)
@@ -59,6 +65,7 @@ from app.models import (
     Stock,
 )
 from app.opportunity_ranking import OPPORTUNITY_RANKING_VERSION
+from app.prediction_freshness_engine import get_freshness_history
 from app.prediction_trust_score import get_trust_score_history
 from app.recommendation_revision import compare_versions, get_active_version, get_revision_history
 from app.target_stop_loss import TARGET_STOP_METHODOLOGY_VERSION, get_publication
@@ -262,6 +269,7 @@ def get_events(session: Session, recommendation_id: int, *, cursor: str | None =
             EvidenceRevalidationCheck.revalidation_required.is_(True),
         )
     ).all()
+    freshness_decisions = [d for d in get_freshness_history(session, prediction.id) if d.re_analysis_recommended]
 
     merged: list[EventItem] = []
     for record in news:
@@ -275,6 +283,12 @@ def get_events(session: Session, recommendation_id: int, *, cursor: str | None =
         merged.append(EventItem(
             timestamp=record.checked_at, eventType=EVENT_TYPE_REANALYSIS_TRIGGER,
             description=f"{record.evidence_category} revalidation required ({record.reason or 'unspecified'})", materiality=None,
+        ))
+    for decision in freshness_decisions:
+        trigger_names = ", ".join(t["trigger"] for t in decision.triggers) or "unspecified"
+        merged.append(EventItem(
+            timestamp=decision.evaluated_at, eventType=EVENT_TYPE_REANALYSIS_TRIGGER,
+            description=f"Freshness engine: {trigger_names}", materiality=None,
         ))
     merged.sort(key=lambda item: item.timestamp, reverse=True)
 
