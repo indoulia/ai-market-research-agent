@@ -80,11 +80,11 @@
         "title": "BootstrapResponse",
         "type": "object"
       },
-      "CursorEnvelope_EventItem_": {
+      "CursorEnvelope_DiscoveryItem_": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/EventItem"
+              "$ref": "#/components/schemas/DiscoveryItem"
             },
             "title": "Data",
             "type": "array"
@@ -97,7 +97,7 @@
           "data",
           "meta"
         ],
-        "title": "CursorEnvelope[EventItem]",
+        "title": "CursorEnvelope[DiscoveryItem]",
         "type": "object"
       },
       "CursorEnvelope_HistoryItem_": {
@@ -118,6 +118,26 @@
           "meta"
         ],
         "title": "CursorEnvelope[HistoryItem]",
+        "type": "object"
+      },
+      "CursorEnvelope_NewsItem_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/NewsItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[NewsItem]",
         "type": "object"
       },
       "CursorEnvelope_RecommendationSummary_": {
@@ -175,17 +195,9 @@
         "title": "CursorMeta",
         "type": "object"
       },
-      "EventItem": {
+      "DiscoveryItem": {
         "properties": {
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "eventType": {
-            "title": "Eventtype",
-            "type": "string"
-          },
-          "materiality": {
+          "companyName": {
             "anyOf": [
               {
                 "type": "string"
@@ -194,21 +206,100 @@
                 "type": "null"
               }
             ],
-            "title": "Materiality"
+            "title": "Companyname"
           },
-          "timestamp": {
+          "discoveredAt": {
             "format": "date-time",
-            "title": "Timestamp",
+            "title": "Discoveredat",
             "type": "string"
+          },
+          "discoveryReasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discoveryreasons",
+            "type": "array"
+          },
+          "eligibility": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eligibility"
+          },
+          "exchange": {
+            "title": "Exchange",
+            "type": "string"
+          },
+          "industry": {
+            "title": "Industry",
+            "type": "string"
+          },
+          "liquidity": {
+            "title": "Liquidity",
+            "type": "string"
+          },
+          "marketCapBucket": {
+            "title": "Marketcapbucket",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "sector": {
+            "title": "Sector",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
           }
         },
         "required": [
-          "timestamp",
-          "eventType",
-          "description",
-          "materiality"
+          "symbol",
+          "companyName",
+          "exchange",
+          "sector",
+          "industry",
+          "marketCapBucket",
+          "liquidity",
+          "discoveredAt",
+          "discoveryReasons",
+          "score",
+          "trustScore",
+          "eligibility",
+          "status"
         ],
-        "title": "EventItem",
+        "title": "DiscoveryItem",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -344,6 +435,125 @@
         "title": "HistoryItem",
         "type": "object"
       },
+      "IndexQuote": {
+        "description": "Shape reserved for future index-level data. Always empty for now --\nthis platform ingests individual NSE equity prices only, no index\n(e.g. NIFTY50) feed exists, so fabricating a value here would be\ndishonest rather than merely incomplete.",
+        "properties": {
+          "changePct": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Changepct",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "value",
+          "changePct"
+        ],
+        "title": "IndexQuote",
+        "type": "object"
+      },
+      "MarketSummary": {
+        "properties": {
+          "advanceDecline": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advancedecline"
+          },
+          "asOf": {
+            "format": "date-time",
+            "title": "Asof",
+            "type": "string"
+          },
+          "indexes": {
+            "items": {
+              "$ref": "#/components/schemas/IndexQuote"
+            },
+            "title": "Indexes",
+            "type": "array"
+          },
+          "marketStatus": {
+            "title": "Marketstatus",
+            "type": "string"
+          },
+          "regime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regime"
+          },
+          "sectorLaggards": {
+            "items": {
+              "$ref": "#/components/schemas/SectorMove"
+            },
+            "title": "Sectorlaggards",
+            "type": "array"
+          },
+          "sectorLeaders": {
+            "items": {
+              "$ref": "#/components/schemas/SectorMove"
+            },
+            "title": "Sectorleaders",
+            "type": "array"
+          },
+          "volatility": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volatility"
+          },
+          "volume": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volume"
+          }
+        },
+        "required": [
+          "asOf",
+          "marketStatus",
+          "regime",
+          "advanceDecline",
+          "volume",
+          "volatility",
+          "indexes",
+          "sectorLeaders",
+          "sectorLaggards"
+        ],
+        "title": "MarketSummary",
+        "type": "object"
+      },
       "Meta": {
         "properties": {
           "requestId": {
@@ -361,6 +571,59 @@
           "timestamp"
         ],
         "title": "Meta",
+        "type": "object"
+      },
+      "NewsItem": {
+        "properties": {
+          "affectedSecurities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affectedsecurities",
+            "type": "array"
+          },
+          "detectedAt": {
+            "format": "date-time",
+            "title": "Detectedat",
+            "type": "string"
+          },
+          "evidenceId": {
+            "title": "Evidenceid",
+            "type": "integer"
+          },
+          "headline": {
+            "title": "Headline",
+            "type": "string"
+          },
+          "materiality": {
+            "title": "Materiality",
+            "type": "string"
+          },
+          "publishedAt": {
+            "format": "date-time",
+            "title": "Publishedat",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "symbol",
+          "headline",
+          "source",
+          "publishedAt",
+          "detectedAt",
+          "materiality",
+          "affectedSecurities",
+          "evidenceId"
+        ],
+        "title": "NewsItem",
         "type": "object"
       },
       "OutcomeResponse": {
@@ -992,6 +1255,25 @@
         "title": "RecommendationSummary",
         "type": "object"
       },
+      "SectorMove": {
+        "properties": {
+          "averageChangePct": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Averagechangepct",
+            "type": "string"
+          },
+          "sector": {
+            "title": "Sector",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sector",
+          "averageChangePct"
+        ],
+        "title": "SectorMove",
+        "type": "object"
+      },
       "ServerTime": {
         "properties": {
           "utc": {
@@ -1035,6 +1317,22 @@
           "meta"
         ],
         "title": "SuccessEnvelope[HealthResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_MarketSummary_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MarketSummary"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[MarketSummary]",
         "type": "object"
       },
       "SuccessEnvelope_OutcomeResponse_": {
@@ -1108,6 +1406,139 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "api__schemas__common__CursorEnvelope_EventItem___1": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/api__schemas__recommendation_detail__EventItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[EventItem]",
+        "type": "object"
+      },
+      "api__schemas__common__CursorEnvelope_EventItem___2": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/api__schemas__news_events__EventItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[EventItem]",
+        "type": "object"
+      },
+      "api__schemas__news_events__EventItem": {
+        "properties": {
+          "detectedAt": {
+            "format": "date-time",
+            "title": "Detectedat",
+            "type": "string"
+          },
+          "effectiveAt": {
+            "format": "date-time",
+            "title": "Effectiveat",
+            "type": "string"
+          },
+          "evidenceId": {
+            "title": "Evidenceid",
+            "type": "integer"
+          },
+          "materiality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materiality"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "symbol",
+          "type",
+          "title",
+          "effectiveAt",
+          "detectedAt",
+          "materiality",
+          "source",
+          "evidenceId"
+        ],
+        "title": "EventItem",
+        "type": "object"
+      },
+      "api__schemas__recommendation_detail__EventItem": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "eventType": {
+            "title": "Eventtype",
+            "type": "string"
+          },
+          "materiality": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Materiality"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestamp",
+          "eventType",
+          "description",
+          "materiality"
+        ],
+        "title": "EventItem",
+        "type": "object"
       }
     }
   },
@@ -1154,6 +1585,312 @@
         ]
       }
     },
+    "/api/v1/discoveries": {
+      "get": {
+        "operationId": "get_discoveries_api_v1_discoveries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Market"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "industry",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Industry"
+            }
+          },
+          {
+            "in": "query",
+            "name": "marketCapBucket",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Marketcapbucket"
+            }
+          },
+          {
+            "description": "LOW|NORMAL|HIGH",
+            "in": "query",
+            "name": "liquidity",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "LOW|NORMAL|HIGH",
+              "title": "Liquidity"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minScore",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Minscore"
+            }
+          },
+          {
+            "description": "discoveredAt|score",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "discoveredAt",
+              "description": "discoveredAt|score",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "pattern": "^(asc|desc)$",
+              "title": "Direction",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_DiscoveryItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Discoveries",
+        "tags": [
+          "discoveries"
+        ]
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "operationId": "get_events_api_v1_events_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "symbol",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Symbol"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "industry",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Industry"
+            }
+          },
+          {
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "pattern": "^(asc|desc)$",
+              "title": "Direction",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/api__schemas__common__CursorEnvelope_EventItem___2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Events",
+        "tags": [
+          "news-events"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "get_health_api_v1_health_get",
@@ -1172,6 +1909,147 @@
         "summary": "Get Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/market/summary": {
+      "get": {
+        "operationId": "get_summary_api_v1_market_summary_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_MarketSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Summary",
+        "tags": [
+          "market"
+        ]
+      }
+    },
+    "/api/v1/news": {
+      "get": {
+        "operationId": "get_news_api_v1_news_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "symbol",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Symbol"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sector",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "in": "query",
+            "name": "industry",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Industry"
+            }
+          },
+          {
+            "in": "query",
+            "name": "direction",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "pattern": "^(asc|desc)$",
+              "title": "Direction",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_NewsItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get News",
+        "tags": [
+          "news-events"
         ]
       }
     },
@@ -1474,7 +2352,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CursorEnvelope_EventItem_"
+                  "$ref": "#/components/schemas/api__schemas__common__CursorEnvelope_EventItem___1"
                 }
               }
             },

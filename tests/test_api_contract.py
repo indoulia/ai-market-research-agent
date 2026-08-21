@@ -66,10 +66,10 @@ def test_bootstrap_reports_contract_and_capabilities(client):
     assert data["contractVersion"]
     assert data["capabilities"] == {
         "recommendations": True,
-        "discovery": False,
-        "marketSummary": False,
-        "news": False,
-        "events": False,
+        "discovery": True,
+        "marketSummary": True,
+        "news": True,
+        "events": True,
         "feedback": False,
         "preferences": False,
         "auth": False,

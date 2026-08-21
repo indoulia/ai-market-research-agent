@@ -6,7 +6,7 @@ from fastapi import APIRouter, FastAPI
 
 from .exception_handlers import register_exception_handlers
 from .middleware import RequestContextMiddleware
-from .routers import bootstrap, health, recommendation_detail, recommendations
+from .routers import bootstrap, discovery, health, market, news_events, recommendation_detail, recommendations
 from .versioning import API_PREFIX
 
 api_router = APIRouter(prefix=API_PREFIX)
@@ -14,6 +14,9 @@ api_router.include_router(health.router)
 api_router.include_router(bootstrap.router)
 api_router.include_router(recommendations.router)
 api_router.include_router(recommendation_detail.router)
+api_router.include_router(discovery.router)
+api_router.include_router(market.router)
+api_router.include_router(news_events.router)
 
 
 def register_api(app: FastAPI) -> None:
