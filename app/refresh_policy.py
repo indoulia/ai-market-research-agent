@@ -1,17 +1,20 @@
 """EPIC-M1.35: determine what information must be fetched, when it must be
 refreshed, and when existing data is sufficiently fresh for analysis.
 
-This repo currently only has one real data type actually ingested end to
-end -- market/price data (`MarketPrice`, via `app/market_data/`). There is
-no news/event or fundamental-data ingestion pipeline in this codebase yet.
-Fabricating fetch logic for data that isn't really ingested would violate
-this platform's standing rule against fabricated evidence, so this module
-defines the policy framework generically (a `data_type` dimension with a
-fixed, documented, versioned freshness threshold per type) and provides a
-working, tested instantiation for market data -- the one type genuinely
-backed by real ingestion -- while news/event and fundamental-data remain
-named policy constants only, honestly representing what this platform can
-actually determine "fresh enough" for today.
+Originally this repo had only one real data type ingested end to end --
+market/price data (`MarketPrice`, via `app/market_data/`) -- so this
+module defined the policy framework generically (a `data_type` dimension
+with a fixed, documented, versioned freshness threshold per type) and
+provided a working, tested instantiation only for market data, leaving
+news/event and fundamental-data as named policy constants with no real
+check behind them, honestly representing what this platform could
+determine "fresh enough" for at the time.
+
+EPIC-M1.72 added the second real instantiation: `check_fundamental_data_
+freshness`, backed by `app.fundamental_data`'s real, point-in-time
+`FundamentalDataRecord` ingestion. `DATA_TYPE_NEWS_EVENT` remains a named
+policy constant only -- there is still no real news/event ingestion
+pipeline in this codebase.
 """
 from __future__ import annotations
 
@@ -21,7 +24,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import event, inspect, select
 from sqlalchemy.orm import Session
 
-from .models import DataFetchAttempt, MarketPrice
+from .models import DataFetchAttempt, FundamentalDataRecord, MarketPrice
 
 REFRESH_POLICY_VERSION = "RFP-001"
 
@@ -143,6 +146,22 @@ def check_market_data_freshness(session: Session, stock_id: int, as_of_timestamp
         .order_by(MarketPrice.timestamp.desc())
     )
     return is_data_fresh(DATA_TYPE_MARKET, latest_timestamp, as_of_timestamp)
+
+
+def check_fundamental_data_freshness(session: Session, stock_id: int, as_of_timestamp: datetime) -> FreshnessCheck:
+    """The real instantiation for fundamentals: is the latest
+    `FundamentalDataRecord` known to have been published *at or before*
+    `as_of_timestamp` fresh enough? The `published_at <= as_of_timestamp`
+    filter is what makes this point-in-time safe -- a later revision is
+    simply invisible to an earlier `as_of_timestamp`, never mutated away
+    (the same point-in-time-safety pattern `app.historical_replay` (M1.24)
+    already established for market data)."""
+    latest_published_at = session.scalar(
+        select(FundamentalDataRecord.published_at)
+        .where(FundamentalDataRecord.stock_id == stock_id, FundamentalDataRecord.published_at <= as_of_timestamp)
+        .order_by(FundamentalDataRecord.published_at.desc())
+    )
+    return is_data_fresh(DATA_TYPE_FUNDAMENTAL, latest_published_at, as_of_timestamp)
 
 
 def record_fetch_attempt(
