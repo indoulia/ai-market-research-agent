@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: market-agent-api
+  namespace: market-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: market-agent-api
+  template:
+    metadata:
+      labels:
+        app: market-agent-api
+    spec:
+      containers:
+        - name: api
+          image: market-agent-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: DATABASE_URL
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: UPSTOX_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_ACCESS_TOKEN
+                  optional: true
+            - name: UPSTOX_INSTRUMENTS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_INSTRUMENTS_URL
+                  optional: true
+            - name: APP_ENV
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: APP_ENV
+            - name: LOG_LEVEL
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: LOG_LEVEL
+            - name: CORS_ALLOWED_ORIGINS
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: CORS_ALLOWED_ORIGINS
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: market-agent-api
+  namespace: market-agent
+spec:
+  selector:
+    app: market-agent-api
+  ports:
+    - port: 8000
+      targetPort: 8000
