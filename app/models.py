@@ -1374,6 +1374,51 @@ class FeatureDriftAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RegimeTransitionAssessment(Base):
+    __tablename__ = "regime_transition_assessments"
+    __table_args__ = (UniqueConstraint("scan_id", name="uq_regime_transition_scan"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    previous_scan_id: Mapped[int | None] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    current_regime: Mapped[str] = mapped_column(String(32))
+    previous_regime: Mapped[str | None] = mapped_column(String(32))
+    transition_detected: Mapped[bool] = mapped_column(Boolean)
+    distance_to_boundary: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    boundary_instability_verdict: Mapped[str] = mapped_column(String(32))
+    uncertainty_source: Mapped[str] = mapped_column(String(32))
+    trust_reduction_recommended: Mapped[bool] = mapped_column(Boolean)
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    assessment_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PredictionRegimeUncertaintySnapshot(Base):
+    __tablename__ = "prediction_regime_uncertainty_snapshots"
+    __table_args__ = (UniqueConstraint("prediction_id", name="uq_regime_uncertainty_snapshot_prediction"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    regime_transition_assessment_id: Mapped[int] = mapped_column(ForeignKey("regime_transition_assessments.id"))
+    snapshotted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TransitionPeriodPerformanceReport(Base):
+    __tablename__ = "transition_period_performance_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    window_label: Mapped[str] = mapped_column(String(128))
+    transition_sample_count: Mapped[int] = mapped_column(Integer)
+    transition_success_count: Mapped[int] = mapped_column(Integer)
+    transition_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    stable_sample_count: Mapped[int] = mapped_column(Integer)
+    stable_success_count: Mapped[int] = mapped_column(Integer)
+    stable_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    success_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (

@@ -68,6 +68,11 @@ _FEATURE_COLUMNS = {
     FEATURE_CONFIDENCE: ScanCandidate.confidence,
 }
 
+# Public vocabulary of every feature this module monitors, for callers
+# (e.g. M1.102) that need to iterate all of them without reaching into
+# this module's internal column mapping.
+MONITORED_FEATURES = tuple(_FEATURE_COLUMNS)
+
 VERDICT_NO_DRIFT = "NO_DRIFT"
 VERDICT_DRIFT_DETECTED = "DRIFT_DETECTED"
 VERDICT_INSUFFICIENT_SAMPLE = "INSUFFICIENT_SAMPLE"
