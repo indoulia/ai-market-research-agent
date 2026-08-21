@@ -2232,3 +2232,15 @@ class MicrostructureSnapshot(Base):
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     snapshot_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EndToEndValidationGateReport(Base):
+    __tablename__ = "end_to_end_validation_gate_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    check_results: Mapped[list] = mapped_column(JSON)
+    blocking_issues: Mapped[list] = mapped_column(JSON)
+    overall_verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    gate_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
