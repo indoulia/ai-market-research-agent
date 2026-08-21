@@ -993,6 +993,24 @@ class PredictionCalibrationDrift(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class PositiveRecommendationGateDecision(Base):
+    __tablename__ = "positive_recommendation_gate_decisions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_positive_gate_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    verdict: Mapped[str] = mapped_column(String(32))
+    evidence_quality_met: Mapped[bool] = mapped_column(Boolean)
+    trust_quality_met: Mapped[bool] = mapped_column(Boolean)
+    segment_trust_met: Mapped[bool] = mapped_column(Boolean)
+    calibration_drift_met: Mapped[bool] = mapped_column(Boolean)
+    suppression_reasons: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    gate_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class NewsEventRecord(Base):
     __tablename__ = "news_event_records"
     __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
