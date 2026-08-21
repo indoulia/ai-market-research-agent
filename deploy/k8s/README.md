@@ -26,56 +26,46 @@ credentials are written -- never paste them into a manifest, script, or this
 README. Leave `OPENAI_API_KEY` / `UPSTOX_ACCESS_TOKEN` blank to run without
 that provider.
 
-## 2. Build images
+## 2. Build and deploy -- one command
+
+```powershell
+./deploy/k8s/deploy.ps1
+```
+
+`deploy.ps1` builds both images, best-effort loads them into the cluster's
+containerd via `nerdctl` (only meaningful in Rancher Desktop's containerd
+engine mode -- in dockerd/moby mode this step harmlessly no-ops because k3s
+already shares the same Docker image store `docker build` populates),
+applies the base manifests, (re)creates the `market-agent-secrets` Secret
+from `market-agent.env`, waits for Postgres, runs the Alembic migration Job,
+and restarts the API/web Deployments. It's safe to re-run.
+
+For a redeploy where no new Alembic revision shipped, skip the migration
+step: `./deploy/k8s/deploy.ps1 -SkipMigrate`.
+
+Doing it by hand instead (what the script automates), in order:
 
 ```powershell
 docker build -t market-agent-api:local .
 docker build --build-arg API_BASE_URL=http://market-agent.localhost -t market-agent-web:local flutter_app
-```
-
-## 3. Load images into the cluster
-
-```powershell
 docker save market-agent-api:local | nerdctl --namespace k8s.io load
 docker save market-agent-web:local | nerdctl --namespace k8s.io load
-```
-
-## 4. Apply base manifests
-
-```powershell
 kubectl apply -k deploy/k8s/base
-```
-
-This creates the `market-agent` namespace, Postgres, the API/web Deployments,
-Services, and the Ingress. The API and web pods will crash-loop until the
-Secret exists (next step) and Postgres is ready -- expected, and self-heals.
-
-## 5. Create the Secret
-
-```powershell
-kubectl create secret generic market-agent-secrets `
-  -n market-agent --from-env-file=deploy/k8s/market-agent.env
-```
-
-## 6. Wait for Postgres, then run migrations
-
-```powershell
+kubectl create secret generic market-agent-secrets -n market-agent --from-env-file=deploy/k8s/market-agent.env --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n market-agent rollout status deploy/postgres
 kubectl apply -f deploy/k8s/base/migration-job.yaml
 kubectl -n market-agent wait --for=condition=complete job/market-agent-migrate --timeout=120s
-```
-
-## 7. Restart API/web to pick up the Secret
-
-```powershell
 kubectl -n market-agent rollout restart deploy/market-agent-api deploy/market-agent-web
 ```
 
-## 8. Verify
+The API/web pods will crash-loop until the Secret exists and Postgres is
+ready -- expected, and self-heals once both are in place.
+
+## 3. Verify
 
 ```powershell
-curl http://market-agent.localhost/health
-curl http://market-agent.localhost/api/models
+Invoke-WebRequest http://market-agent.localhost/health
+Invoke-WebRequest http://market-agent.localhost/api/models
 ```
 
 Open `http://market-agent.localhost/` in a browser for the Flutter UI.
@@ -89,22 +79,6 @@ kubectl -n market-agent logs job/market-agent-migrate
 
 All pods should be `Running`/`Completed` with no `ImagePullBackOff` or
 `CrashLoopBackOff`.
-
-## Redeploying after code changes
-
-```powershell
-docker build -t market-agent-api:local .   # or the web build command above
-docker save market-agent-api:local | nerdctl --namespace k8s.io load
-kubectl -n market-agent rollout restart deploy/market-agent-api
-```
-
-If a new Alembic revision shipped, re-run migrations first:
-
-```powershell
-kubectl -n market-agent delete job/market-agent-migrate --ignore-not-found
-kubectl apply -f deploy/k8s/base/migration-job.yaml
-kubectl -n market-agent wait --for=condition=complete job/market-agent-migrate --timeout=120s
-```
 
 ## Teardown
 

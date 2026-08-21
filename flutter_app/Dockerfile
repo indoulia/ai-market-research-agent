@@ -1,4 +1,6 @@
-FROM ghcr.io/cirruslabs/flutter:stable AS build
+# Pinned to match .github/workflows/flutter-ci.yml -- "stable" has moved past
+# APIs this app depends on (e.g. CupertinoPageTransitionsBuilder removal).
+FROM ghcr.io/cirruslabs/flutter:3.41.2 AS build
 WORKDIR /app
 
 COPY pubspec.yaml pubspec.lock ./
