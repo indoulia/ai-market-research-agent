@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_exception.dart';
+import '../../core/auth/auth_controller.dart';
 import '../../design_system/design_system.dart';
 import 'preferences.dart';
 import 'preferences_repository.dart';
@@ -18,7 +19,16 @@ enum _LoadState { loading, error, loaded }
 class GeneralSettingsScreen extends StatefulWidget {
   final PreferencesRepository? repository;
 
-  const GeneralSettingsScreen({super.key, this.repository});
+  /// EPIC-M1.146 — when set, shows an "Account" section with the signed-in
+  /// user id and a sign-out action. Null hides the section entirely (the
+  /// QA gallery and pre-M1.146 tests never construct a real session).
+  final AuthController? authController;
+
+  const GeneralSettingsScreen({
+    super.key,
+    this.repository,
+    this.authController,
+  });
 
   @override
   State<GeneralSettingsScreen> createState() => _GeneralSettingsScreenState();
@@ -81,6 +91,10 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
             // and the QA gallery link below never do, so a failed/slow
             // preferences fetch never blocks access to them.
             _buildDisplaySection(context),
+            if (widget.authController != null) ...[
+              const SizedBox(height: MraSpacing.xxl),
+              _buildAccountSection(context, widget.authController!),
+            ],
             const SizedBox(height: MraSpacing.xxl),
             Text('About', style: theme.textTheme.labelLarge),
             const SizedBox(height: MraSpacing.sm),
@@ -120,6 +134,42 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAccountSection(BuildContext context, AuthController controller) {
+    final theme = Theme.of(context);
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final userId = controller.session?.userId;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Account', style: theme.textTheme.labelLarge),
+            const SizedBox(height: MraSpacing.sm),
+            MraCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      userId == null ? 'Not signed in' : 'Signed in as $userId',
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: MraSpacing.sm),
+                  OutlinedButton(
+                    onPressed: () => controller.signOut(),
+                    child: const Text('Sign out'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
