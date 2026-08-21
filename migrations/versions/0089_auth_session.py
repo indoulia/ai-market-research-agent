@@ -1,22 +1,24 @@
 """add auth_sessions table
 
-Revision ID: 0088_auth_session
-Revises: 0087_counterfactual
+Revision ID: 0089_auth_session
+Revises: 0088_assumption_decay
 
 EPIC-M1.145: a real, server-managed session lifecycle (issue/refresh/
 revoke/expire) for the Flutter mobile and web clients. `previous_
 session_id` links a refreshed session back to the one it rotated out,
 so the full lineage of a login is reconstructable.
 
-Renumbered from 0087 (onto 0086_api_pref_profile) to 0088 (onto
-0087_counterfactual) because EPIC-M1.111's 0087_counterfactual_analysis
-merged to main first, claiming the same down_revision. No schema change.
+Renumbered twice due to concurrent-session collisions: 0087 (onto
+0086_api_pref_profile, collided with M1.111's 0087_counterfactual_
+analysis) -> 0088 (onto 0087_counterfactual, collided with an
+0088_assumption_decay_tracker migration merged concurrently) -> this,
+0089 (onto 0088_assumption_decay). No schema change each time.
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0088_auth_session"
-down_revision = "0087_counterfactual"
+revision = "0089_auth_session"
+down_revision = "0088_assumption_decay"
 branch_labels = None
 depends_on = None
 
