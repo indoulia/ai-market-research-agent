@@ -62,6 +62,8 @@ class YahooFundamentalsClient:
     data)."""
 
     source = "yahoo-finance"
+    capability = "FUNDAMENTAL_DATA"
+    version = "1"
 
     def fetch_fundamentals(self, symbol: str) -> RawFundamentals | None:
         normalized_symbol = symbol.strip().upper()

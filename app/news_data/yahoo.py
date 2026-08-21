@@ -50,6 +50,8 @@ class YahooNewsClient:
     """
 
     source = "yahoo-finance"
+    capability = "NEWS_EVENT_DATA"
+    version = "1"
 
     def fetch_news(self, symbol: str) -> tuple[RawNewsItem, ...]:
         normalized_symbol = symbol.strip().upper()
