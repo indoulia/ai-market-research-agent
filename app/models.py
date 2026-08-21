@@ -2139,3 +2139,54 @@ class LatencyDegradationReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     report_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ShadowChallengerAssessment(Base):
+    __tablename__ = "shadow_challenger_assessments"
+    __table_args__ = (
+        UniqueConstraint("champion_prediction_id", "challenger_model_version", name="uq_shadow_prediction_challenger"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    champion_prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    champion_model_version: Mapped[str] = mapped_column(String(64))
+    challenger_model_version: Mapped[str] = mapped_column(String(64))
+    challenger_predicted_probability: Mapped[Decimal] = mapped_column(Numeric(10, 8))
+    challenger_confidence: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    shadow_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ShadowChallengerComparisonReport(Base):
+    __tablename__ = "shadow_challenger_comparison_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    challenger_model_version: Mapped[str] = mapped_column(String(64))
+    champion_model_version: Mapped[str] = mapped_column(String(64))
+    window_label: Mapped[str] = mapped_column(String(128))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    champion_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    challenger_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    success_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    champion_calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    challenger_calibration_error: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    by_horizon: Mapped[list] = mapped_column(JSON)
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    comparison_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ChampionRollback(Base):
+    __tablename__ = "champion_rollbacks"
+    __table_args__ = (
+        UniqueConstraint("rolled_back_model_version", "restored_model_version", name="uq_rollback_from_to"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    rolled_back_model_version: Mapped[str] = mapped_column(String(64))
+    restored_model_version: Mapped[str] = mapped_column(String(64))
+    triggering_model_regression_check_id: Mapped[int | None] = mapped_column(ForeignKey("model_regression_checks.id"))
+    resulting_model_promotion_id: Mapped[int] = mapped_column(ForeignKey("model_promotions.id"))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    approver: Mapped[str] = mapped_column(String(128))
+    rollback_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
