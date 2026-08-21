@@ -16,19 +16,22 @@ constants), this module never fabricates evidence a category doesn't have:
 - **Market/sector**: real when available -- `Stock.sector` (always present)
   and M1.26's `MarketRegime` for the originating scan ("where available",
   this platform's established pattern since not every scan is classified).
-- **News**: real when available -- M1.17's `DiscoveryRecord.rationale` is
-  the one genuine qualitative narrative this platform records about why a
-  candidate was surfaced; exposed here as "news evidence" rather than
-  fabricating a news-article feed that doesn't exist.
+- **News**: real when available, preferring M1.73's own point-in-time-safe
+  ingested `NewsEventRecord` (any `event_type`); falls back to M1.17's
+  `DiscoveryRecord.rationale` -- the one genuine qualitative narrative this
+  platform records about why a candidate was surfaced -- only when no real
+  ingested news exists for that stock as of the decision time.
 - **Fundamental**: real when available, as of EPIC-M1.72 -- M1.72's own
   point-in-time-safe `get_latest_fundamental_record` (never a plain
   "latest row" query, which would leak a future revision into a past
   decision), freshness checked via M1.35's `check_fundamental_data_freshness`.
-- **Event**: no ingestion pipeline exists for this category in this repo,
-  so it is always recorded `UNAVAILABLE` -- an honest, explicit statement
-  of what the system did not know, never a fabricated value (AC: "every
-  recommendation records all required evidence categories or an explicit
-  unavailable state").
+- **Event**: real when available, as of EPIC-M1.73 -- M1.73's own
+  point-in-time-safe `get_latest_news_event` filtered to
+  `EVENT_TYPE_CORPORATE_EVENT` (a deterministic, versioned keyword rule
+  over the ingested headline, never sentiment); `UNAVAILABLE` when no
+  such classified item exists for that stock as of the decision time --
+  an honest, explicit statement of what the system did not know, never a
+  fabricated value.
 
 One immutable row per `(prediction_id, evidence_category)` -- captured once,
 never re-derived or overwritten (AC: "historical snapshots cannot be
@@ -42,6 +45,7 @@ from sqlalchemy import event, inspect, select
 from sqlalchemy.orm import Session
 
 from .fundamental_data import get_latest_fundamental_record
+from .news_data import EVENT_TYPE_CORPORATE_EVENT, get_latest_news_event
 from .models import (
     DailyCandidateScan,
     DiscoveryRecord,
@@ -145,10 +149,34 @@ def _fundamental_evidence(session: Session, prediction: Prediction) -> dict:
 
 
 def _event_evidence(session: Session, prediction: Prediction) -> dict:
-    return _unavailable()
+    event = get_latest_news_event(
+        session, prediction.stock_id, as_of_timestamp=prediction.as_of_timestamp, event_type=EVENT_TYPE_CORPORATE_EVENT
+    )
+    if event is None:
+        return _unavailable()
+
+    check = is_data_fresh(DATA_TYPE_NEWS_EVENT, event.published_at, prediction.as_of_timestamp)
+    return dict(
+        status=STATUS_STALE if not check.is_fresh else STATUS_AVAILABLE,
+        source=event.source,
+        reference=f"{event.headline} (materiality={event.materiality})",
+        evidence_timestamp=event.published_at,
+        is_stale=not check.is_fresh,
+    )
 
 
 def _news_evidence(session: Session, prediction: Prediction) -> dict:
+    news = get_latest_news_event(session, prediction.stock_id, as_of_timestamp=prediction.as_of_timestamp)
+    if news is not None:
+        check = is_data_fresh(DATA_TYPE_NEWS_EVENT, news.published_at, prediction.as_of_timestamp)
+        return dict(
+            status=STATUS_STALE if not check.is_fresh else STATUS_AVAILABLE,
+            source=news.source,
+            reference=news.headline,
+            evidence_timestamp=news.published_at,
+            is_stale=not check.is_fresh,
+        )
+
     discovery = session.execute(
         select(DiscoveryRecord)
         .join(RecommendationGeneration, RecommendationGeneration.id == DiscoveryRecord.recommendation_generation_id)

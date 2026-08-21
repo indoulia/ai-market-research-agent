@@ -169,3 +169,33 @@ def test_resolution_never_mutates_prediction_or_evidence(session):
     after_snapshot = tuple((item.status, item.reference) for item in snapshot)
     assert before_prediction == after_prediction
     assert before_snapshot == after_snapshot
+
+
+def test_real_corporate_event_evidence_resolves_cleanly_through_m1_65(session):
+    """EPIC-M1.73's AC 'support evidence conflict handling through M1.65'
+    is structural, not a code change in M1.65 itself: once EVENT evidence
+    is real (M1.64's coverage is no longer permanently zero for this
+    category), M1.65 processes it exactly like any other trusted,
+    available category, with no special-casing required."""
+    from app.news_data.ingest import EVENT_TYPE_CORPORATE_EVENT, MATERIALITY_HIGH, NEWS_EVENT_INGESTION_VERSION
+    from app.models import NewsEventRecord
+
+    prediction, stock = _make_prediction(session)
+    session.add(NewsEventRecord(
+        stock_id=stock.id, source="yahoo-finance", external_id="e1",
+        headline="Company announces merger agreement", event_type=EVENT_TYPE_CORPORATE_EVENT,
+        materiality=MATERIALITY_HIGH, published_at=AS_OF - timedelta(hours=1), fetched_at=AS_OF - timedelta(hours=1),
+        ingestion_rule_version=NEWS_EVENT_INGESTION_VERSION,
+    ))
+    session.commit()
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+    event_item = {item.evidence_category: item for item in snapshot}["EVENT"]
+    assert event_item.status == "AVAILABLE"
+
+    report = compute_data_source_reliability_report(session)
+    event_status = next(s for s in report.quality_statuses if s.key == "EVENT")
+    assert event_status.trusted is True
+
+    resolution = resolve_evidence_conflicts(session, prediction, reliability_report=report, resolved_at=AS_OF)
+    assert resolution.state == STATE_RESOLVED

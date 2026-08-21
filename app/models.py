@@ -874,3 +874,19 @@ class FundamentalDataRecord(Base):
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ingestion_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class NewsEventRecord(Base):
+    __tablename__ = "news_event_records"
+    __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    source: Mapped[str] = mapped_column(String(64))
+    external_id: Mapped[str] = mapped_column(String(128))
+    headline: Mapped[str] = mapped_column(String(512))
+    event_type: Mapped[str] = mapped_column(String(32))
+    materiality: Mapped[str] = mapped_column(String(16))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    ingestion_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

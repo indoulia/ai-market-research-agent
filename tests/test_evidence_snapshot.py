@@ -176,6 +176,87 @@ def test_fundamental_evidence_ignores_data_published_after_the_decision(session)
 
     fundamental = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_FUNDAMENTAL]
     assert fundamental.status == STATUS_UNAVAILABLE
+
+
+def _add_news_event(session, stock, *, external_id, headline, event_type, materiality, published_at):
+    from app.news_data.ingest import NEWS_EVENT_INGESTION_VERSION
+    from app.models import NewsEventRecord
+
+    record = NewsEventRecord(
+        stock_id=stock.id, source="yahoo-finance", external_id=external_id, headline=headline,
+        event_type=event_type, materiality=materiality, published_at=published_at, fetched_at=published_at,
+        ingestion_rule_version=NEWS_EVENT_INGESTION_VERSION,
+    )
+    session.add(record)
+    session.commit()
+    return record
+
+
+def test_news_evidence_prefers_real_ingested_data_over_discovery_rationale(session):
+    from app.news_data.ingest import EVENT_TYPE_NEWS_STORY, MATERIALITY_LOW
+
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "EEE")
+    _add_news_event(
+        session, stock, external_id="n1", headline="Real ingested market commentary",
+        event_type=EVENT_TYPE_NEWS_STORY, materiality=MATERIALITY_LOW, published_at=AS_OF - timedelta(hours=1),
+    )
+    prediction = _make_qualified(session, scan, stock)
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    news = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_NEWS]
+    assert news.status == STATUS_AVAILABLE
+    assert news.source == "yahoo-finance"
+    assert news.reference == "Real ingested market commentary"
+
+
+def test_news_evidence_falls_back_to_discovery_rationale_without_real_data(session):
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "FFF")
+    prediction = _make_qualified(session, scan, stock)  # discovery-based, no NewsEventRecord seeded
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    news = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_NEWS]
+    assert news.status == STATUS_AVAILABLE
+    assert news.source.startswith("DISCOVERY:")
+
+
+def test_event_evidence_is_available_for_a_real_corporate_event(session):
+    from app.news_data.ingest import EVENT_TYPE_CORPORATE_EVENT, MATERIALITY_HIGH
+
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "GGG")
+    _add_news_event(
+        session, stock, external_id="e1", headline="Company announces merger agreement",
+        event_type=EVENT_TYPE_CORPORATE_EVENT, materiality=MATERIALITY_HIGH, published_at=AS_OF - timedelta(hours=1),
+    )
+    prediction = _make_qualified(session, scan, stock)
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    event = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_EVENT]
+    assert event.status == STATUS_AVAILABLE
+    assert "merger" in event.reference.lower()
+    assert "materiality=HIGH" in event.reference
+
+
+def test_event_evidence_ignores_a_corporate_event_published_after_the_decision(session):
+    from app.news_data.ingest import EVENT_TYPE_CORPORATE_EVENT, MATERIALITY_HIGH
+
+    scan = _make_scan(session)
+    stock = _make_priced_stock(session, "HHH")
+    _add_news_event(
+        session, stock, external_id="e2", headline="Company announces merger agreement",
+        event_type=EVENT_TYPE_CORPORATE_EVENT, materiality=MATERIALITY_HIGH, published_at=AS_OF + timedelta(hours=5),
+    )
+    prediction = _make_qualified(session, scan, stock)
+
+    snapshot = capture_evidence_snapshot(session, prediction, captured_at=AS_OF)
+
+    event = {item.evidence_category: item for item in snapshot}[EVIDENCE_CATEGORY_EVENT]
+    assert event.status == STATUS_UNAVAILABLE
     assert all(item.status in (STATUS_AVAILABLE, STATUS_STALE, STATUS_UNAVAILABLE) for item in snapshot)
     assert all(item.snapshot_rule_version == EVIDENCE_SNAPSHOT_VERSION for item in snapshot)
 
