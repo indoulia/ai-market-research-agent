@@ -80,6 +80,81 @@
         "title": "BootstrapResponse",
         "type": "object"
       },
+      "BreakdownItem": {
+        "properties": {
+          "avgRealizedReturn": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgrealizedreturn"
+          },
+          "closedCount": {
+            "title": "Closedcount",
+            "type": "integer"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "predictionCount": {
+            "title": "Predictioncount",
+            "type": "integer"
+          },
+          "smallSample": {
+            "title": "Smallsample",
+            "type": "boolean"
+          },
+          "targetHitRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targethitrate"
+          }
+        },
+        "required": [
+          "key",
+          "predictionCount",
+          "closedCount",
+          "targetHitRate",
+          "avgRealizedReturn",
+          "smallSample"
+        ],
+        "title": "BreakdownItem",
+        "type": "object"
+      },
+      "BreakdownResponse": {
+        "properties": {
+          "dimension": {
+            "title": "Dimension",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dimension",
+          "items"
+        ],
+        "title": "BreakdownResponse",
+        "type": "object"
+      },
       "CursorEnvelope_DiscoveryItem_": {
         "properties": {
           "data": {
@@ -158,6 +233,26 @@
           "meta"
         ],
         "title": "CursorEnvelope[RecommendationSummary]",
+        "type": "object"
+      },
+      "CursorEnvelope_TrackedPrediction_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TrackedPrediction"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[TrackedPrediction]",
         "type": "object"
       },
       "CursorMeta": {
@@ -1600,6 +1695,22 @@
         "title": "SuccessEnvelope[BootstrapResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_BreakdownResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BreakdownResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[BreakdownResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_FeedbackResponse_": {
         "properties": {
           "data": {
@@ -1744,6 +1855,38 @@
         "title": "SuccessEnvelope[SessionResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_TimeseriesResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TimeseriesResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[TimeseriesResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_TrackingSummary_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/TrackingSummary"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[TrackingSummary]",
+        "type": "object"
+      },
       "SuccessEnvelope_UserContext_": {
         "properties": {
           "data": {
@@ -1758,6 +1901,309 @@
           "meta"
         ],
         "title": "SuccessEnvelope[UserContext]",
+        "type": "object"
+      },
+      "TimeseriesPoint": {
+        "properties": {
+          "bucketStart": {
+            "format": "date-time",
+            "title": "Bucketstart",
+            "type": "string"
+          },
+          "sampleCount": {
+            "title": "Samplecount",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "bucketStart",
+          "value",
+          "sampleCount"
+        ],
+        "title": "TimeseriesPoint",
+        "type": "object"
+      },
+      "TimeseriesResponse": {
+        "properties": {
+          "bucket": {
+            "title": "Bucket",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TimeseriesPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "range": {
+            "title": "Range",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric",
+          "range",
+          "bucket",
+          "points"
+        ],
+        "title": "TimeseriesResponse",
+        "type": "object"
+      },
+      "TrackedPrediction": {
+        "properties": {
+          "asOf": {
+            "format": "date-time",
+            "title": "Asof",
+            "type": "string"
+          },
+          "horizonDays": {
+            "title": "Horizondays",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "modelVersion": {
+            "title": "Modelversion",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "predictedReturn": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Predictedreturn",
+            "type": "string"
+          },
+          "realizedReturn": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realizedreturn"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "symbol",
+          "status",
+          "asOf",
+          "horizonDays",
+          "predictedReturn",
+          "realizedReturn",
+          "outcome",
+          "modelVersion"
+        ],
+        "title": "TrackedPrediction",
+        "type": "object"
+      },
+      "TrackingSummary": {
+        "properties": {
+          "avgPredictedReturn": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgpredictedreturn"
+          },
+          "avgRealizedReturn": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgrealizedreturn"
+          },
+          "benchmarkReturn": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmarkreturn"
+          },
+          "calibrationScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calibrationscore"
+          },
+          "closedCount": {
+            "title": "Closedcount",
+            "type": "integer"
+          },
+          "horizonExpiryRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Horizonexpiryrate"
+          },
+          "modelVersion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelversion"
+          },
+          "predictionCount": {
+            "title": "Predictioncount",
+            "type": "integer"
+          },
+          "range": {
+            "title": "Range",
+            "type": "string"
+          },
+          "relativeReturn": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relativereturn"
+          },
+          "smallSample": {
+            "title": "Smallsample",
+            "type": "boolean"
+          },
+          "stopLossRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stoplossrate"
+          },
+          "targetHitRate": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targethitrate"
+          },
+          "trustDelta": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustdelta"
+          },
+          "trustScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trustscore"
+          }
+        },
+        "required": [
+          "range",
+          "predictionCount",
+          "closedCount",
+          "targetHitRate",
+          "stopLossRate",
+          "horizonExpiryRate",
+          "avgRealizedReturn",
+          "avgPredictedReturn",
+          "calibrationScore",
+          "trustScore",
+          "trustDelta",
+          "modelVersion",
+          "benchmarkReturn",
+          "relativeReturn",
+          "smallSample"
+        ],
+        "title": "TrackingSummary",
         "type": "object"
       },
       "UserContext": {
@@ -3344,6 +3790,231 @@
         "summary": "Get Recommendation Outcome",
         "tags": [
           "recommendations"
+        ]
+      }
+    },
+    "/api/v1/tracking/breakdown": {
+      "get": {
+        "operationId": "get_tracking_breakdown_api_v1_tracking_breakdown_get",
+        "parameters": [
+          {
+            "description": "horizon|sector|marketCap|regime|setup",
+            "in": "query",
+            "name": "dimension",
+            "required": true,
+            "schema": {
+              "description": "horizon|sector|marketCap|regime|setup",
+              "title": "Dimension",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_BreakdownResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Tracking Breakdown",
+        "tags": [
+          "tracking"
+        ]
+      }
+    },
+    "/api/v1/tracking/predictions": {
+      "get": {
+        "operationId": "get_tracking_predictions_api_v1_tracking_predictions_get",
+        "parameters": [
+          {
+            "description": "active|closed",
+            "in": "query",
+            "name": "status",
+            "required": true,
+            "schema": {
+              "description": "active|closed",
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_TrackedPrediction_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Tracking Predictions",
+        "tags": [
+          "tracking"
+        ]
+      }
+    },
+    "/api/v1/tracking/summary": {
+      "get": {
+        "operationId": "get_tracking_summary_api_v1_tracking_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "30d",
+              "title": "Range",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_TrackingSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Tracking Summary",
+        "tags": [
+          "tracking"
+        ]
+      }
+    },
+    "/api/v1/tracking/timeseries": {
+      "get": {
+        "operationId": "get_tracking_timeseries_api_v1_tracking_timeseries_get",
+        "parameters": [
+          {
+            "description": "trust|hitRate|return|calibration",
+            "in": "query",
+            "name": "metric",
+            "required": true,
+            "schema": {
+              "description": "trust|hitRate|return|calibration",
+              "title": "Metric",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "default": "30d",
+              "title": "Range",
+              "type": "string"
+            }
+          },
+          {
+            "description": "day|week",
+            "in": "query",
+            "name": "bucket",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "description": "day|week",
+              "title": "Bucket",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_TimeseriesResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Tracking Timeseries",
+        "tags": [
+          "tracking"
         ]
       }
     },
