@@ -1,17 +1,21 @@
 """add orchestration_execution_locks and orchestration_executions tables
 
-Revision ID: 0097_event_schedule_orchestration
+Revision ID: 0097_event_sched_orchestration
 Revises: 0096_release_readiness
 
 EPIC-M1.118: centralized MRA event & schedule orchestration -- one
 authoritative record of which operation ran, why (trigger type/source),
 whether it is currently in flight (lock), and its full attempt/retry
 history (execution log).
+
+Revision id shortened from the original "0097_event_schedule_
+orchestration" (33 chars) to fit alembic_version.version_num's
+VARCHAR(32) column -- see the repo's own fresh-database migration test.
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0097_event_schedule_orchestration"
+revision = "0097_event_sched_orchestration"
 down_revision = "0096_release_readiness"
 branch_labels = None
 depends_on = None
