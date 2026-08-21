@@ -1,7 +1,7 @@
 # EPIC-M1.99 — Cross-Sectional Opportunity Ranking
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -28,7 +28,7 @@ Next: M1.100.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #145 (`c8e4328`).
 
 **Implementation:**
 - `app/cross_sectional_ranking.py` (`rank_scan_candidates`, `measure_ranking_effectiveness`, `get_effectiveness_report_history`): a new, versioned (`EFFECTIVENESS_RULE_VERSION = "CSR-001"`) module.
