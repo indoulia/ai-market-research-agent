@@ -16,7 +16,7 @@ from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Prediction, Stock
+from app.models import Prediction, PredictionOutcome, RecommendationRevision, Stock
 from app.settings import settings
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -138,3 +138,102 @@ def test_raw_sql_update_still_allows_status_change(session):
 
     session.refresh(rec)
     assert rec.status == "EVALUATED"
+
+
+def test_raw_sql_update_rejects_change_to_a_later_added_immutable_field(session):
+    """`opportunity_score`/`consensus_contract_version`/`horizon_selection_version`/
+    `scoring_contract_version` were added to `app.recommendations.IMMUTABLE_FIELDS` after
+    0006's trigger shipped and were never protected at the DB boundary until this audit's
+    migration (0087) -- this is a regression test for that specific gap, not a duplicate
+    of test_raw_sql_update_rejects_immutable_field_change above (which only covers an
+    original 0006 column)."""
+    rec = make_recommendation(session)
+
+    with pytest.raises(Exception, match="immutable fields cannot be modified"):
+        session.execute(
+            text("UPDATE predictions SET opportunity_score = :score WHERE id = :id"),
+            {"score": Decimal("99.99"), "id": rec.id},
+        )
+        session.commit()
+    session.rollback()
+
+    session.refresh(rec)
+    assert rec.opportunity_score == Decimal("70.00")
+
+
+def make_outcome(session, rec):
+    now = datetime(2026, 8, 1, tzinfo=timezone.utc)
+    outcome = PredictionOutcome(
+        prediction_id=rec.id,
+        evaluation_date=now,
+        highest_price=Decimal("110"),
+        lowest_price=Decimal("95"),
+        closing_price=Decimal("105"),
+        maximum_return=Decimal("0.10"),
+        maximum_drawdown=Decimal("-0.05"),
+        actual_return=Decimal("0.05"),
+        prediction_error=Decimal("0.00"),
+        target_hit=True,
+        stop_hit=False,
+        outcome="TARGET_HIT",
+        label_methodology_version="LBL-001",
+    )
+    session.add(outcome)
+    session.commit()
+    return outcome
+
+
+def test_raw_sql_update_rejects_prediction_outcome_field_change(session):
+    """`prediction_outcomes` had only an ORM `before_update` guard (app.outcomes) --
+    a bulk/raw-SQL write bypasses ORM events entirely, so before 0087 this table had
+    no real DB-boundary protection at all, unlike `predictions`."""
+    rec = make_recommendation(session)
+    outcome = make_outcome(session, rec)
+
+    with pytest.raises(Exception, match="immutable fields cannot be modified"):
+        session.execute(
+            text("UPDATE prediction_outcomes SET target_hit = false, outcome = :outcome WHERE id = :id"),
+            {"outcome": "STOP_LOSS_HIT", "id": outcome.id},
+        )
+        session.commit()
+    session.rollback()
+
+    session.refresh(outcome)
+    assert outcome.target_hit is True
+    assert outcome.outcome == "TARGET_HIT"
+
+
+def make_revision(session, rec):
+    now = datetime(2026, 8, 1, tzinfo=timezone.utc)
+    revised = make_recommendation(session)
+    revision = RecommendationRevision(
+        original_prediction_id=rec.id,
+        previous_prediction_id=rec.id,
+        revised_prediction_id=revised.id,
+        version_number=2,
+        revision_reason="MATERIAL_EVIDENCE_CHANGE",
+        revised_at=now,
+        revision_rule_version="RRV-001",
+    )
+    session.add(revision)
+    session.commit()
+    return revision
+
+
+def test_raw_sql_update_rejects_recommendation_revision_field_change(session):
+    """`recommendation_revisions` had only an ORM `before_update` guard
+    (app.recommendation_revision) -- same DB-boundary gap as prediction_outcomes,
+    closed by 0087."""
+    rec = make_recommendation(session)
+    revision = make_revision(session, rec)
+
+    with pytest.raises(Exception, match="immutable fields cannot be modified"):
+        session.execute(
+            text("UPDATE recommendation_revisions SET version_number = :version WHERE id = :id"),
+            {"version": 99, "id": revision.id},
+        )
+        session.commit()
+    session.rollback()
+
+    session.refresh(revision)
+    assert revision.version_number == 2

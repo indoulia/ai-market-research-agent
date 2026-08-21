@@ -60,7 +60,7 @@ from .context_summaries import (
     event_summary,
     evidence_freshness,
     fundamental_summary,
-    latest_market_price_pair,
+    latest_market_price_pairs,
     market_summary,
     news_summary,
 )
@@ -219,10 +219,12 @@ def list_recommendations(session: Session, query: RecommendationQuery) -> Recomm
     has_more = len(rows) > query.page_size
     rows = rows[: query.page_size]
 
+    price_pairs = latest_market_price_pairs(session, [row._mapping["stock_id"] for row in rows])
+
     items = []
     for row in rows:
         m = row._mapping
-        price, change_pct = latest_market_price_pair(session, m["stock_id"])
+        price, change_pct = price_pairs[m["stock_id"]]
         target_price = m["target_price"] if m["target_price"] is not None else m["entry_price"] * (1 + m["target_return"])
         stop_loss = m["stop_loss_price"] if m["stop_loss_price"] is not None else m["entry_price"] * (1 + m["stop_return"])
         upside_pct = m["upside_percentage"] if m["upside_percentage"] is not None else m["target_return"] * 100

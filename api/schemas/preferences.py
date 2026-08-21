@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
+
+# Bounds an arbitrary client-supplied tag (market/sector/watchlist symbol/etc.) so a
+# request body can't carry unboundedly large strings or list lengths into the DB.
+_Tag = Annotated[str, StringConstraints(max_length=64)]
+_MAX_TAGS = 200
 
 
 class NotificationPreferences(BaseModel):
-    mutedAlertTypes: list[str] = Field(default_factory=list)
+    mutedAlertTypes: list[_Tag] = Field(default_factory=list, max_length=_MAX_TAGS)
 
 
 class DisplayPreferences(BaseModel):
@@ -35,11 +41,11 @@ class PreferencesDocument(BaseModel):
 
 class PreferencesUpdateRequest(BaseModel):
     defaultHorizon: int
-    markets: list[str] = Field(default_factory=list)
-    sectors: list[str] = Field(default_factory=list)
-    industries: list[str] = Field(default_factory=list)
-    marketCapBuckets: list[str] = Field(default_factory=list)
-    watchlist: list[str] = Field(default_factory=list)
+    markets: list[_Tag] = Field(default_factory=list, max_length=_MAX_TAGS)
+    sectors: list[_Tag] = Field(default_factory=list, max_length=_MAX_TAGS)
+    industries: list[_Tag] = Field(default_factory=list, max_length=_MAX_TAGS)
+    marketCapBuckets: list[_Tag] = Field(default_factory=list, max_length=_MAX_TAGS)
+    watchlist: list[_Tag] = Field(default_factory=list, max_length=_MAX_TAGS)
     notificationPreferences: NotificationPreferences = Field(default_factory=NotificationPreferences)
     displayPreferences: DisplayPreferences = Field(default_factory=DisplayPreferences)
     riskPreference: str | None = None

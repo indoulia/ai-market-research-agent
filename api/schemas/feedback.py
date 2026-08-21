@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 TYPE_USEFUL = "useful"
 TYPE_NOT_USEFUL = "not_useful"
@@ -28,7 +28,7 @@ LEARNING_IMPACT_INFORMATIONAL = "informational"
 
 class FeedbackRequest(BaseModel):
     type: str
-    comment: str | None = None
+    comment: str | None = Field(default=None, max_length=2000)
     predictionVersion: str
 
 

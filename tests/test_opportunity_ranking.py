@@ -62,12 +62,17 @@ def _make_prediction(session, symbol="AAA", sector="TECH", target_return=Decimal
         stock = Stock(symbol=symbol, exchange="NSE", sector=sector, is_active=True)
         session.add(stock)
         session.flush()
-    session.add(MarketPrice(
-        stock_id=stock.id, timestamp=AS_OF,
-        open=Decimal("100"), high=Decimal("101"), low=Decimal("99"), close=Decimal("100"),
-        volume=1000, source="test",
-    ))
-    session.flush()
+    # Real market data has at most one candle per (stock, timestamp) -- when a caller
+    # passes an already-created `stock` (e.g. a second prediction on the same stock),
+    # don't insert a second row for the same AS_OF timestamp.
+    existing_price = session.query(MarketPrice).filter_by(stock_id=stock.id, timestamp=AS_OF).first()
+    if existing_price is None:
+        session.add(MarketPrice(
+            stock_id=stock.id, timestamp=AS_OF,
+            open=Decimal("100"), high=Decimal("101"), low=Decimal("99"), close=Decimal("100"),
+            volume=1000, source="test",
+        ))
+        session.flush()
     candidate = ScanCandidate(
         scan_id=scan.id, stock_id=stock.id, eligible=True, exclusion_reason=None,
         predicted_probability=Decimal("0.72"), confidence=Decimal("0.80"), sma20_distance=Decimal("0.03"),

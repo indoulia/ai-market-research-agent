@@ -22,6 +22,10 @@ class Stock(Base):
 
 class MarketPrice(Base):
     __tablename__ = "market_prices"
+    # Mirrors migrations/versions/0001_initial.py's table-level constraint of the same
+    # name -- previously undeclared here, so Base.metadata.create_all() (every sqlite
+    # test fixture in this repo) silently omitted it, unlike the real migrated schema.
+    __table_args__ = (UniqueConstraint("stock_id", "timestamp", name="uq_market_prices_stock_timestamp"),)
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))

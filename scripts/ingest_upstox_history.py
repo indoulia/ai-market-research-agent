@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date
+from datetime import date, datetime, timezone
 
 from app.db import SessionLocal
 from app.market_data import UpstoxClient
@@ -28,6 +28,7 @@ def main() -> None:
                 args.from_date,
                 args.to_date,
                 args.symbols,
+                requested_at=datetime.now(timezone.utc),
             )
     print(f"NSE instruments upserted: {universe_count}")
     print(f"Daily candles inserted: {candle_count}")
