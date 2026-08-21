@@ -1,7 +1,7 @@
 # EPIC-M1.111 — Prediction Counterfactual & Selection-Bias Analysis
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -19,7 +19,7 @@ M1.97, M1.99, M1.100, M1.110.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #194 (`7c08961`).
 
 **Implementation:**
 - `app/counterfactual_analysis.py`: a new, versioned (`COUNTERFACTUAL_ANALYSIS_VERSION = "CFA-001"`) module.
