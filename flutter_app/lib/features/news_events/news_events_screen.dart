@@ -74,7 +74,8 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
   String _dateFilter = 'ALL';
 
   bool get _fetchNews => _typeFilter != 'CORPORATE_ACTION';
-  bool get _fetchEvents => _typeFilter == 'ALL' || _typeFilter == 'CORPORATE_ACTION';
+  bool get _fetchEvents =>
+      _typeFilter == 'ALL' || _typeFilter == 'CORPORATE_ACTION';
 
   bool get _hasMore =>
       !_hasLoadedOnce ||
@@ -239,9 +240,7 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: MraSpacing.lg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
                 child: MraFilterBar(
                   options: _typeOptions,
                   selectedIds: {_typeFilter},
@@ -250,9 +249,7 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
               ),
               const SizedBox(height: MraSpacing.sm),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: MraSpacing.lg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
                 child: MraFilterBar(
                   options: _materialityOptions,
                   selectedIds: {_materialityFilter},
@@ -261,9 +258,7 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
               ),
               const SizedBox(height: MraSpacing.sm),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: MraSpacing.lg,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
                 child: MraFilterBar(
                   options: _dateOptions,
                   selectedIds: {_dateFilter},

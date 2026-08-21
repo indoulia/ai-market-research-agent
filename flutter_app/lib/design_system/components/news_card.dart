@@ -51,11 +51,7 @@ class NewsCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                Icon(icon, size: 18, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: MraSpacing.sm),
               ],
               Expanded(
