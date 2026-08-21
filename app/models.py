@@ -1996,3 +1996,55 @@ class PredictionOutcomeEvent(Base):
     evidence: Mapped[dict] = mapped_column(JSON)
     monitor_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PortfolioCorrelationReport(Base):
+    __tablename__ = "portfolio_correlation_reports"
+    __table_args__ = (UniqueConstraint("scan_id", "evaluated_at", name="uq_portfolio_correlation_scan_evaluated_at"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    candidate_count: Mapped[int] = mapped_column(Integer)
+    lookback_days: Mapped[int] = mapped_column(Integer)
+    sector_concentration: Mapped[dict] = mapped_column(JSON)
+    high_correlation_pairs: Mapped[list] = mapped_column(JSON)
+    near_duplicate_stock_ids: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    correlation_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PortfolioUtilityAssessment(Base):
+    __tablename__ = "portfolio_utility_assessments"
+    __table_args__ = (UniqueConstraint("prediction_id", "evaluated_at", name="uq_portfolio_utility_prediction_evaluated_at"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    scan_id: Mapped[int] = mapped_column(ForeignKey("daily_candidate_scans.id"))
+    sector: Mapped[str | None] = mapped_column(String(128))
+    base_utility: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    concentration_penalty: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    correlation_penalty: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    preference_penalty: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    adjusted_utility: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    included: Mapped[bool] = mapped_column(Boolean)
+    penalty_reasons: Mapped[list] = mapped_column(JSON)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    utility_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PortfolioSelectionEffectivenessReport(Base):
+    __tablename__ = "portfolio_selection_effectiveness_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    window_label: Mapped[str] = mapped_column(String(128))
+    top_k: Mapped[int] = mapped_column(Integer)
+    diversified_sample_count: Mapped[int] = mapped_column(Integer)
+    diversified_success_count: Mapped[int] = mapped_column(Integer)
+    diversified_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    raw_sample_count: Mapped[int] = mapped_column(Integer)
+    raw_success_count: Mapped[int] = mapped_column(Integer)
+    raw_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    success_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    effectiveness_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
