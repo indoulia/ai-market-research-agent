@@ -28,7 +28,7 @@ CAPABILITIES = ApiCapabilities(
     events=True,
     feedback=True,
     preferences=True,
-    auth=False,
+    auth=True,
     analytics=False,
 )
 

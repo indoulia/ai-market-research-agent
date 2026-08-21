@@ -72,7 +72,7 @@ def test_bootstrap_reports_contract_and_capabilities(client):
         "events": True,
         "feedback": True,
         "preferences": True,
-        "auth": False,
+        "auth": True,
         "analytics": False,
     }
 

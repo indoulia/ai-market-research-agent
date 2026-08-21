@@ -526,6 +526,19 @@
         "title": "IndexQuote",
         "type": "object"
       },
+      "LogoutResponse": {
+        "properties": {
+          "revoked": {
+            "title": "Revoked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "revoked"
+        ],
+        "title": "LogoutResponse",
+        "type": "object"
+      },
       "MarketSummary": {
         "properties": {
           "advanceDecline": {
@@ -815,6 +828,22 @@
           "evidenceId"
         ],
         "title": "OutcomeResponse",
+        "type": "object"
+      },
+      "PermissionsResponse": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          }
+        },
+        "required": [
+          "capabilities"
+        ],
+        "title": "PermissionsResponse",
         "type": "object"
       },
       "PredictionVersions": {
@@ -1507,6 +1536,54 @@
         "title": "ServerTime",
         "type": "object"
       },
+      "SessionRequest": {
+        "description": "Only consulted when establishing a brand-new session (no valid\n``Authorization`` bearer session token on the request) -- see\n``api/services/auth.py``. ``userId`` is verified by whichever\n``CredentialVerifier`` this deployment configures (see\n``app.auth_session``); the default, until a real identity provider is\nintegrated, is self-asserted.",
+        "properties": {
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid"
+          }
+        },
+        "title": "SessionRequest",
+        "type": "object"
+      },
+      "SessionResponse": {
+        "properties": {
+          "expiresAt": {
+            "format": "date-time",
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "issuedAt": {
+            "format": "date-time",
+            "title": "Issuedat",
+            "type": "string"
+          },
+          "sessionToken": {
+            "title": "Sessiontoken",
+            "type": "string"
+          },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessionToken",
+          "userId",
+          "issuedAt",
+          "expiresAt"
+        ],
+        "title": "SessionResponse",
+        "type": "object"
+      },
       "SuccessEnvelope_BootstrapResponse_": {
         "properties": {
           "data": {
@@ -1555,6 +1632,22 @@
         "title": "SuccessEnvelope[HealthResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_LogoutResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/LogoutResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[LogoutResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_MarketSummary_": {
         "properties": {
           "data": {
@@ -1587,6 +1680,22 @@
         "title": "SuccessEnvelope[OutcomeResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_PermissionsResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PermissionsResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[PermissionsResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_PreferencesDocument_": {
         "properties": {
           "data": {
@@ -1617,6 +1726,68 @@
           "meta"
         ],
         "title": "SuccessEnvelope[RecommendationDetail]",
+        "type": "object"
+      },
+      "SuccessEnvelope_SessionResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SessionResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[SessionResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_UserContext_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UserContext"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[UserContext]",
+        "type": "object"
+      },
+      "UserContext": {
+        "properties": {
+          "requestId": {
+            "title": "Requestid",
+            "type": "string"
+          },
+          "sessionExpiresAt": {
+            "format": "date-time",
+            "title": "Sessionexpiresat",
+            "type": "string"
+          },
+          "sessionIssuedAt": {
+            "format": "date-time",
+            "title": "Sessionissuedat",
+            "type": "string"
+          },
+          "userId": {
+            "title": "Userid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "sessionIssuedAt",
+          "sessionExpiresAt",
+          "requestId"
+        ],
+        "title": "UserContext",
         "type": "object"
       },
       "ValidationError": {
@@ -1834,6 +2005,121 @@
         "summary": "Get Bootstrap",
         "tags": [
           "app"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "post_auth_logout_api_v1_auth_logout_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_LogoutResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Auth Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/session": {
+      "post": {
+        "operationId": "post_auth_session_api_v1_auth_session_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SessionRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_SessionResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Auth Session",
+        "tags": [
+          "auth"
         ]
       }
     },
@@ -2185,6 +2471,104 @@
         ]
       }
     },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "get_me_api_v1_me_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_UserContext_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/me/permissions": {
+      "get": {
+        "operationId": "get_me_permissions_api_v1_me_permissions_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_PermissionsResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Me Permissions",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/news": {
       "get": {
         "operationId": "get_news_api_v1_news_get",
@@ -2311,7 +2695,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "Authorization",
+            "name": "authorization",
             "required": false,
             "schema": {
               "anyOf": [
@@ -2358,7 +2742,7 @@
         "parameters": [
           {
             "in": "header",
-            "name": "Authorization",
+            "name": "authorization",
             "required": false,
             "schema": {
               "anyOf": [
@@ -2764,7 +3148,7 @@
           },
           {
             "in": "header",
-            "name": "Authorization",
+            "name": "authorization",
             "required": false,
             "schema": {
               "anyOf": [
