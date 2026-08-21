@@ -1,7 +1,7 @@
 # EPIC-M1.114 — Provider Outage Resilience & Data Continuity
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -21,7 +21,7 @@ M1.90, M1.94, M1.101, M1.105.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #207 (`eff89cd`).
 
 **Implementation:**
 - `app/provider_outage_tracker.py`: a new, versioned (`OUTAGE_SNAPSHOT_VERSION = "POT-001"`) module.
