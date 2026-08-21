@@ -649,3 +649,20 @@ class MultiHorizonResolution(Base):
     resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     resolution_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RecommendationRevalidationOutcome(Base):
+    __tablename__ = "recommendation_revalidation_outcomes"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "checked_at", name="uq_revalidation_prediction_checked_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    outcome: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(String(256))
+    elapsed_days: Mapped[int] = mapped_column(Integer)
+    current_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    evidence_timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revalidation_engine_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
