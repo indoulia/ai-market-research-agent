@@ -47,7 +47,7 @@ Doing it by hand instead (what the script automates), in order:
 
 ```powershell
 docker build -t market-agent-api:local .
-docker build --build-arg API_BASE_URL=http://market-agent.localhost -t market-agent-web:local flutter_app
+docker build --build-arg API_BASE_URL=http://market-agent.test -t market-agent-web:local flutter_app
 docker save market-agent-api:local | nerdctl --namespace k8s.io load
 docker save market-agent-web:local | nerdctl --namespace k8s.io load
 kubectl apply -k deploy/k8s/base
@@ -61,16 +61,31 @@ kubectl -n market-agent rollout restart deploy/market-agent-api deploy/market-ag
 The API/web pods will crash-loop until the Secret exists and Postgres is
 ready -- expected, and self-heals once both are in place.
 
-## 3. Verify
+## 3. Point the hostname at the cluster
+
+The Ingress host is `market-agent.test` (deliberately **not** `*.localhost`:
+Chromium-based browsers hardcode the entire `.localhost` TLD to `127.0.0.1`
+and ignore the hosts file for it, which breaks routing to Traefik's real
+address). Add an entry to `C:\Windows\System32\drivers\etc\hosts` (as
+Administrator) pointing at Traefik's LoadBalancer IP:
 
 ```powershell
-Invoke-WebRequest http://market-agent.localhost/health
-Invoke-WebRequest http://market-agent.localhost/api/models
+kubectl get svc -n kube-system traefik   # note the EXTERNAL-IP
+Add-Content -Path "$env:SystemRoot\System32\drivers\etc\hosts" -Value "`n<EXTERNAL-IP> market-agent.test"
 ```
 
-Open `http://market-agent.localhost/` in a browser for the Flutter UI.
-`.localhost` resolves to `127.0.0.1` in modern browsers/OSes with no
-`/etc/hosts` edit needed.
+That IP can change if the Rancher Desktop VM is recreated -- if
+`market-agent.test` stops resolving correctly, re-check the Traefik
+EXTERNAL-IP and update the hosts entry.
+
+## 4. Verify
+
+```powershell
+Invoke-WebRequest http://market-agent.test/health
+Invoke-WebRequest http://market-agent.test/api/models
+```
+
+Open `http://market-agent.test/` in a browser for the Flutter UI.
 
 ```powershell
 kubectl -n market-agent get pods

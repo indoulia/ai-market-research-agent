@@ -9,7 +9,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$ApiBaseUrl = "http://market-agent.localhost",
+    [string]$ApiBaseUrl = "http://market-agent.test",
     [string]$Namespace = "market-agent",
     [switch]$SkipMigrate
 )
