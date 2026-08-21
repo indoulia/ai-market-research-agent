@@ -1,7 +1,7 @@
 # EPIC-M1.110 — Prediction Lifecycle & Recommendation Capacity Control
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -21,7 +21,7 @@ M1.55, M1.78, M1.87, M1.99, M1.105.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #188.
 
 **Implementation:**
 - `app/prediction_lifecycle_capacity.py`: a new, versioned (`LIFECYCLE_CAPACITY_VERSION = "PLC-001"`) module.
