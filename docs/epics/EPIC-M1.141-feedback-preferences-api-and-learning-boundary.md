@@ -1,8 +1,8 @@
 # EPIC-M1.141 — Feedback, Preferences & Learning Boundary API
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #184, commit ddcb525)
 **Priority:** P0
 
 ## Objective
