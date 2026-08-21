@@ -825,3 +825,18 @@ class FeedbackDrivenExperiment(Base):
     success_rate_at_creation: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
     pipeline_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserPreferenceSuggestion(Base):
+    __tablename__ = "user_preference_suggestions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    current_horizon_band: Mapped[str | None] = mapped_column(String(32))
+    suggested_horizon_band: Mapped[str] = mapped_column(String(32))
+    evidence_sample_count: Mapped[int] = mapped_column(Integer)
+    evidence_agree_rate: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    current_band_agree_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    rationale: Mapped[str] = mapped_column(String(1024))
+    suggested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    learning_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
