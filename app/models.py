@@ -1841,3 +1841,38 @@ class SegmentAbstentionQualityReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     report_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class OrchestrationExecutionLock(Base):
+    __tablename__ = "orchestration_execution_locks"
+    __table_args__ = (
+        UniqueConstraint("operation_name", "scope_key", name="uq_orchestration_lock_operation_scope"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    operation_name: Mapped[str] = mapped_column(String(64))
+    scope_key: Mapped[str] = mapped_column(String(128))
+    trigger_type: Mapped[str] = mapped_column(String(32))
+    acquired_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    orchestration_rule_version: Mapped[str] = mapped_column(String(32))
+
+
+class OrchestrationExecution(Base):
+    __tablename__ = "orchestration_executions"
+    __table_args__ = (
+        Index("ix_orchestration_executions_dedup_key", "dedup_key"),
+        Index("ix_orchestration_executions_operation_name", "operation_name"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    operation_name: Mapped[str] = mapped_column(String(64))
+    trigger_type: Mapped[str] = mapped_column(String(32))
+    trigger_source: Mapped[str | None] = mapped_column(String(128))
+    scope_key: Mapped[str] = mapped_column(String(128))
+    dedup_key: Mapped[str] = mapped_column(String(256))
+    attempt_number: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(16))
+    triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    failure_reason: Mapped[str | None] = mapped_column(String(256))
+    orchestration_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
