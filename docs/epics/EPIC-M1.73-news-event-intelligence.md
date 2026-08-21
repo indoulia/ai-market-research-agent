@@ -2,6 +2,7 @@
 
 **Status:** APPROVED
 **Execution Status:** READY_FOR_EXECUTION
+**Approved By:** User
 **Priority:** P0
 
 ## Objective
