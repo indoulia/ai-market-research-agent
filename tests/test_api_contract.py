@@ -70,8 +70,8 @@ def test_bootstrap_reports_contract_and_capabilities(client):
         "marketSummary": True,
         "news": True,
         "events": True,
-        "feedback": False,
-        "preferences": False,
+        "feedback": True,
+        "preferences": True,
         "auth": False,
         "analytics": False,
     }

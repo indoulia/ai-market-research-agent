@@ -302,6 +302,71 @@
         "title": "DiscoveryItem",
         "type": "object"
       },
+      "DisplayPreferences": {
+        "additionalProperties": true,
+        "description": "Free-form key/value display settings (e.g. theme, density). No\ndomain module owns display concerns, so this is validated only as a\nJSON object -- values are opaque to the API layer.",
+        "properties": {},
+        "title": "DisplayPreferences",
+        "type": "object"
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "predictionVersion": {
+            "title": "Predictionversion",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "predictionVersion"
+        ],
+        "title": "FeedbackRequest",
+        "type": "object"
+      },
+      "FeedbackResponse": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "boolean"
+          },
+          "feedbackId": {
+            "title": "Feedbackid",
+            "type": "string"
+          },
+          "learningImpact": {
+            "title": "Learningimpact",
+            "type": "string"
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "title": "Recordedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feedbackId",
+          "accepted",
+          "recordedAt",
+          "learningImpact"
+        ],
+        "title": "FeedbackResponse",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -626,6 +691,19 @@
         "title": "NewsItem",
         "type": "object"
       },
+      "NotificationPreferences": {
+        "properties": {
+          "mutedAlertTypes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mutedalerttypes",
+            "type": "array"
+          }
+        },
+        "title": "NotificationPreferences",
+        "type": "object"
+      },
       "OutcomeResponse": {
         "properties": {
           "benchmarkReturnPct": {
@@ -783,6 +861,148 @@
           "rankingVersion"
         ],
         "title": "PredictionVersions",
+        "type": "object"
+      },
+      "PreferencesDocument": {
+        "properties": {
+          "defaultHorizon": {
+            "title": "Defaulthorizon",
+            "type": "integer"
+          },
+          "displayPreferences": {
+            "$ref": "#/components/schemas/DisplayPreferences"
+          },
+          "industries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Industries",
+            "type": "array"
+          },
+          "marketCapBuckets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Marketcapbuckets",
+            "type": "array"
+          },
+          "markets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Markets",
+            "type": "array"
+          },
+          "minConfidenceThreshold": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Minconfidencethreshold",
+            "type": "string"
+          },
+          "notificationPreferences": {
+            "$ref": "#/components/schemas/NotificationPreferences"
+          },
+          "preferenceVersion": {
+            "title": "Preferenceversion",
+            "type": "string"
+          },
+          "riskPreference": {
+            "title": "Riskpreference",
+            "type": "string"
+          },
+          "sectors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sectors",
+            "type": "array"
+          },
+          "watchlist": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Watchlist",
+            "type": "array"
+          }
+        },
+        "required": [
+          "defaultHorizon",
+          "markets",
+          "sectors",
+          "industries",
+          "marketCapBuckets",
+          "watchlist",
+          "notificationPreferences",
+          "displayPreferences",
+          "riskPreference",
+          "minConfidenceThreshold",
+          "preferenceVersion"
+        ],
+        "title": "PreferencesDocument",
+        "type": "object"
+      },
+      "PreferencesUpdateRequest": {
+        "properties": {
+          "defaultHorizon": {
+            "title": "Defaulthorizon",
+            "type": "integer"
+          },
+          "displayPreferences": {
+            "$ref": "#/components/schemas/DisplayPreferences"
+          },
+          "industries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Industries",
+            "type": "array"
+          },
+          "marketCapBuckets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Marketcapbuckets",
+            "type": "array"
+          },
+          "markets": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Markets",
+            "type": "array"
+          },
+          "notificationPreferences": {
+            "$ref": "#/components/schemas/NotificationPreferences"
+          },
+          "riskPreference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Riskpreference"
+          },
+          "sectors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sectors",
+            "type": "array"
+          },
+          "watchlist": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Watchlist",
+            "type": "array"
+          }
+        },
+        "required": [
+          "defaultHorizon"
+        ],
+        "title": "PreferencesUpdateRequest",
         "type": "object"
       },
       "RecommendationDetail": {
@@ -1303,6 +1523,22 @@
         "title": "SuccessEnvelope[BootstrapResponse]",
         "type": "object"
       },
+      "SuccessEnvelope_FeedbackResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/FeedbackResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[FeedbackResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_HealthResponse_": {
         "properties": {
           "data": {
@@ -1349,6 +1585,22 @@
           "meta"
         ],
         "title": "SuccessEnvelope[OutcomeResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_PreferencesDocument_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PreferencesDocument"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[PreferencesDocument]",
         "type": "object"
       },
       "SuccessEnvelope_RecommendationDetail_": {
@@ -2053,6 +2305,112 @@
         ]
       }
     },
+    "/api/v1/preferences": {
+      "get": {
+        "operationId": "get_user_preferences_api_v1_preferences_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_PreferencesDocument_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get User Preferences",
+        "tags": [
+          "preferences"
+        ]
+      },
+      "put": {
+        "operationId": "put_user_preferences_api_v1_preferences_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_PreferencesDocument_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put User Preferences",
+        "tags": [
+          "preferences"
+        ]
+      }
+    },
     "/api/v1/recommendations": {
       "get": {
         "operationId": "get_recommendations_api_v1_recommendations_get",
@@ -2370,6 +2728,90 @@
           }
         },
         "summary": "Get Recommendation Events",
+        "tags": [
+          "recommendations"
+        ]
+      }
+    },
+    "/api/v1/recommendations/{recommendationId}/feedback": {
+      "post": {
+        "operationId": "post_recommendation_feedback_api_v1_recommendations__recommendationId__feedback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recommendationId",
+            "required": true,
+            "schema": {
+              "title": "Recommendationid",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_FeedbackResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Recommendation Feedback",
         "tags": [
           "recommendations"
         ]

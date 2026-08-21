@@ -26,8 +26,8 @@ CAPABILITIES = ApiCapabilities(
     marketSummary=True,
     news=True,
     events=True,
-    feedback=False,
-    preferences=False,
+    feedback=True,
+    preferences=True,
     auth=False,
     analytics=False,
 )

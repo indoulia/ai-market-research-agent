@@ -1552,3 +1552,27 @@ class CoverageDriftAssessment(Base):
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     drift_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserApiPreferenceProfile(Base):
+    __tablename__ = "user_api_preference_profiles"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128), index=True)
+    markets: Mapped[list] = mapped_column(JSON)
+    industries: Mapped[list] = mapped_column(JSON)
+    watchlist_symbols: Mapped[list] = mapped_column(JSON)
+    notification_preferences: Mapped[dict] = mapped_column(JSON)
+    display_preferences: Mapped[dict] = mapped_column(JSON)
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    preference_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FeedbackIdempotencyKey(Base):
+    __tablename__ = "feedback_idempotency_keys"
+    __table_args__ = (UniqueConstraint("user_id", "idempotency_key", name="uq_feedback_idem_user_key"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    idempotency_key: Mapped[str] = mapped_column(String(256))
+    feedback_id: Mapped[int] = mapped_column(ForeignKey("recommendation_feedback.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
