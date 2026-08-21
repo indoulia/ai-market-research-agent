@@ -37,3 +37,30 @@ class FeedbackResponse(BaseModel):
     accepted: bool
     recordedAt: datetime
     learningImpact: str
+
+
+class FeedbackHistoryItem(BaseModel):
+    """One row of ``GET /api/v1/feedback/history`` (EPIC-M3.10).
+
+    Field names follow M3.10's own "Feedback model" list
+    (``feedbackId``/``recommendationId``/``predictionVersionId``/
+    ``reasonCode``/``note``/``createdAt``) with one deliberate
+    substitution: M3.10's illustrative ``rating`` is realized here as
+    ``type`` -- the exact ``useful``/``not_useful``/``target_*``/``reason``
+    vocabulary EPIC-M1.141 already established for submission (see
+    ``VALID_FEEDBACK_TYPES`` above). There is no separate numeric rating
+    scale anywhere in this codebase; reusing the real submitted vocabulary
+    is honest where inventing a new, unbacked rating enum would not be.
+    ``predictionVersionId`` holds the same ``model_version`` string
+    accepted by ``FeedbackRequest.predictionVersion``, not a surrogate id
+    -- no separate prediction-version id exists.
+    """
+
+    feedbackId: str
+    recommendationId: int
+    predictionVersionId: str
+    type: str
+    reasonCode: str
+    note: str | None
+    learningImpact: str
+    createdAt: datetime

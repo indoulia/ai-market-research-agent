@@ -253,3 +253,83 @@ def test_feedback_without_idempotency_key_creates_separate_records(client, sessi
 
     from app.recommendation_feedback import get_feedback_for_prediction
     assert len(get_feedback_for_prediction(session, prediction.id)) == 2
+
+
+# ---- Feedback history (EPIC-M3.10) ----
+
+
+def test_feedback_history_requires_auth(client):
+    response = client.get("/api/v1/feedback/history")
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "MRA_UNAUTHENTICATED"
+
+
+def test_feedback_history_empty_for_new_user(client, session):
+    response = client.get("/api/v1/feedback/history", headers=_auth(session))
+    assert response.status_code == 200
+    assert response.json()["data"] == []
+    assert response.json()["meta"]["nextCursor"] is None
+
+
+def test_feedback_history_lists_submitted_feedback(client, session):
+    prediction, generation = _make_recommendation(session)
+    headers = _auth(session)
+    client.post(
+        f"/api/v1/recommendations/{generation.id}/feedback",
+        json={"type": "useful", "comment": "great call", "predictionVersion": prediction.model_version},
+        headers=headers,
+    )
+    client.post(
+        f"/api/v1/recommendations/{generation.id}/feedback",
+        json={"type": "target_too_high", "predictionVersion": prediction.model_version},
+        headers=headers,
+    )
+
+    response = client.get("/api/v1/feedback/history", headers=headers)
+    assert response.status_code == 200
+    items = response.json()["data"]
+    assert len(items) == 2
+    # Newest first.
+    assert items[0]["type"] == "target_too_high"
+    assert items[0]["recommendationId"] == generation.id
+    assert items[0]["predictionVersionId"] == prediction.model_version
+    assert items[0]["reasonCode"] == "TOO_HIGH"
+    assert items[0]["note"] is None
+    assert items[0]["learningImpact"] == "queued"
+    assert items[1]["type"] == "useful"
+    assert items[1]["note"] == "great call"
+    assert items[1]["learningImpact"] == "informational"
+    assert all(item["feedbackId"] for item in items)
+
+
+def test_feedback_history_is_isolated_per_user(client, session):
+    prediction, generation = _make_recommendation(session)
+    client.post(
+        f"/api/v1/recommendations/{generation.id}/feedback",
+        json={"type": "useful", "predictionVersion": prediction.model_version},
+        headers=_auth(session, "user-a"),
+    )
+    response = client.get("/api/v1/feedback/history", headers=_auth(session, "user-b"))
+    assert response.json()["data"] == []
+
+
+def test_feedback_history_respects_page_size_and_cursor(client, session):
+    prediction, generation = _make_recommendation(session)
+    headers = _auth(session)
+    for _ in range(3):
+        client.post(
+            f"/api/v1/recommendations/{generation.id}/feedback",
+            json={"type": "useful", "predictionVersion": prediction.model_version},
+            headers=headers,
+        )
+
+    first_page = client.get("/api/v1/feedback/history", params={"pageSize": 2}, headers=headers)
+    assert len(first_page.json()["data"]) == 2
+    next_cursor = first_page.json()["meta"]["nextCursor"]
+    assert next_cursor is not None
+
+    second_page = client.get(
+        "/api/v1/feedback/history", params={"pageSize": 2, "cursor": next_cursor}, headers=headers
+    )
+    assert len(second_page.json()["data"]) == 1
+    assert second_page.json()["meta"]["nextCursor"] is None

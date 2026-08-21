@@ -1,5 +1,13 @@
 import '../../core/api_client.dart';
 import 'feedback.dart';
+import 'feedback_history_item.dart';
+
+/// EPIC-M3.10 — one page of `GET /api/v1/feedback/history`.
+class FeedbackHistoryPage {
+  final List<FeedbackHistoryItem> items;
+  final String? nextCursor;
+  const FeedbackHistoryPage({required this.items, required this.nextCursor});
+}
 
 /// EPIC-M1.142 — repository boundary over EPIC-M1.141's real, merged
 /// `POST /api/v1/recommendations/{id}/feedback`
@@ -39,5 +47,25 @@ class FeedbackRepository {
           : {'Idempotency-Key': idempotencyKey},
     );
     return FeedbackResult.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// EPIC-M3.10 — `GET /api/v1/feedback/history`: every feedback event the
+  /// signed-in caller has ever submitted, newest first.
+  Future<FeedbackHistoryPage> fetchHistory({
+    String? cursor,
+    int pageSize = 20,
+  }) async {
+    final response = await _client.get(
+      '/feedback/history',
+      query: {'pageSize': pageSize.toString(), 'cursor': ?cursor},
+    );
+    final items = (response.data as List)
+        .cast<Map<String, dynamic>>()
+        .map(FeedbackHistoryItem.fromJson)
+        .toList();
+    return FeedbackHistoryPage(
+      items: items,
+      nextCursor: response.meta['nextCursor'] as String?,
+    );
   }
 }
