@@ -1,7 +1,7 @@
 # EPIC-M1.106 — Event-Driven Refresh & Reanalysis
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -20,7 +20,7 @@ M1.73, M1.90, M1.105.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #170 (`d8a384f`).
 
 **Implementation:**
 - `app/event_driven_refresh.py`: a new, versioned (`EVENT_TRIGGER_VERSION = "EDR-001"`) module.
