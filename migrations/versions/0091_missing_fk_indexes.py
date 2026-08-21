@@ -1,17 +1,21 @@
 """add indexes on FK columns left unindexed since their introducing migration
 
-Revision ID: 0088_missing_fk_indexes
-Revises: 0087_immutability_hardening
+Revision ID: 0091_missing_fk_indexes
+Revises: 0090_immutability_hardening
 
 Found in the 2026-08-21 QA/integration audit: these foreign-key columns were never
 given a supporting index and aren't otherwise covered by a unique constraint that
 happens to lead with them, so any lookup/join filtering on them alone forces a full
 table scan. Adding the index only; no other schema change.
+
+Renumbered from the original 0088 (onto 0087_immutability_hardening) to 0091 after
+EPIC-M1.111/M1.112/M1.145 claimed 0087/0088 on main concurrently -- see
+0090_immutability_trigger_hardening.py's own renumbering note.
 """
 from alembic import op
 
-revision = "0088_missing_fk_indexes"
-down_revision = "0087_immutability_hardening"
+revision = "0091_missing_fk_indexes"
+down_revision = "0090_immutability_hardening"
 branch_labels = None
 depends_on = None
 

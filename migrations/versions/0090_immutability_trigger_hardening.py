@@ -1,12 +1,18 @@
 """close DB-level immutability gaps found in the 2026-08-21 QA/integration audit
 
-Revision ID: 0087_immutability_hardening
-Revises: 0086_api_pref_profile
+Revision ID: 0090_immutability_hardening
+Revises: 0089_merge_0088_heads
 
 NOTE: `revision` is deliberately shorter than the filename/docstring title --
 `alembic_version.version_num` is `VARCHAR(32)`, and the descriptive filename-length
 string does not fit (hit this live: the first upgrade attempt against a real Postgres
 instance failed on the final `UPDATE alembic_version` with `StringDataRightTruncation`).
+
+Renumbered from the original 0087 (onto 0086_api_pref_profile) to 0090 (onto
+0089_merge_0088_heads) after EPIC-M1.111/M1.112/M1.145 landed on main concurrently and
+claimed 0087/0088 for themselves (resolved by main's own 0089_merge_heads_0088). No
+schema change, filename/revision-id/down_revision only -- same pattern as 0086's own
+two prior renumberings.
 
 Two gaps, both defense-in-depth against bulk/raw-SQL writes that bypass the
 ORM `before_update` guards (the exact reason 0006 added a DB trigger for
@@ -26,8 +32,8 @@ ORM `before_update` guards (the exact reason 0006 added a DB trigger for
 """
 from alembic import op
 
-revision = "0087_immutability_hardening"
-down_revision = "0086_api_pref_profile"
+revision = "0090_immutability_hardening"
+down_revision = "0089_merge_0088_heads"
 branch_labels = None
 depends_on = None
 
