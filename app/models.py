@@ -1419,6 +1419,41 @@ class TransitionPeriodPerformanceReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class FundamentalConsensusAssessment(Base):
+    __tablename__ = "fundamental_consensus_assessments"
+    __table_args__ = (
+        UniqueConstraint("stock_id", "period_end_date", "evaluated_at", name="uq_fundamental_consensus_stock_period_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    period_end_date: Mapped[date] = mapped_column(Date)
+    metric_name: Mapped[str] = mapped_column(String(32))
+    source_count: Mapped[int] = mapped_column(Integer)
+    sources_considered: Mapped[list] = mapped_column(JSON)
+    weighted_mean: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    max_relative_deviation: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    trust_reduction_recommended: Mapped[bool] = mapped_column(Boolean)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consensus_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class NewsConsensusAssessment(Base):
+    __tablename__ = "news_consensus_assessments"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(32))
+    anchor_published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    distinct_source_count: Mapped[int] = mapped_column(Integer)
+    distinct_headline_count: Mapped[int] = mapped_column(Integer)
+    record_count: Mapped[int] = mapped_column(Integer)
+    verdict: Mapped[str] = mapped_column(String(32))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consensus_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
