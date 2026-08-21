@@ -6,6 +6,7 @@ import '../features/auth/splash_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/detail/recommendation_detail_screen.dart';
 import '../features/discover/discover_screen.dart';
+import '../features/learning/learning_screen.dart';
 import '../features/market/market_screen.dart';
 import '../features/opportunities/opportunity_explorer_screen.dart';
 import '../features/preferences/preferences_settings_screen.dart';
@@ -115,6 +116,10 @@ GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
                   builder: (context, state) => RecommendationDetailScreen(
                     recommendationId: int.parse(state.pathParameters['id']!),
                   ),
+                ),
+                GoRoute(
+                  path: 'learning',
+                  builder: (context, state) => const LearningScreen(),
                 ),
               ],
             ),
