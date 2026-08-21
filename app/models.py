@@ -694,3 +694,21 @@ class RecommendationAlert(Base):
     triggered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     alert_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EvidenceConflictResolution(Base):
+    __tablename__ = "evidence_conflict_resolutions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "resolved_at", name="uq_conflict_resolution_prediction_resolved_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    state: Mapped[str] = mapped_column(String(32))
+    conflict_count: Mapped[int] = mapped_column(Integer)
+    conflicts: Mapped[list] = mapped_column(JSON)
+    evidence_categories_considered: Mapped[list] = mapped_column(JSON)
+    confidence_adjustment_ceiling: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    blocks_qualification: Mapped[bool] = mapped_column(Boolean)
+    resolved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolution_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
