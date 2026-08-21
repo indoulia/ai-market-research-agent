@@ -1,5 +1,12 @@
 # EPIC-M1.74 — Evidence Completeness & Point-in-Time Data Quality
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.74-evidence-completeness-point-in-time-data-quality.md`, which is
+> `DONE` with a real, verified implementation (`app/evidence_quality_gate.py`).
+> No EPIC numbered ≥110 references this file or depends on it as unfinished
+> work. Left in place, not deleted/renamed — a human should decide whether to
+> formally retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** BLOCKED_PENDING_APPROVAL
 **Priority:** P0

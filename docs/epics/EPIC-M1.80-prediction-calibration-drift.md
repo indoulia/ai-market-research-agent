@@ -1,5 +1,13 @@
 # EPIC-M1.80 — Prediction & Calibration Drift Detection
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.80-prediction-calibration-drift-detection.md`, which is `DONE`
+> with a real, verified implementation
+> (`app/prediction_calibration_drift.py`). No EPIC numbered ≥110
+> references this file or depends on it as unfinished work. Left in
+> place, not deleted/renamed — a human should decide whether to formally
+> retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** NOT_READY
 **Priority:** P0

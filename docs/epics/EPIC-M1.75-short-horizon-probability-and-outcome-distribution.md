@@ -1,5 +1,12 @@
 # EPIC-M1.75 — Short-Horizon Probability & Outcome Distribution
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.75-short-horizon-probability-outcome-distribution.md`, which is
+> `DONE` with a real, verified implementation
+> (`app/short_horizon_probability.py`). No EPIC numbered ≥110 references
+> this file or depends on it as unfinished work. Left in place, not
+> deleted/renamed — a human should decide whether to formally retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** BLOCKED_PENDING_APPROVAL
 **Priority:** P0

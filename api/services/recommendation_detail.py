@@ -66,6 +66,7 @@ from app.models import (
 )
 from app.opportunity_ranking import OPPORTUNITY_RANKING_VERSION
 from app.prediction_freshness_engine import get_freshness_history
+from app.prediction_lifecycle_capacity import classify_prediction_lifecycle_state
 from app.prediction_trust_score import get_trust_score_history
 from app.recommendation_revision import compare_versions, get_active_version, get_revision_history
 from app.target_stop_loss import TARGET_STOP_METHODOLOGY_VERSION, get_publication
@@ -174,7 +175,13 @@ def get_detail(session: Session, recommendation_id: int) -> RecommendationDetail
         benchmarkRelative=None,
         liquidity=liquidity,
         providerEvidence=list(decision_trace.evidence_categories_snapshot) if decision_trace else [],
-        status=lifecycle.state if lifecycle else active.status,
+        # EPIC-M1.110's classifier is the one documented-as-authoritative, complete
+        # vocabulary (CREATED/ACTIVE/REVISED/EXPIRED/TARGET_HIT/SL_HIT/INVALIDATED/
+        # EVALUATED) computed deterministically from already-immutable evidence --
+        # unlike the prior `lifecycle.state if lifecycle else active.status`, this
+        # never flips vocabularies just because a RecommendationLifecycle row happens
+        # not to exist yet (found in the 2026-08-21 QA/integration audit).
+        status=classify_prediction_lifecycle_state(session, active)[0],
     )
 
 
