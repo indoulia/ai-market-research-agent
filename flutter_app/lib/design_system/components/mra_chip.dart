@@ -49,6 +49,11 @@ class MraChip extends StatelessWidget {
       context,
     ).textTheme.labelMedium?.copyWith(color: colors.foreground);
 
+    // EPIC-M1.143: the label is Flexible+ellipsis so a chip placed inside
+    // a tightly-constrained parent (e.g. an Expanded/Flexible slot) can
+    // shrink gracefully instead of overflowing — this is the shared
+    // component every chip in the app renders through, so the fix here
+    // covers all of them.
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -56,7 +61,14 @@ class MraChip extends StatelessWidget {
           Icon(icon, size: 14, color: colors.foreground),
           const SizedBox(width: 4),
         ],
-        Text(label, style: textStyle),
+        Flexible(
+          child: Text(
+            label,
+            style: textStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
 

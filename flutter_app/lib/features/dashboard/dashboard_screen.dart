@@ -143,6 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Expanded(
+                flex: 3,
                 child: Text(
                   'Recommendations',
                   style: theme.textTheme.headlineSmall,
@@ -150,11 +151,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // EPIC-M1.143: also flexible (not just the title) — at
+              // extreme text-scale/narrow-width combinations this label's
+              // own intrinsic width could overflow the row on its own.
               if (_lastUpdated != null)
-                Text(
-                  'Updated ${_relativeLabel(_lastUpdated!)}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Flexible(
+                  child: Text(
+                    'Updated ${_relativeLabel(_lastUpdated!)}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
                   ),
                 ),
               IconButton(

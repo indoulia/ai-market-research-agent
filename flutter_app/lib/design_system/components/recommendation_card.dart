@@ -166,20 +166,27 @@ class RecommendationCard extends StatelessWidget {
           ),
           const SizedBox(height: MraSpacing.md),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              ScoreIndicator(kind: MraScoreKind.score, value0to100: data.score),
-              ScoreIndicator(
-                kind: MraScoreKind.confidence,
-                value0to100: data.confidence,
+              Expanded(
+                child: ScoreIndicator(
+                  kind: MraScoreKind.score,
+                  value0to100: data.score,
+                ),
               ),
-              if (data.trust != null)
-                ScoreIndicator(
-                  kind: MraScoreKind.trust,
-                  value0to100: data.trust!,
-                )
-              else
-                _UnavailableTrustIndicator(size: 44),
+              Expanded(
+                child: ScoreIndicator(
+                  kind: MraScoreKind.confidence,
+                  value0to100: data.confidence,
+                ),
+              ),
+              Expanded(
+                child: data.trust != null
+                    ? ScoreIndicator(
+                        kind: MraScoreKind.trust,
+                        value0to100: data.trust!,
+                      )
+                    : const _UnavailableTrustIndicator(size: 44),
+              ),
             ],
           ),
         ],

@@ -59,7 +59,14 @@ class KpiStatCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(value, style: valueStyle),
+              Flexible(
+                child: Text(
+                  value,
+                  style: valueStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               if (delta != null) ...[
                 const SizedBox(width: MraSpacing.xs),
                 Text(

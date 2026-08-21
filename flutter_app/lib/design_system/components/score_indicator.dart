@@ -73,7 +73,13 @@ class ScoreIndicator extends StatelessWidget {
             ),
           ),
           const SizedBox(height: MraSpacing.xs),
-          Text(_label, style: theme.textTheme.labelSmall),
+          Text(
+            _label,
+            style: theme.textTheme.labelSmall,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
