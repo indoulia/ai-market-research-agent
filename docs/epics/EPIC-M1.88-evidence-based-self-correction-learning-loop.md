@@ -1,7 +1,7 @@
 # EPIC-M1.88 — Evidence-Based Self-Correction & Learning Loop
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -36,7 +36,7 @@ The system must prefer honest abstention and controlled improvement over increas
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #141 (`f40ee96`).
 
 **Implementation:**
 - `app/self_correction_loop.py` (`generate_learning_hypotheses`, `get_hypothesis_history`, `get_latest_eligibility_effect`): a new, versioned (`HYPOTHESIS_RULE_VERSION = "SCL-001"`) module combining M1.85 `PredictionAttributionSnapshot` (failure-pattern evidence, itself already derived from M1.5 closed outcomes) and M1.86 `PredictionUsefulnessAssessment`/investment-usefulness evidence into explicit, persisted `LearningHypothesis` rows.
