@@ -807,3 +807,21 @@ class ExperimentResult(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     framework_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FeedbackDrivenExperiment(Base):
+    __tablename__ = "feedback_driven_experiments"
+    __table_args__ = (
+        UniqueConstraint("experiment_id", name="uq_feedback_driven_experiment_experiment"),
+        UniqueConstraint("feedback_category", "feedback_reason_code", name="uq_feedback_driven_experiment_pattern"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    experiment_id: Mapped[int] = mapped_column(ForeignKey("experiments.id"))
+    feedback_category: Mapped[str] = mapped_column(String(64))
+    feedback_reason_code: Mapped[str] = mapped_column(String(64))
+    evaluated_count_at_creation: Mapped[int] = mapped_column(Integer)
+    distinct_user_count_at_creation: Mapped[int] = mapped_column(Integer)
+    repeated_prediction_count_at_creation: Mapped[int] = mapped_column(Integer)
+    success_rate_at_creation: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    pipeline_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
