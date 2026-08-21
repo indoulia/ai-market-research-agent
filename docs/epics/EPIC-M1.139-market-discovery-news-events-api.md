@@ -1,8 +1,8 @@
 # EPIC-M1.139 — Discovery, Market, News & Events API
 
 **Track:** API
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PR_OPEN
+**Status:** DONE
+**Execution Status:** MERGED (PR #175, commit 8bd4e02)
 **Priority:** P0
 
 ## Objective
