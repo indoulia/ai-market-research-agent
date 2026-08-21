@@ -1475,6 +1475,22 @@ class SegmentCalibrationAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class PredictionFreshnessDecision(Base):
+    __tablename__ = "prediction_freshness_decisions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_prediction_freshness_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"), index=True)
+    revalidation_outcome: Mapped[str] = mapped_column(String(32))
+    triggers: Mapped[list] = mapped_column(JSON)
+    re_analysis_recommended: Mapped[bool] = mapped_column(Boolean)
+    revision_trigger_reason: Mapped[str | None] = mapped_column(String(64))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    engine_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class CoverageDriftAssessment(Base):
     __tablename__ = "coverage_drift_assessments"
     __table_args__ = (
