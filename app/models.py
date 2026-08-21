@@ -1195,3 +1195,18 @@ class BiasGuardOverride(Base):
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     override_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ExecutionCostAssessment(Base):
+    __tablename__ = "execution_cost_assessments"
+    __table_args__ = (UniqueConstraint("prediction_id", name="uq_execution_cost_prediction"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    gross_return: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    liquidity_bucket: Mapped[str] = mapped_column(String(32))
+    executability_verdict: Mapped[str] = mapped_column(String(32))
+    estimated_cost_percent: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    net_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    cost_model_version: Mapped[str] = mapped_column(String(32))
+    assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
