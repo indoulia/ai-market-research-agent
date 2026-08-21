@@ -1,7 +1,7 @@
 # EPIC-M3.5 — News & Corporate Events Intelligence
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Track:** UI + API
 **Priority:** P0
 
@@ -44,6 +44,28 @@ directly from `origin/main` per the fallback rule. Re-checked with
 `git fetch origin` immediately before opening the PR — still no
 `autonomous/epic-m3-4` branch or open PR referencing M3.4, so this PR's
 base is plain `origin/main` with no stacking/rebase needed.
+
+**Mid-flight complication (2026-08-21):** EPIC-M3.4 (PR #267) merged into
+`main` while PR #265/#268 (this EPIC's PR — see below for why there were
+two numbers) was waiting on CI, producing a real conflict in
+`docs/api/openapi.json`. Rebased `autonomous/epic-m3-5` onto the new
+`origin/main`, resolved the conflict by regenerating
+`docs/api/openapi.json` fresh (`python scripts/export_openapi.py`) rather
+than hand-merging JSON, and re-ran the full validation suite (see below)
+to confirm no regressions from M3.4's changes (it added
+`market`/`sector`/`marketCapBucket` params to
+`RecommendationsRepository.fetchPage`, which the rebase auto-merged
+cleanly into this EPIC's own test fixture). Separately, PR #265 (opened
+from branch `autonomous/epic-m3-5`) never got a single GitHub Actions
+check triggered against it despite multiple retrigger attempts (push,
+close/reopen, empty commits) over ~15 minutes, while sibling PRs opened by
+other concurrent sessions in the same window triggered normally — a
+throwaway diagnostic PR from a brand-new, unrelated branch confirmed the
+same symptom repo-wide for a window, then GitHub Actions recovered on its
+own. Rather than keep waiting on a possibly-permanently-stuck PR object,
+the branch was renamed to `autonomous/epic-m3-5-retry`, PR #265 closed,
+and PR #268 opened from the renamed branch — which then triggered CI
+normally. PR #268 is the one that was actually merged.
 
 **Context:** see `docs/epics/EPIC-M3-ROADMAP-NOTE.md`. This EPIC's product
 surface (news/events feed, filters, materiality, event-to-recommendation
@@ -203,11 +225,44 @@ cd flutter_app && flutter test
 # infinite-scroll test was updated to target the vertical list by Key,
 # since the new filter rows added three more horizontal ListViews to the
 # screen and made the old find.byType(ListView) lookup ambiguous)
+
+# --- after rebasing autonomous/epic-m3-5 onto main (EPIC-M3.4 merged, PR #267) ---
+python -m pytest -q
+# 1372 passed, 9 skipped in 239.51s -- full suite on top of M3.4, no regressions
+
+cd flutter_app && flutter test
+# All 150 tests passed (M3.4 added its own opportunity-explorer tests)
 ```
+
+CI on PR #268 caught one thing local `flutter analyze` does not check:
+Flutter CI's `dart format --output=none --set-exit-if-changed lib test`
+step failed on two lines this session wrapped differently than
+`dart format`'s canonical style (`news_card.dart`'s `Icon(...)` call,
+`news_events_screen.dart`'s `_fetchEvents` getter and three `Padding`
+calls). Fixed by running `dart format lib test` and pushing a follow-up
+commit — purely cosmetic, no behavior change, re-verified with
+`flutter analyze` (no issues) after the fix.
+
+**PRs and merge:**
+- PR #265 (branch `autonomous/epic-m3-5`) was opened first but GitHub
+  Actions never dispatched a single check against it despite repeated
+  retriggers over ~15 minutes (see the mid-flight-complication note
+  above); closed without merging once the same symptom was confirmed
+  repo-wide via a throwaway diagnostic PR/branch (also closed, branch
+  deleted).
+- **PR #268** (branch `autonomous/epic-m3-5-retry`, rebased onto
+  `origin/main` post-M3.4) is the PR that carries this EPIC's actual
+  changes. CI: `analyze-and-test` (Flutter CI) and `test` (backend) both
+  `pass`; `gh pr view 268 --json mergeable,mergeStateStatus` showed
+  `MERGEABLE`/`CLEAN`; squash-merged via
+  `gh pr merge 268 --squash --delete-branch`, confirmed via
+  `gh pr view 268 --json state,mergedAt` ->
+  `{"mergedAt":"2026-08-21T21:04:17Z","state":"MERGED"}`.
 
 **Conclusion:** EPIC-M3.5's product surface was already ~85% satisfied by
 the existing, merged M1.139/M1.140 work. The one explicitly-named API gap
 (`GET /api/v1/events/{eventId}`) plus the UI-scope filter/icon/section gaps
 have been implemented, tested and verified above, using this codebase's
 existing conventions throughout (keyset pagination, `MraFilterBar`,
-`NotFoundError`, honest-gap documentation). Marking this EPIC `DONE`.
+`NotFoundError`, honest-gap documentation). PR #268 is merged. Marking
+this EPIC `DONE`.
