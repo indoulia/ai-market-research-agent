@@ -748,3 +748,21 @@ class RecommendationDecisionTrace(Base):
     traced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     decision_trace_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ModelRegressionCheck(Base):
+    __tablename__ = "model_regression_checks"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64))
+    baseline_window_label: Mapped[str] = mapped_column(String(128))
+    baseline_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    baseline_sample_count: Mapped[int] = mapped_column(Integer)
+    monitoring_window_label: Mapped[str] = mapped_column(String(128))
+    monitoring_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    monitoring_sample_count: Mapped[int] = mapped_column(Integer)
+    verdict: Mapped[str] = mapped_column(String(32))
+    segment_regressions: Mapped[list] = mapped_column(JSON)
+    rollback_triggered: Mapped[bool] = mapped_column(Boolean)
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    detection_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
