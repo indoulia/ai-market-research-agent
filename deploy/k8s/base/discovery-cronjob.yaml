@@ -1,0 +1,33 @@
+# Scheduled discovery scan so a long-running cluster doesn't depend on someone
+# remembering to trigger discovery-job.yaml manually after each ingest. Runs daily at
+# 10:30 UTC (16:00 IST, after the NSE 15:30 IST close) on weekdays. Still depends on
+# `market-agent-ingest` having populated fresh market_prices first -- this CronJob
+# does not ingest; it only turns already-ingested data into scan_candidates /
+# discovery_records, same script and same guarantees as discovery-job.yaml.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: market-agent-discovery
+  namespace: market-agent
+spec:
+  schedule: "30 10 * * 1-5"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: discovery
+              image: market-agent-api:local
+              imagePullPolicy: IfNotPresent
+              command: ["python", "-m", "scripts.run_discovery_scan"]
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: market-agent-secrets
+                      key: DATABASE_URL

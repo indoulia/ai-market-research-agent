@@ -7,3 +7,4 @@ resources:
   - api-deployment.yaml
   - web-deployment.yaml
   - ingress.yaml
+  - discovery-cronjob.yaml

@@ -95,6 +95,48 @@ kubectl -n market-agent logs job/market-agent-migrate
 All pods should be `Running`/`Completed` with no `ImagePullBackOff` or
 `CrashLoopBackOff`.
 
+## 5. Ingest market data and run the discovery scan (EPIC-M1.150)
+
+A freshly deployed cluster's PostgreSQL starts empty, so `/api/v1/discoveries`
+and the Flutter Discover screen are honestly empty until you run these --
+same idea as the root README's Docker Compose `ingest`/`discovery` section,
+just as Kubernetes Jobs instead of `docker compose run`.
+
+```powershell
+# 1. Load NSE candles from whichever provider MARKET_DATA_PROVIDER selects in
+#    market-agent.env (default yahoo). Edit ingest-job.yaml's FROM_DATE/TO_DATE
+#    env values first if you want a different window than the default.
+kubectl -n market-agent delete job/market-agent-ingest --ignore-not-found
+kubectl apply -f deploy/k8s/base/ingest-job.yaml
+kubectl -n market-agent wait --for=condition=complete job/market-agent-ingest --timeout=180s
+kubectl -n market-agent logs job/market-agent-ingest
+
+# 2. Turn that market data into real scan_candidates + discovery_records
+kubectl -n market-agent delete job/market-agent-discovery --ignore-not-found
+kubectl apply -f deploy/k8s/base/discovery-job.yaml
+kubectl -n market-agent wait --for=condition=complete job/market-agent-discovery --timeout=120s
+kubectl -n market-agent logs job/market-agent-discovery
+```
+
+Or do both as part of a deploy: `./deploy/k8s/deploy.ps1 -RunIngest -RunDiscovery`.
+
+Both Jobs are on-demand and are **not** applied by `kubectl apply -k
+deploy/k8s/base` (same reasoning as `migration-job.yaml`: a Job's spec is
+immutable once created, so re-running means delete-then-reapply, shown
+above). Re-running either is safe -- both scripts are idempotent for the
+same input window/date; see `scripts/ingest_market_history.py` and
+`scripts/run_discovery_scan.py`.
+
+For a standing cluster you don't want to babysit, `deploy/k8s/base/discovery-cronjob.yaml`
+(applied automatically as part of the base kustomization) runs the same
+discovery scan daily at 10:30 UTC / 16:00 IST on weekdays. It still depends on
+`market-agent-ingest` having populated fresh market data first -- the
+CronJob only scans, it never ingests.
+
+Once discovery has run, `GET /api/v1/discoveries` (and the Flutter Discover
+screen served by `web`) reflect the persisted records directly through the
+Traefik ingress -- no separate backend step.
+
 ## Teardown
 
 ```powershell
