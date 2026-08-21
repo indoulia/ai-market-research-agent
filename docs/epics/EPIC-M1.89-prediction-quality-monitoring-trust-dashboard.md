@@ -1,7 +1,7 @@
 # EPIC-M1.89 — Prediction Quality Monitoring & Trust Dashboard
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P1
 
 ## Objective
@@ -32,7 +32,7 @@ Next: M1.117 validation gate.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #143 (`9bd6961`).
 
 **Implementation:**
 - `app/trust_dashboard.py` (`build_trust_dashboard`, `get_prediction_trust_drilldown`): a new, versioned (`DASHBOARD_VERSION = "TDB-001"`) read-only composition module, following the same no-persistence pattern M1.16's `compute_trust_report` already established. It introduces no new measurement and no new table -- every field is assembled from an already-existing, already-immutable history accessor:
