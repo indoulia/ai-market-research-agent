@@ -1,7 +1,7 @@
 """add user_api_preference_profiles and feedback_idempotency_keys tables
 
-Revision ID: 0083_api_pref_profile
-Revises: 0082_stock_behavior
+Revision ID: 0085_api_pref_profile
+Revises: 0084_sector_relative
 
 EPIC-M1.141: persist the preference fields the API contract requires
 (markets/industries/watchlist/notification/display preferences) that
@@ -12,12 +12,19 @@ supplied `Idempotency-Key` header to the feedback row it originally
 created -- `app.recommendation_feedback.submit_feedback` is deliberately
 non-idempotent (retains every feedback event), so this EPIC's own
 "duplicate submissions are idempotent" AC is enforced at the API layer.
+
+Originally numbered 0083 and chained onto 0082_stock_behavior; renumbered
+to 0085 (chained onto 0084_sector_relative) because EPIC-M1.109's own
+0083_setup_combination_learning migration merged to main first, claiming
+the same down_revision and creating two competing heads. No schema
+change, filename/revision-id/down_revision only -- this repo's
+established fix for this exact class of concurrent-session collision.
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0083_api_pref_profile"
-down_revision = "0082_stock_behavior"
+revision = "0085_api_pref_profile"
+down_revision = "0084_sector_relative"
 branch_labels = None
 depends_on = None
 
