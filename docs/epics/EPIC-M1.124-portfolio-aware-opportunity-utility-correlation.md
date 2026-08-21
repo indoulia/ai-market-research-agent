@@ -1,7 +1,7 @@
 # EPIC-M1.124 — Portfolio-Aware Opportunity Utility & Correlation
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -35,7 +35,7 @@ This EPIC does not authorize automated trading or portfolio execution. It improv
 ## Completion Report
 
 ### Status
-Implemented, tested, PR pending. Branch `autonomous/epic-m1-124`.
+Implemented, tested, merged via PR #240.
 
 ### What was built
 - `app/portfolio_opportunity_correlation.py` (PCR-001/PUA-001/PSE-001):
