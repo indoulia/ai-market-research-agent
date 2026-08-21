@@ -12,12 +12,17 @@ Composes existing, already-merged domain modules -- nothing recomputed:
   - M1.34's ``classify_market_cap_bucket`` for the ``marketCap``
     breakdown dimension.
 
-M1.119 (real-time outcome monitor), M1.122 (statistical reliability/
-uncertainty) and M1.129 (benchmark-relative alpha) are APPROVED but not
-implemented (see EPIC-M1.147's Dependencies note). Consequences, named
-rather than hidden:
-  - ``benchmarkReturn``/``relativeReturn`` are always ``None`` -- no
-    benchmark module exists (same gap M1.137 already documented).
+M1.119 (real-time outcome monitor) and M1.122 (statistical reliability/
+uncertainty) are still APPROVED but not implemented (see EPIC-M1.147's
+Dependencies note). M1.129 (benchmark-relative alpha) landed after this
+EPIC's Dependencies note was written -- ``benchmarkReturn``/
+``relativeReturn`` are now the average BROAD_MARKET-level benchmark
+return / alpha across this window's closed, genuine predictions that
+already have an
+``app.benchmark_relative_alpha.BenchmarkRelativeAssessment`` row
+(``None`` if none do yet -- this module never computes the assessment on
+the fly, same read-only posture as the rest of this file). Consequences,
+named rather than hidden:
   - The ``setup`` breakdown dimension always returns a single
     ``UNCLASSIFIED`` bucket -- no strategy/pattern-type classification
     module exists yet.
@@ -40,8 +45,10 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.benchmark_relative_alpha import LEVEL_BROAD_MARKET
 from app.discovery_segmentation import BUCKET_UNCLASSIFIED, classify_market_cap_bucket
 from app.models import (
+    BenchmarkRelativeAssessment,
     ConfidenceCalibrationRecord,
     MarketRegime,
     Prediction,
@@ -116,6 +123,20 @@ def _outcomes_for(session: Session, prediction_ids: list[int]) -> list[Predictio
     return list(session.scalars(select(PredictionOutcome).where(PredictionOutcome.prediction_id.in_(prediction_ids))).all())
 
 
+def _latest_broad_market_assessments(session: Session, prediction_ids: list[int]) -> list[BenchmarkRelativeAssessment]:
+    if not prediction_ids:
+        return []
+    latest_ids = (
+        select(func.max(BenchmarkRelativeAssessment.id))
+        .where(
+            BenchmarkRelativeAssessment.prediction_id.in_(prediction_ids),
+            BenchmarkRelativeAssessment.benchmark_level == LEVEL_BROAD_MARKET,
+        )
+        .group_by(BenchmarkRelativeAssessment.prediction_id)
+    )
+    return list(session.scalars(select(BenchmarkRelativeAssessment).where(BenchmarkRelativeAssessment.id.in_(latest_ids))).all())
+
+
 def _calibration_errors_for(session: Session, prediction_ids: list[int]) -> list[Decimal]:
     if not prediction_ids:
         return []
@@ -166,6 +187,10 @@ def get_summary(session: Session, range_key: str) -> TrackingSummary:
     closed_prediction_ids = {o.prediction_id for o in outcomes}
     avg_predicted_return = _avg([p.target_return for p in predictions if p.id in closed_prediction_ids])
 
+    broad_market_assessments = _latest_broad_market_assessments(session, list(closed_prediction_ids))
+    benchmark_return = _avg([a.benchmark_return_pct for a in broad_market_assessments])
+    relative_return = _avg([a.relative_alpha for a in broad_market_assessments])
+
     calibration_score = _avg(_calibration_errors_for(session, prediction_ids))
 
     trust_score = _avg(_latest_trust_scores(session, prediction_ids))
@@ -194,8 +219,8 @@ def get_summary(session: Session, range_key: str) -> TrackingSummary:
         trustScore=trust_score,
         trustDelta=trust_delta,
         modelVersion=model_version,
-        benchmarkReturn=None,
-        relativeReturn=None,
+        benchmarkReturn=benchmark_return,
+        relativeReturn=relative_return,
         smallSample=closed_count < MIN_SAMPLE_SIZE_FOR_COMPARISON,
     )
 

@@ -157,7 +157,7 @@ def test_detail_returns_full_field_shape(client, session):
     assert data["evidenceStrength"] == STATE_SUFFICIENT
     assert data["trustScore"] == "0.90000000"
     assert data["liquidity"] == "NORMAL"  # volume_ratio_20d=1.10 -> NORMAL bucket
-    assert data["benchmarkRelative"] is None  # M1.129 not implemented -- honest gap
+    assert data["benchmarkRelative"] is None  # no outcome yet -> no BenchmarkRelativeAssessment computed (M1.129)
     assert data["providerEvidence"] == []  # no RecommendationDecisionTrace captured in this test
     assert Decimal(data["targetPrice"]) > Decimal(data["entryPrice"])
 
