@@ -897,6 +897,23 @@ class EvidenceQualityDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class HorizonProbabilityProfile(Base):
+    __tablename__ = "horizon_probability_profiles"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    sample_count: Mapped[int] = mapped_column(Integer)
+    positive_return_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    target_hit_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    stop_hit_probability: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    expected_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    downside_p10_return: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    profile_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class NewsEventRecord(Base):
     __tablename__ = "news_event_records"
     __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
