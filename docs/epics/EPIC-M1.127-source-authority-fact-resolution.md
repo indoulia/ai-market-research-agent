@@ -1,7 +1,7 @@
 # EPIC-M1.127 — Source Authority & Fact Conflict Resolution
 
-**Status:** VALIDATING
-**Execution Status:** IMPLEMENTED_PENDING_MERGE
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -32,7 +32,7 @@ M1.90, M1.94, M1.103, M1.120.
 
 ## Completion Report
 
-**Status:** implemented on branch `autonomous/epic-m1-127`, PR opened against `main`, not yet merged.
+**Status:** DONE -- merged to `main` via PR #243 (`30ce4fb`).
 
 **Implementation:**
 - `app/source_authority_resolution.py`: new, versioned (`RESOLUTION_VERSION = "SAR-001"`) module. New table `resolved_facts` (migration `0105_source_authority_resolution.py`).
