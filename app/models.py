@@ -1278,3 +1278,61 @@ class RankingEffectivenessReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     effectiveness_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class HoldoutWindowRegistry(Base):
+    __tablename__ = "holdout_window_registry"
+    __table_args__ = (UniqueConstraint("label", name="uq_holdout_window_label"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    label: Mapped[str] = mapped_column(String(128))
+    window_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    window_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    registered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    registry_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class HoldoutUsageRecord(Base):
+    __tablename__ = "holdout_usage_records"
+    __table_args__ = (UniqueConstraint("holdout_label", name="uq_holdout_usage_label"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    holdout_label: Mapped[str] = mapped_column(String(128))
+    experiment_arm_id: Mapped[int] = mapped_column(ForeignKey("experiment_arms.id"))
+    used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MultiplicityGuardDecision(Base):
+    __tablename__ = "multiplicity_guard_decisions"
+    __table_args__ = (
+        UniqueConstraint("model_version", "evaluated_at", name="uq_multiplicity_guard_model_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    trial_count: Mapped[int] = mapped_column(Integer)
+    observed_success_rate_delta: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    weakness_margin: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    adjusted_margin: Mapped[Decimal] = mapped_column(Numeric(10, 6))
+    significant: Mapped[bool] = mapped_column(Boolean)
+    verdict: Mapped[str] = mapped_column(String(32))
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    guard_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class IndependentConfirmationDecision(Base):
+    __tablename__ = "independent_confirmation_decisions"
+    __table_args__ = (
+        UniqueConstraint("model_version", "confirmed_at", name="uq_independent_confirmation_model_confirmed_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    baseline_window_label: Mapped[str] = mapped_column(String(128))
+    first_window_label: Mapped[str] = mapped_column(String(128))
+    confirmation_window_label: Mapped[str] = mapped_column(String(128))
+    first_window_verdict: Mapped[str] = mapped_column(String(32))
+    confirmation_window_verdict: Mapped[str] = mapped_column(String(32))
+    both_validated: Mapped[bool] = mapped_column(Boolean)
+    confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    confirmation_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
