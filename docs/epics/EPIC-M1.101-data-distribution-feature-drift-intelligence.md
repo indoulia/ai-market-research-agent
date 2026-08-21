@@ -1,7 +1,7 @@
 # EPIC-M1.101 — Data Distribution & Feature Drift Intelligence
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -29,7 +29,7 @@ Next: M1.102.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #151 (`3b173a3`).
 
 **Implementation:**
 - `app/feature_drift_monitor.py`: a new, versioned (`FEATURE_DRIFT_VERSION = "FDM-001"`) module monitoring a fixed, documented vocabulary of the real, already-captured numeric feature columns `app.scan`'s pipeline produces on `ScanCandidate` — `SMA20_DISTANCE`, `VOLUME_RATIO_20D`, `ATR_PERCENT`, `PREDICTED_PROBABILITY`, `CONFIDENCE`.
