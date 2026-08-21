@@ -1,7 +1,7 @@
 """add validation_folds and temporal_validation_policy_decisions tables
 
 Revision ID: 0098_purged_embargo_validation
-Revises: 0097_event_schedule_orchestration
+Revises: 0097_event_sched_orchestration
 
 EPIC-M1.125: make time-overlapping financial labels and dependent
 observations safe for model evaluation by enforcing purged and embargoed
@@ -12,12 +12,17 @@ Numbered 0098 rather than the 0097 this branch originally picked: by the
 time this merged, a concurrent EPIC-M1.118 session's migration had
 independently claimed 0097 onto 0096_release_readiness. Rebased onto the
 post-merge origin/main and renumbered here -- no schema change.
+
+`down_revision` updated again post-merge: PR #231 renamed
+0097_event_schedule_orchestration's own revision id to
+0097_event_sched_orchestration (VARCHAR(32) fix) after this migration
+had already merged on top of it.
 """
 from alembic import op
 import sqlalchemy as sa
 
 revision = "0098_purged_embargo_validation"
-down_revision = "0097_event_schedule_orchestration"
+down_revision = "0097_event_sched_orchestration"
 branch_labels = None
 depends_on = None
 
