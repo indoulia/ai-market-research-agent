@@ -1,5 +1,12 @@
 # EPIC-M1.79 — Horizon & Regime Specific Trust
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.79-horizon-regime-specific-trust.md`, which is `DONE` with a
+> real, verified implementation (`app/horizon_regime_trust.py`). No EPIC
+> numbered ≥110 references this file or depends on it as unfinished work.
+> Left in place, not deleted/renamed — a human should decide whether to
+> formally retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** NOT_READY
 **Priority:** P0

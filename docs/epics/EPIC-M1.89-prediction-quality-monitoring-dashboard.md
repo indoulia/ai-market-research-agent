@@ -1,5 +1,12 @@
 # EPIC-M1.89 — Prediction Quality Monitoring & Trust Dashboard
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.89-prediction-quality-monitoring-trust-dashboard.md`, which is
+> `DONE` (merged PR #143) with a real, verified implementation
+> (`app/trust_dashboard.py`). No EPIC numbered ≥110 references this file
+> or depends on it as unfinished work. Left in place, not deleted/renamed
+> — a human should decide whether to formally retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** NOT_READY
 **Priority:** P1

@@ -1,5 +1,12 @@
 # EPIC-M1.88 — Evidence-Based Self-Correction & Learning Loop
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.88-evidence-based-self-correction-learning-loop.md`, which is
+> `DONE` (merged PR #141) with a real, verified implementation
+> (`app/self_correction_loop.py`). No EPIC numbered ≥110 references this
+> file or depends on it as unfinished work. Left in place, not
+> deleted/renamed — a human should decide whether to formally retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** NOT_READY
 **Priority:** P0

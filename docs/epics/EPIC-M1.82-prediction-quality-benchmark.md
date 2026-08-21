@@ -1,5 +1,13 @@
 # EPIC-M1.82 — Prediction Quality & Benchmark Measurement
 
+> **Note (2026-08-21 QA/integration audit):** This file duplicates
+> `EPIC-M1.82-prediction-quality-benchmark-measurement.md`, which is `DONE`
+> with a real, verified implementation
+> (`app/prediction_quality_benchmark.py`). No EPIC numbered ≥110
+> references this file or depends on it as unfinished work. Left in
+> place, not deleted/renamed — a human should decide whether to formally
+> retire it.
+
 **Status:** READY_FOR_APPROVAL
 **Execution Status:** NOT_READY
 **Priority:** P0
