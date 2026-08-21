@@ -35,6 +35,11 @@ actually needs — never mixed on the same endpoint:
   default 1), `pageSize` (default 20, max 100). `meta` carries `page`,
   `pageSize`, `totalItems`, `totalPages`. Use for bounded, rarely-changing
   collections where "jump to page N" and a total count are useful.
+  First real consumer: `GET /api/v1/opportunities` (EPIC-M3.3) — its
+  response embeds `page`/`pageSize`/`total` directly in `data` (per its
+  own documented contract) rather than in `meta`, since that endpoint's
+  epic specifies those fields as part of the payload alongside `items`,
+  `asOf` and `filters`.
 - **Cursor-based** (`api/envelope.py::cursor_paginated`, first used by
   M1.135's `/recommendations`): `pageSize` plus an opaque `cursor` from
   the previous page's `meta.nextCursor`. `meta` carries `pageSize` and
@@ -44,11 +49,14 @@ actually needs — never mixed on the same endpoint:
   results must not shift or duplicate across pages (AC: "pagination is
   stable during a query session").
 
-Sorting: `sort=<field>` (single field per M1.135; a future multi-field
-list endpoint may extend this to comma-separated, `-` prefix for
-descending — not yet needed) plus a separate `direction=asc|desc` for
-cursor-paginated endpoints. Endpoints reject unknown sort fields with
-`MRA_VALIDATION_FAILED` rather than ignoring them.
+Sorting: `sort=<field>` plus a separate `direction=asc|desc` for
+cursor-paginated endpoints (M1.135's original convention). Page-based
+endpoints (first used by `GET /api/v1/opportunities`, EPIC-M3.3) instead
+fold direction into `sort` itself via a `-` prefix (e.g. `sort=-score`
+descending, `sort=score` ascending) — the single-param form this doc
+previously flagged as a "future, not yet needed" extension. Endpoints
+reject unknown sort fields with `MRA_VALIDATION_FAILED` rather than
+ignoring them.
 
 Filters are individual query params, documented per endpoint. Unknown
 filter params are rejected the same way.

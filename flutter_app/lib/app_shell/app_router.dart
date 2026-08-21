@@ -7,6 +7,7 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/detail/recommendation_detail_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/market/market_screen.dart';
+import '../features/opportunities/opportunity_explorer_screen.dart';
 import '../features/preferences/preferences_settings_screen.dart';
 import '../features/tracking/tracking_screen.dart';
 import '../gallery/gallery_screen.dart';
@@ -139,9 +140,15 @@ GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[4].path,
-              builder: (context, state) => DestinationPlaceholderScreen(
-                destination: kAppDestinations[4],
-              ),
+              builder: (context, state) => const OpportunityExplorerScreen(),
+              routes: [
+                GoRoute(
+                  path: 'recommendation/:id',
+                  builder: (context, state) => RecommendationDetailScreen(
+                    recommendationId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -149,6 +156,16 @@ GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[5].path,
+              builder: (context, state) => DestinationPlaceholderScreen(
+                destination: kAppDestinations[5],
+              ),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: kAppDestinations[6].path,
               builder: (context, state) =>
                   PreferencesSettingsScreen(authController: authController),
             ),

@@ -51,6 +51,13 @@ const List<AppDestination> kAppDestinations = [
     ownerEpic: 'EPIC-M1.140 Discovery/Market/News UI',
   ),
   AppDestination(
+    path: '/opportunities',
+    label: 'Opportunities',
+    icon: Icons.grid_view_outlined,
+    selectedIcon: Icons.grid_view,
+    ownerEpic: 'EPIC-M3.3 Opportunity Explorer',
+  ),
+  AppDestination(
     path: '/history',
     label: 'History',
     icon: Icons.history_outlined,
