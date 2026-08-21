@@ -1093,3 +1093,33 @@ class TrustControlDecision(Base):
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     control_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PredictionAttributionSnapshot(Base):
+    __tablename__ = "prediction_attribution_snapshots"
+    __table_args__ = (UniqueConstraint("prediction_id", name="uq_attribution_snapshot_prediction"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    model_version: Mapped[str] = mapped_column(String(64))
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    regime: Mapped[str | None] = mapped_column(String(32))
+    sma20_distance_bucket: Mapped[str | None] = mapped_column(String(16))
+    volume_ratio_bucket: Mapped[str | None] = mapped_column(String(16))
+    evidence_categories_available: Mapped[list] = mapped_column(JSON)
+    outcome: Mapped[str] = mapped_column(String(32))
+    snapshotted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    attribution_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FactorAssociationReport(Base):
+    __tablename__ = "factor_association_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    scope_label: Mapped[str] = mapped_column(String(128))
+    sample_count: Mapped[int] = mapped_column(Integer)
+    baseline_success_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    factor_associations: Mapped[list] = mapped_column(JSON)
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
