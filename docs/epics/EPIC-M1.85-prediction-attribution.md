@@ -1,7 +1,8 @@
 # EPIC-M1.85 — Prediction Attribution
 
-**Status:** READY_FOR_APPROVAL
-**Execution Status:** NOT_READY
+**Status:** APPROVED
+**Execution Status:** READY_FOR_EXECUTION
+**Approved By:** User
 **Priority:** P1
 
 ## Objective
