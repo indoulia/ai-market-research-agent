@@ -477,6 +477,26 @@
         "title": "CursorEnvelope[DiscoveryItem]",
         "type": "object"
       },
+      "CursorEnvelope_FeedbackHistoryItem_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/FeedbackHistoryItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CursorMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "CursorEnvelope[FeedbackHistoryItem]",
+        "type": "object"
+      },
       "CursorEnvelope_HistoryItem_": {
         "properties": {
           "data": {
@@ -1467,6 +1487,63 @@
           "pending"
         ],
         "title": "ExperimentCounts",
+        "type": "object"
+      },
+      "FeedbackHistoryItem": {
+        "description": "One row of ``GET /api/v1/feedback/history`` (EPIC-M3.10).\n\nField names follow M3.10's own \"Feedback model\" list\n(``feedbackId``/``recommendationId``/``predictionVersionId``/\n``reasonCode``/``note``/``createdAt``) with one deliberate\nsubstitution: M3.10's illustrative ``rating`` is realized here as\n``type`` -- the exact ``useful``/``not_useful``/``target_*``/``reason``\nvocabulary EPIC-M1.141 already established for submission (see\n``VALID_FEEDBACK_TYPES`` above). There is no separate numeric rating\nscale anywhere in this codebase; reusing the real submitted vocabulary\nis honest where inventing a new, unbacked rating enum would not be.\n``predictionVersionId`` holds the same ``model_version`` string\naccepted by ``FeedbackRequest.predictionVersion``, not a surrogate id\n-- no separate prediction-version id exists.",
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "feedbackId": {
+            "title": "Feedbackid",
+            "type": "string"
+          },
+          "learningImpact": {
+            "title": "Learningimpact",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "predictionVersionId": {
+            "title": "Predictionversionid",
+            "type": "string"
+          },
+          "reasonCode": {
+            "title": "Reasoncode",
+            "type": "string"
+          },
+          "recommendationId": {
+            "title": "Recommendationid",
+            "type": "integer"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feedbackId",
+          "recommendationId",
+          "predictionVersionId",
+          "type",
+          "reasonCode",
+          "note",
+          "learningImpact",
+          "createdAt"
+        ],
+        "title": "FeedbackHistoryItem",
         "type": "object"
       },
       "FeedbackRequest": {
@@ -5472,6 +5549,83 @@
         "summary": "Get Event Detail",
         "tags": [
           "news-events"
+        ]
+      }
+    },
+    "/api/v1/feedback/history": {
+      "get": {
+        "operationId": "get_feedback_history_endpoint_api_v1_feedback_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Pagesize",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CursorEnvelope_FeedbackHistoryItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Feedback History Endpoint",
+        "tags": [
+          "feedback"
         ]
       }
     },

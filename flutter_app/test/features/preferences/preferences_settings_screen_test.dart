@@ -56,4 +56,32 @@ void main() {
 
     expect(find.text('Design system gallery (QA)'), findsOneWidget);
   });
+
+  testWidgets(
+    'switching to the History tab shows the feedback history screen',
+    (tester) async {
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) =>
+                const Scaffold(body: PreferencesSettingsScreen()),
+          ),
+        ],
+        initialLocation: '/settings',
+      );
+      await tester.pumpWidget(
+        MaterialApp.router(theme: MraTheme.light(), routerConfig: router),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(Tab, 'History'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Feedback history'), findsOneWidget);
+      // No server in the test environment, so the screen lands on its error
+      // state rather than a loaded list.
+      expect(find.textContaining('queued for learning'), findsOneWidget);
+    },
+  );
 }
