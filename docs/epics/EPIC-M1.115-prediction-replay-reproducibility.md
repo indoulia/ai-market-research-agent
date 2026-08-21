@@ -1,7 +1,7 @@
 # EPIC-M1.115 — Prediction Replay & Reproducibility
 
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
@@ -20,7 +20,7 @@ M1.66, M1.78, M1.90, M1.110.
 
 ## Completion Report
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
+**Status:** DONE — merged to main via PR #213.
 
 **Implementation:**
 - `app/reproducibility_audit.py`: a new, versioned (`AUDIT_RULE_VERSION = "RPA-001"`) module.
