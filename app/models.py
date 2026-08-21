@@ -613,3 +613,14 @@ class PositionRiskAssessment(Base):
     assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     assessment_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserHolding(Base):
+    __tablename__ = "user_holdings"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(128))
+    stock_id: Mapped[int] = mapped_column(ForeignKey("stocks.id"))
+    action: Mapped[str] = mapped_column(String(16))
+    quantity: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
