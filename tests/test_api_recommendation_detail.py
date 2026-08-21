@@ -25,6 +25,7 @@ from app.models import (
     MarketPrice,
     NewsEventRecord,
     Prediction,
+    PredictionFreshnessDecision,
     PredictionTrustScore,
     RecommendationLifecycle,
     ScanCandidate,
@@ -33,6 +34,7 @@ from app.models import (
 from app.opportunity_ranking import rank_positive_opportunities
 from app.outcomes import evaluate_recommendation
 from app.positive_recommendation_gate import evaluate_positive_gate
+from app.prediction_freshness_engine import FRESHNESS_ENGINE_VERSION, TRIGGER_FEATURE_DRIFT_DETECTED
 from app.prediction_trust_score import PREDICTION_TRUST_SCORE_VERSION
 from app.recommendation_revision import REASON_MATERIAL_EVIDENCE_CHANGE, create_recommendation_revision
 
@@ -243,6 +245,39 @@ def test_events_includes_reanalysis_triggers(client, session):
     response = client.get(f"/api/v1/recommendations/{generation.id}/events")
     items = response.json()["data"]
     assert any(item["eventType"] == "REANALYSIS_TRIGGER" for item in items)
+
+
+def test_events_includes_freshness_engine_triggers(client, session):
+    """M1.105's PredictionFreshnessDecision is a distinct signal from M1.54's
+    EvidenceRevalidationCheck (prediction-level drift/disagreement vs.
+    per-category evidence staleness) and must surface on the same feed."""
+    prediction, generation, stock, scan = _make_live_recommendation(session)
+    session.add(PredictionFreshnessDecision(
+        prediction_id=prediction.id, revalidation_outcome="UNCHANGED",
+        triggers=[{"trigger": TRIGGER_FEATURE_DRIFT_DETECTED, "detail": ["sma20_distance"]}],
+        re_analysis_recommended=True, revision_trigger_reason=None,
+        evaluated_at=AS_OF, engine_rule_version=FRESHNESS_ENGINE_VERSION,
+    ))
+    session.commit()
+
+    response = client.get(f"/api/v1/recommendations/{generation.id}/events")
+    items = response.json()["data"]
+    matches = [item for item in items if item["eventType"] == "REANALYSIS_TRIGGER"]
+    assert len(matches) == 1
+    assert TRIGGER_FEATURE_DRIFT_DETECTED in matches[0]["description"]
+
+
+def test_events_omits_freshness_decisions_with_no_reanalysis_recommended(client, session):
+    prediction, generation, stock, scan = _make_live_recommendation(session)
+    session.add(PredictionFreshnessDecision(
+        prediction_id=prediction.id, revalidation_outcome="UNCHANGED", triggers=[],
+        re_analysis_recommended=False, revision_trigger_reason=None,
+        evaluated_at=AS_OF, engine_rule_version=FRESHNESS_ENGINE_VERSION,
+    ))
+    session.commit()
+
+    response = client.get(f"/api/v1/recommendations/{generation.id}/events")
+    assert response.json()["data"] == []
 
 
 def test_events_pagination_covers_every_item_once(client, session):
