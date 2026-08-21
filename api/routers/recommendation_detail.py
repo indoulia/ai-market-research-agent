@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy.orm import Session
 
-from ..deps import get_db
+from ..deps import get_db, require_bearer_subject
 from ..envelope import cursor_paginated, success
 from ..pagination import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from ..schemas.common import CursorEnvelope, SuccessEnvelope
+from ..schemas.feedback import FeedbackRequest, FeedbackResponse
 from ..schemas.recommendation_detail import EventItem, HistoryItem, OutcomeResponse, RecommendationDetail
+from ..services.feedback import submit_recommendation_feedback
 from ..services.recommendation_detail import get_detail, get_events, get_history, get_outcome
 
 router = APIRouter(prefix="/recommendations", tags=["recommendations"])
@@ -49,3 +51,17 @@ def get_recommendation_events(
 @router.get("/{recommendationId}/outcome", response_model=SuccessEnvelope[OutcomeResponse])
 def get_recommendation_outcome(recommendationId: int, db: Session = Depends(get_db)):
     return success(get_outcome(db, recommendationId))
+
+
+@router.post("/{recommendationId}/feedback", response_model=SuccessEnvelope[FeedbackResponse])
+def post_recommendation_feedback(
+    recommendationId: int,
+    request: FeedbackRequest,
+    db: Session = Depends(get_db),
+    user_id: str = Depends(require_bearer_subject),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    response = submit_recommendation_feedback(
+        db, recommendationId, request, user_id=user_id, submitted_at=datetime.now(timezone.utc), idempotency_key=idempotency_key,
+    )
+    return success(response)

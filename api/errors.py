@@ -84,6 +84,11 @@ class RateLimitedError(ApiError):
         self.retry_after_seconds = retry_after_seconds
 
 
+class ConflictError(ApiError):
+    def __init__(self, code: str, message: str, *, details: dict | None = None) -> None:
+        super().__init__(code, message, http_status=status.HTTP_409_CONFLICT, details=details, retryable=False)
+
+
 class InternalError(ApiError):
     def __init__(self, message: str = "An unexpected error occurred.") -> None:
         super().__init__(
