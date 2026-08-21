@@ -840,3 +840,15 @@ class UserPreferenceSuggestion(Base):
     suggested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     learning_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserDecision(Base):
+    __tablename__ = "user_decisions"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    recommendation_generation_id: Mapped[int] = mapped_column(ForeignKey("recommendation_generations.id"))
+    decision: Mapped[str] = mapped_column(String(32))
+    rationale: Mapped[str | None] = mapped_column(String(2000))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    journal_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
