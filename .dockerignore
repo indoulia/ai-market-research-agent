@@ -8,7 +8,7 @@ __pycache__/
 flutter_app/
 tests/
 docs/
-scripts/
+scripts/__pycache__/
 *.pyc
 *.pyo
 *.log
