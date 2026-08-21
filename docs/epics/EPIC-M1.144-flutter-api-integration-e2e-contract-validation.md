@@ -1,8 +1,8 @@
 # EPIC-M1.144 — Flutter/API Integration & End-to-End Contract Validation
 
 **Track:** CROSS-TRACK
-**Status:** APPROVED
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETED
 **Priority:** P0
 
 ## Objective
