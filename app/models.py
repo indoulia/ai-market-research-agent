@@ -876,6 +876,27 @@ class FundamentalDataRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class EvidenceQualityDecision(Base):
+    __tablename__ = "evidence_quality_decisions"
+    __table_args__ = (
+        UniqueConstraint("prediction_id", "evaluated_at", name="uq_evidence_quality_prediction_evaluated_at"),
+    )
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    state: Mapped[str] = mapped_column(String(32))
+    available_category_count: Mapped[int] = mapped_column(Integer)
+    stale_category_count: Mapped[int] = mapped_column(Integer)
+    unavailable_category_count: Mapped[int] = mapped_column(Integer)
+    categories_considered: Mapped[list] = mapped_column(JSON)
+    leaked_categories: Mapped[list] = mapped_column(JSON)
+    reasons: Mapped[list] = mapped_column(JSON)
+    confidence_adjustment_ceiling: Mapped[Decimal | None] = mapped_column(Numeric(10, 8))
+    blocks_publication: Mapped[bool] = mapped_column(Boolean)
+    evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    gate_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class NewsEventRecord(Base):
     __tablename__ = "news_event_records"
     __table_args__ = (UniqueConstraint("stock_id", "external_id", name="uq_news_event_stock_external_id"),)
