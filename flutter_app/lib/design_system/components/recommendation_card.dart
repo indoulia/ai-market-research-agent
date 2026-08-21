@@ -4,6 +4,7 @@ import '../tokens/mra_colors.dart';
 import '../tokens/mra_spacing.dart';
 import '../tokens/mra_typography.dart';
 import 'mra_card.dart';
+import 'mra_chip.dart';
 import 'score_indicator.dart';
 import 'sparkline_chart.dart';
 import 'target_sl_badge.dart';
@@ -36,6 +37,15 @@ class RecommendationCardData {
   final List<double> priceHistory;
   final String lastUpdatedLabel;
 
+  /// EPIC-M1.144 — the API's `evidenceFreshness` ("FRESH"/"STALE"/
+  /// "UNKNOWN", `api/services/context_summaries.py::evidence_freshness`).
+  /// Null when a caller doesn't have it (e.g. an older screen); only
+  /// `"STALE"` renders a badge — the card never claims freshness it can't
+  /// confirm, but it also never hides a confirmed-stale prediction's
+  /// numbers behind a value the user can't act on (Scope: "stale data"
+  /// error state).
+  final String? evidenceFreshness;
+
   const RecommendationCardData({
     required this.symbol,
     required this.companyName,
@@ -50,6 +60,7 @@ class RecommendationCardData {
     required this.trust,
     required this.priceHistory,
     required this.lastUpdatedLabel,
+    this.evidenceFreshness,
   });
 }
 
@@ -140,6 +151,12 @@ class RecommendationCard extends StatelessWidget {
                 kind: MraPriceBadgeKind.stopLoss,
                 formattedPrice: data.stopLossPrice.toStringAsFixed(2),
               ),
+              if (data.evidenceFreshness == 'STALE')
+                const MraChip(
+                  label: 'Stale evidence',
+                  tone: MraChipTone.warning,
+                  icon: Icons.history_toggle_off,
+                ),
             ],
           ),
           const SizedBox(height: MraSpacing.md),

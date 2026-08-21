@@ -6,6 +6,7 @@ import 'package:mra_app/core/auth/auth_controller.dart';
 import 'package:mra_app/core/auth/auth_repository.dart';
 import 'package:mra_app/core/auth/auth_session.dart';
 import 'package:mra_app/design_system/theme/mra_theme.dart';
+import 'package:mra_app/features/detail/recommendation_detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -153,4 +154,36 @@ void main() {
 
     expect(find.text('Sign in'), findsOneWidget);
   });
+
+  testWidgets(
+    'EPIC-M1.144: a deep link straight into a nested recommendation route '
+    'resolves that exact route/screen (simulates a web reload landing on '
+    'the link, not just top-level tab navigation)',
+    (tester) async {
+      final repository = _FakeAuthRepository()..signInResult = _session();
+      final controller = AuthController(repository: repository);
+      await controller.signIn('analyst-1');
+      // A fresh GoRouter with an `initialLocation` deep in a branch is
+      // exactly what a real reload does: the app cold-starts and go_router
+      // parses the URL from scratch, with no prior in-app navigation to
+      // fall back on.
+      final router = buildAppRouter(authController: controller);
+      router.go('/home/recommendation/99');
+
+      await tester.pumpWidget(_appWithRouter(router));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/home/recommendation/99',
+      );
+      final screen = tester.widget<RecommendationDetailScreen>(
+        find.byType(RecommendationDetailScreen),
+      );
+      expect(screen.recommendationId, 99);
+      // Not the dashboard/list — the deep link (not an auth redirect
+      // default) drove which screen rendered.
+      expect(find.text('Recommendations'), findsNothing);
+    },
+  );
 }
