@@ -313,6 +313,8 @@ def get_breakdown(session: Session, dimension: str) -> BreakdownResponse:
             key = stock.sector or "UNKNOWN"
         elif dimension == "marketCap":
             key = classify_market_cap_bucket(stock.market_cap)
+        elif dimension == "stock":  # EPIC-M3.7: per-stock breakdown
+            key = stock.symbol
         else:  # regime
             scan_id = scan_ids_by_candidate.get(scan_candidate_id)
             key = regime_by_scan.get(scan_id, "UNKNOWN") if scan_id else "UNKNOWN"
