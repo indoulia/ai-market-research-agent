@@ -1,7 +1,7 @@
 # EPIC-M1.121 — Market Calendar & Operational Window Management
 
-**Status:** VALIDATING (implemented, tests passing, PR open)
-**Execution Status:** READY_FOR_EXECUTION
+**Status:** DONE
+**Execution Status:** COMPLETE
 **Priority:** P0
 
 ## Objective
@@ -30,6 +30,8 @@ M1.95, M1.118.
 **Market-calendar logic is a capability/provider concern exposed through a stable contract; business logic must not hard-code exchange calendars.**
 
 ## Implementation
+
+**Status:** DONE — merged to main via PR #241 (`544c84c`).
 
 `app/market_calendar.py` supplies the canonical holiday/special-session data M1.118's `schedule_orchestration.classify_session` always accepted but never had a source for (M1.118's own docstring flagged this as an honest gap deferred to this EPIC):
 
