@@ -45,7 +45,10 @@ class _MraExpandableSectionState extends State<MraExpandableSection> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(widget.title, style: theme.textTheme.titleMedium),
+                    child: Text(
+                      widget.title,
+                      style: theme.textTheme.titleMedium,
+                    ),
                   ),
                   Icon(_expanded ? Icons.expand_less : Icons.expand_more),
                 ],

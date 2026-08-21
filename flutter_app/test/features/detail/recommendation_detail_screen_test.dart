@@ -259,69 +259,87 @@ void main() {
     expect(find.textContaining('Revenue growth 8% YoY.'), findsWidgets);
   });
 
-  testWidgets('what-changed shows "no revisions" for a never-revised prediction', (
-    tester,
-  ) async {
-    final repo = _FakeDetailRepository(onDetail: _detail);
-    await tester.pumpWidget(
-      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
-    );
-    await tester.pumpAndSettle();
-
-    expect(
-      find.text('No revisions yet — this is the original prediction.'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('what-changed shows the latest revision summary and affected metrics', (
-    tester,
-  ) async {
-    final repo = _FakeDetailRepository(
-      onDetail: _detail,
-      timeline: [
-        _timelineItem(),
-        _timelineItem(
-          version: 2,
-          reason: 'MATERIAL_EVIDENCE_CHANGE',
-          changeSummary: 'Target raised from 170 to 176.50.',
-          affectedMetrics: ['targetPrice', 'confidence'],
+  testWidgets(
+    'what-changed shows "no revisions" for a never-revised prediction',
+    (tester) async {
+      final repo = _FakeDetailRepository(onDetail: _detail);
+      await tester.pumpWidget(
+        _wrap(
+          RecommendationDetailScreen(recommendationId: 1, repository: repo),
         ),
-      ],
-    );
-    await tester.pumpWidget(
-      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('What changed since previous prediction'), findsOneWidget);
-    expect(find.textContaining('Target raised from 170'), findsWidgets);
-    expect(find.text('targetPrice'), findsOneWidget);
-    expect(find.text('confidence'), findsOneWidget);
-  });
+      expect(
+        find.text('No revisions yet — this is the original prediction.'),
+        findsOneWidget,
+      );
+    },
+  );
 
-  testWidgets('evidence panel collapses and expands via progressive disclosure', (
-    tester,
-  ) async {
-    final repo = _FakeDetailRepository(onDetail: _detail);
-    await tester.pumpWidget(
-      _wrap(RecommendationDetailScreen(recommendationId: 1, repository: repo)),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'what-changed shows the latest revision summary and affected metrics',
+    (tester) async {
+      final repo = _FakeDetailRepository(
+        onDetail: _detail,
+        timeline: [
+          _timelineItem(),
+          _timelineItem(
+            version: 2,
+            reason: 'MATERIAL_EVIDENCE_CHANGE',
+            changeSummary: 'Target raised from 170 to 176.50.',
+            affectedMetrics: ['targetPrice', 'confidence'],
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        _wrap(
+          RecommendationDetailScreen(recommendationId: 1, repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    // One copy in the always-visible "why selected" narrative, one in the
-    // collapsible evidence panel.
-    expect(find.textContaining('Above 50-day moving average'), findsNWidgets(2));
+      expect(
+        find.text('What changed since previous prediction'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Target raised from 170'), findsWidgets);
+      expect(find.text('targetPrice'), findsOneWidget);
+      expect(find.text('confidence'), findsOneWidget);
+    },
+  );
 
-    final evidenceHeader = find.text('Evidence & provider summary');
-    await tester.ensureVisible(evidenceHeader);
-    await tester.pumpAndSettle();
-    await tester.tap(evidenceHeader);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'evidence panel collapses and expands via progressive disclosure',
+    (tester) async {
+      final repo = _FakeDetailRepository(onDetail: _detail);
+      await tester.pumpWidget(
+        _wrap(
+          RecommendationDetailScreen(recommendationId: 1, repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    // Evidence panel's copy is gone; "why selected"'s copy remains.
-    expect(find.textContaining('Above 50-day moving average'), findsOneWidget);
-  });
+      // One copy in the always-visible "why selected" narrative, one in the
+      // collapsible evidence panel.
+      expect(
+        find.textContaining('Above 50-day moving average'),
+        findsNWidgets(2),
+      );
+
+      final evidenceHeader = find.text('Evidence & provider summary');
+      await tester.ensureVisible(evidenceHeader);
+      await tester.pumpAndSettle();
+      await tester.tap(evidenceHeader);
+      await tester.pumpAndSettle();
+
+      // Evidence panel's copy is gone; "why selected"'s copy remains.
+      expect(
+        find.textContaining('Above 50-day moving average'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('renders target-hit outcome chip when evaluated', (tester) async {
     final repo = _FakeDetailRepository(
