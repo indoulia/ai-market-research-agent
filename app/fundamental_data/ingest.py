@@ -108,19 +108,21 @@ def ingest_fundamental_data(
     if already_fresh.is_fresh:
         return get_latest_fundamental_record(session, stock.id, as_of_timestamp=requested_at)
 
+    provider_id = getattr(provider, "source", None)
+
     try:
         raw = provider.fetch_fundamentals(stock.symbol)
     except Exception as exc:
         record_fetch_attempt(
             session, data_type=DATA_TYPE_FUNDAMENTAL, scope_key=str(stock.id), requested_at=requested_at,
-            source_timestamp=None, success=False, failure_reason=str(exc),
+            source_timestamp=None, success=False, failure_reason=str(exc), provider_id=provider_id,
         )
         return None
 
     if raw is None:
         record_fetch_attempt(
             session, data_type=DATA_TYPE_FUNDAMENTAL, scope_key=str(stock.id), requested_at=requested_at,
-            source_timestamp=None, success=False, failure_reason=FAILURE_NO_DATA_RETURNED,
+            source_timestamp=None, success=False, failure_reason=FAILURE_NO_DATA_RETURNED, provider_id=provider_id,
         )
         return None
 
@@ -135,12 +137,12 @@ def ingest_fundamental_data(
 
     record_fetch_attempt(
         session, data_type=DATA_TYPE_FUNDAMENTAL, scope_key=str(stock.id), requested_at=requested_at,
-        source_timestamp=published_at, success=True,
+        source_timestamp=published_at, success=True, provider_id=provider_id,
     )
 
     record = FundamentalDataRecord(
         stock_id=stock.id,
-        source=getattr(provider, "source", "unknown"),
+        source=provider_id or "unknown",
         period_end_date=raw.period_end_date,
         revenue=raw.revenue,
         net_income=raw.net_income,

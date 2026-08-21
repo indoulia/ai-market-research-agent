@@ -130,12 +130,14 @@ def ingest_news_events(
     `NewsEventRecord`'s own `(stock_id, external_id)` uniqueness. Every
     real attempt, successful or failed, is recorded via M1.35's
     `record_fetch_attempt`."""
+    provider_id = getattr(provider, "source", None)
+
     try:
         raw_items = provider.fetch_news(stock.symbol)
     except Exception as exc:
         record_fetch_attempt(
             session, data_type=DATA_TYPE_NEWS_EVENT, scope_key=str(stock.id), requested_at=requested_at,
-            source_timestamp=None, success=False, failure_reason=str(exc),
+            source_timestamp=None, success=False, failure_reason=str(exc), provider_id=provider_id,
         )
         return ()
 
@@ -155,7 +157,7 @@ def ingest_news_events(
         event_type, materiality = _classify(item.headline)
         record = NewsEventRecord(
             stock_id=stock.id,
-            source=getattr(provider, "source", "unknown"),
+            source=provider_id or "unknown",
             external_id=item.external_id,
             headline=item.headline,
             event_type=event_type,
@@ -170,7 +172,7 @@ def ingest_news_events(
 
     record_fetch_attempt(
         session, data_type=DATA_TYPE_NEWS_EVENT, scope_key=str(stock.id), requested_at=requested_at,
-        source_timestamp=latest_published_at, success=True,
+        source_timestamp=latest_published_at, success=True, provider_id=provider_id,
     )
 
     session.commit()
