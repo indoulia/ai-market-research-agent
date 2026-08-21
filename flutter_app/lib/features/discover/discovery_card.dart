@@ -63,24 +63,33 @@ class DiscoveryCard extends StatelessWidget {
             ),
           const SizedBox(height: MraSpacing.md),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              ScoreIndicator(
-                kind: MraScoreKind.score,
-                value0to100: item.score ?? 0,
-                size: 36,
+              // EPIC-M1.143: Flexible (not a bare spaceAround Row) — the
+              // same unguarded pattern in RecommendationCard overflowed at
+              // 2x text scale/narrow width, since ScoreIndicator's label
+              // has no width ceiling without one.
+              Expanded(
+                child: ScoreIndicator(
+                  kind: MraScoreKind.score,
+                  value0to100: item.score ?? 0,
+                  size: 36,
+                ),
               ),
-              ScoreIndicator(
-                kind: MraScoreKind.trust,
-                value0to100: item.trustScore ?? 0,
-                size: 36,
+              Expanded(
+                child: ScoreIndicator(
+                  kind: MraScoreKind.trust,
+                  value0to100: item.trustScore ?? 0,
+                  size: 36,
+                ),
               ),
               if (item.eligibility != null)
-                MraChip(
-                  label: item.eligibility! ? 'Eligible' : 'Not eligible',
-                  tone: item.eligibility!
-                      ? MraChipTone.positive
-                      : MraChipTone.neutral,
+                Flexible(
+                  child: MraChip(
+                    label: item.eligibility! ? 'Eligible' : 'Not eligible',
+                    tone: item.eligibility!
+                        ? MraChipTone.positive
+                        : MraChipTone.neutral,
+                  ),
                 ),
             ],
           ),

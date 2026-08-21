@@ -14,6 +14,8 @@ enum _LoadState { loading, error, loaded }
 /// stream (UX rule: "do not create a giant news feed; prioritize material
 /// events" — handled by only showing what M1.139 already returns, which is
 /// keyed off recorded materiality rather than every ingested row).
+/// EPIC-M1.143 added cursor-based infinite scroll — the original version
+/// fetched exactly one page per source and never loaded more.
 class NewsEventsScreen extends StatefulWidget {
   final NewsEventsRepository? repository;
   final RecommendationsRepository? recommendationsRepository;
@@ -31,12 +33,20 @@ class NewsEventsScreen extends StatefulWidget {
 class _NewsEventsScreenState extends State<NewsEventsScreen> {
   late final NewsEventsRepository _repository;
   late final RecommendationsRepository _recommendationsRepository;
+  final ScrollController _scrollController = ScrollController();
 
   _LoadState _state = _LoadState.loading;
   List<FeedEntry> _entries = const [];
+  String? _newsCursor;
+  String? _eventsCursor;
+  bool _hasLoadedOnce = false;
+  bool _loadingMore = false;
   ApiException? _error;
   final TextEditingController _symbolController = TextEditingController();
   String? _symbolFilter;
+
+  bool get _hasMore =>
+      !_hasLoadedOnce || _newsCursor != null || _eventsCursor != null;
 
   @override
   void initState() {
@@ -44,21 +54,37 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
     _repository = widget.repository ?? NewsEventsRepository();
     _recommendationsRepository =
         widget.recommendationsRepository ?? RecommendationsRepository();
+    _scrollController.addListener(_onScroll);
     _load();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _symbolController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_hasMore || _loadingMore || _state != _LoadState.loaded) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 400) {
+      _loadMore();
+    }
   }
 
   Future<void> _load() async {
     setState(() => _state = _LoadState.loading);
     try {
-      final entries = await _repository.fetchFeed(symbol: _symbolFilter);
+      final page = await _repository.fetchPage(symbol: _symbolFilter);
+      final merged = [...page.newEntries]
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
       setState(() {
-        _entries = entries;
+        _entries = merged;
+        _newsCursor = page.nextNewsCursor;
+        _eventsCursor = page.nextEventsCursor;
+        _hasLoadedOnce = true;
         _state = _LoadState.loaded;
       });
     } catch (e) {
@@ -66,6 +92,29 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
         _error = e is ApiException ? e : ApiException.network(e);
         _state = _LoadState.error;
       });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    try {
+      final page = await _repository.fetchPage(
+        symbol: _symbolFilter,
+        newsCursor: _newsCursor,
+        eventsCursor: _eventsCursor,
+        fetchNews: _newsCursor != null,
+        fetchEvents: _eventsCursor != null,
+      );
+      final merged = [..._entries, ...page.newEntries]
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      setState(() {
+        _entries = merged;
+        _newsCursor = page.nextNewsCursor;
+        _eventsCursor = page.nextEventsCursor;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      setState(() => _loadingMore = false);
     }
   }
 
@@ -129,13 +178,30 @@ class _NewsEventsScreenState extends State<NewsEventsScreen> {
         return RefreshIndicator(
           onRefresh: _load,
           child: ListView.separated(
+            controller: _scrollController,
             padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
-            itemCount: _entries.length,
+            itemCount: _entries.length + 1,
             separatorBuilder: (_, _) => const SizedBox(height: MraSpacing.sm),
-            itemBuilder: (context, index) => NewsEventRowCard(
-              entry: _entries[index],
-              onTap: () => _onEntryTap(_entries[index]),
-            ),
+            itemBuilder: (context, index) {
+              if (index == _entries.length) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: MraSpacing.lg),
+                  child: Center(
+                    child: _loadingMore
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                );
+              }
+              return NewsEventRowCard(
+                entry: _entries[index],
+                onTap: () => _onEntryTap(_entries[index]),
+              );
+            },
           ),
         );
     }

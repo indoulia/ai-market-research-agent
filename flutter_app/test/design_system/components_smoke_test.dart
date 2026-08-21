@@ -128,6 +128,23 @@ void main() {
       expect(find.textContaining('176.50'), findsOneWidget);
       expect(find.textContaining('163.00'), findsOneWidget);
     });
+
+    testWidgets('EPIC-M1.143: exposes one combined semantics node per badge', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _wrap(
+          const TargetSlBadge(
+            kind: MraPriceBadgeKind.target,
+            formattedPrice: '176.50',
+          ),
+        ),
+      );
+
+      expect(find.bySemanticsLabel('Target 176.50'), findsOneWidget);
+      handle.dispose();
+    });
   });
 
   group('HorizonSelector', () {

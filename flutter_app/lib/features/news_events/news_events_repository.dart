@@ -47,37 +47,85 @@ class FeedEntry {
   );
 }
 
-/// EPIC-M1.140 — repository boundary over EPIC-M1.139's `/news` and
+/// EPIC-M1.143 — one merged fetch's result, carrying each source's own
+/// cursor separately. `/news` and `/events` are independently paginated
+/// (different source tables per M1.139), so "load more" must advance
+/// each source's cursor on its own rather than a single shared one.
+class FeedPage {
+  final List<FeedEntry> newEntries;
+  final String? nextNewsCursor;
+  final String? nextEventsCursor;
+
+  const FeedPage({
+    required this.newEntries,
+    required this.nextNewsCursor,
+    required this.nextEventsCursor,
+  });
+}
+
+/// EPIC-M1.140/M1.143 — repository boundary over EPIC-M1.139's `/news` and
 /// `/events`. Merges both into one chronological feed client-side — the
 /// API deliberately keeps them separate endpoints (different source
 /// tables), so the "chronological event stream" UX requirement is a
-/// presentation-layer merge, not a contract gap.
+/// presentation-layer merge, not a contract gap. Supports independent
+/// per-source cursor pagination (EPIC-M1.143: "lazy loading/pagination
+/// for large datasets") — a source whose cursor is already `null` is not
+/// re-fetched.
 class NewsEventsRepository {
   final ApiClient _client;
 
   NewsEventsRepository({ApiClient? client}) : _client = client ?? ApiClient();
 
-  Future<List<FeedEntry>> fetchFeed({String? symbol, int pageSize = 20}) async {
-    final newsResponse = await _client.get(
-      '/news',
-      query: {'pageSize': pageSize.toString(), 'symbol': ?symbol},
-    );
-    final eventsResponse = await _client.get(
-      '/events',
-      query: {'pageSize': pageSize.toString(), 'symbol': ?symbol},
-    );
+  Future<FeedPage> fetchPage({
+    String? symbol,
+    int pageSize = 20,
+    String? newsCursor,
+    String? eventsCursor,
+    bool fetchNews = true,
+    bool fetchEvents = true,
+  }) async {
+    List<FeedEntry> news = const [];
+    String? nextNewsCursor = newsCursor;
+    if (fetchNews) {
+      final response = await _client.get(
+        '/news',
+        query: {
+          'pageSize': pageSize.toString(),
+          'symbol': ?symbol,
+          'cursor': ?newsCursor,
+        },
+      );
+      news = (response.data as List)
+          .cast<Map<String, dynamic>>()
+          .map(NewsItem.fromJson)
+          .map(FeedEntry.fromNews)
+          .toList();
+      nextNewsCursor = response.meta['nextCursor'] as String?;
+    }
 
-    final news = (newsResponse.data as List)
-        .cast<Map<String, dynamic>>()
-        .map(NewsItem.fromJson)
-        .map(FeedEntry.fromNews);
-    final events = (eventsResponse.data as List)
-        .cast<Map<String, dynamic>>()
-        .map(MarketEventItem.fromJson)
-        .map(FeedEntry.fromEvent);
+    List<FeedEntry> events = const [];
+    String? nextEventsCursor = eventsCursor;
+    if (fetchEvents) {
+      final response = await _client.get(
+        '/events',
+        query: {
+          'pageSize': pageSize.toString(),
+          'symbol': ?symbol,
+          'cursor': ?eventsCursor,
+        },
+      );
+      events = (response.data as List)
+          .cast<Map<String, dynamic>>()
+          .map(MarketEventItem.fromJson)
+          .map(FeedEntry.fromEvent)
+          .toList();
+      nextEventsCursor = response.meta['nextCursor'] as String?;
+    }
 
-    final merged = [...news, ...events].toList()
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return merged;
+    return FeedPage(
+      newEntries: [...news, ...events],
+      nextNewsCursor: nextNewsCursor,
+      nextEventsCursor: nextEventsCursor,
+    );
   }
 }

@@ -127,6 +127,35 @@ Widget _wrapWithRouter(Widget child) {
 }
 
 void main() {
+  testWidgets(
+    'EPIC-M1.143: discovery card survives 2x text scaling at narrow width '
+    'without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = _FakeDiscoveriesRepository(
+        () async => DiscoveriesPage(
+          items: [DiscoveryItem.fromJson(_rawItem())],
+          nextCursor: null,
+        ),
+      );
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(360, 800),
+            textScaler: TextScaler.linear(2.0),
+          ),
+          child: _wrapWithRouter(DiscoverScreen(repository: repo)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('renders discovery cards with reason chips', (tester) async {
     final repo = _FakeDiscoveriesRepository(
       () async => DiscoveriesPage(

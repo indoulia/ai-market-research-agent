@@ -111,6 +111,30 @@ void main() {
     expect(find.text('2'), findsOneWidget); // opportunities count
   });
 
+  testWidgets(
+    'EPIC-M1.143: header and KPI strip survive 2x text scaling at compact '
+    'width without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = _FakeRepository(() async => _pageOf([_item(id: 1)]));
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(360, 800),
+            textScaler: TextScaler.linear(2.0),
+          ),
+          child: _wrap(DashboardScreen(repository: repo)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('shows an error state with retry on fetch failure', (
     tester,
   ) async {
@@ -191,4 +215,22 @@ void main() {
 
     expect(find.text('detail:42'), findsOneWidget);
   });
+
+  testWidgets(
+    'EPIC-M1.143: renders a realistic 100-item page without overflow or '
+    'exceptions',
+    (tester) async {
+      final repo = _FakeRepository(
+        () async =>
+            _pageOf(List.generate(100, (i) => _item(id: i, symbol: 'SYM$i'))),
+      );
+      await tester.pumpWidget(_wrap(DashboardScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      // First page's items render; scrolling further shouldn't be needed
+      // to prove the large list itself laid out cleanly.
+      expect(find.text('SYM0'), findsOneWidget);
+    },
+  );
 }
