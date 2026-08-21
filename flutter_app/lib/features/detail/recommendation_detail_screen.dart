@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api_exception.dart';
 import '../../design_system/design_system.dart';
+import '../feedback/recommendation_feedback_section.dart';
 import 'event_item.dart';
 import 'history_item.dart';
 import 'price_target_chart.dart';
@@ -138,6 +139,12 @@ class _DetailBody extends StatelessWidget {
             _ChartSection(detail: detail, history: history),
             const SizedBox(height: MraSpacing.lg),
             _OutcomeSection(outcome: outcome, detail: detail),
+            const SizedBox(height: MraSpacing.lg),
+            RecommendationFeedbackSection(
+              recommendationId: detail.id,
+              predictionVersion:
+                  detail.predictionVersion['modelVersion'] as String,
+            ),
           ],
         );
         final secondary = Column(

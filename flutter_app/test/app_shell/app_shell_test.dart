@@ -95,6 +95,12 @@ void main() {
     await tester.pumpWidget(_appWithRouter(router));
     await tester.pumpAndSettle();
 
+    // The gallery link lives on the "Settings" tab, not the default
+    // "Preferences" tab. The nav rail also has a "Settings" destination
+    // label, so target the Tab widget specifically to avoid ambiguity.
+    await tester.tap(find.widgetWithText(Tab, 'Settings'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Design system gallery (QA)'));
     await tester.pumpAndSettle();
 

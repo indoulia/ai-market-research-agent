@@ -4,11 +4,11 @@ import '../features/dashboard/dashboard_screen.dart';
 import '../features/detail/recommendation_detail_screen.dart';
 import '../features/discover/discover_screen.dart';
 import '../features/market/market_screen.dart';
+import '../features/preferences/preferences_settings_screen.dart';
 import '../gallery/gallery_screen.dart';
 import 'app_destination.dart';
 import 'app_shell_scaffold.dart';
 import 'placeholder_screen.dart';
-import 'settings_screen.dart';
 
 /// EPIC-M1.134 — route table. One [StatefulShellRoute] branch per primary
 /// destination so each keeps independent navigation/scroll state when the
@@ -98,7 +98,7 @@ GoRouter buildAppRouter() => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[5].path,
-              builder: (context, state) => const SettingsScreen(),
+              builder: (context, state) => const PreferencesSettingsScreen(),
             ),
           ],
         ),
