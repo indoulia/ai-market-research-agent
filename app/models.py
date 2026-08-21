@@ -1123,3 +1123,30 @@ class FactorAssociationReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     report_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PredictionUsefulnessAssessment(Base):
+    __tablename__ = "prediction_usefulness_assessments"
+    __table_args__ = (UniqueConstraint("prediction_id", name="uq_usefulness_assessment_prediction"),)
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    prediction_id: Mapped[int] = mapped_column(ForeignKey("predictions.id"))
+    directional_outcome: Mapped[str] = mapped_column(String(32))
+    risk_adjusted_ratio: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    usefulness_verdict: Mapped[str] = mapped_column(String(32))
+    assessed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    usefulness_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class HorizonUsefulnessReport(Base):
+    __tablename__ = "horizon_usefulness_reports"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    model_version: Mapped[str] = mapped_column(String(64), index=True)
+    horizon_days: Mapped[int] = mapped_column(Integer)
+    sample_count: Mapped[int] = mapped_column(Integer)
+    avg_risk_adjusted_ratio: Mapped[Decimal | None] = mapped_column(Numeric(12, 6))
+    useful_rate: Mapped[Decimal | None] = mapped_column(Numeric(10, 6))
+    verdict: Mapped[str] = mapped_column(String(32))
+    computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    report_rule_version: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
