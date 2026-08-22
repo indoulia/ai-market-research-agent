@@ -2244,3 +2244,37 @@ class EndToEndValidationGateReport(Base):
     computed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     gate_rule_version: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UpstoxOAuthState(Base):
+    """Short-lived CSRF `state` values for EPIC-MARKSY-0001's OAuth
+    authorization-code flow. A browser redirect back from Upstox carries no
+    Marksy session header, so `state` (not the caller's bearer token) is
+    what ties a callback to the login this app itself initiated."""
+
+    __tablename__ = "upstox_oauth_states"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    state: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class UpstoxOAuthToken(Base):
+    """Server-side-only record of a Upstox OAuth access token (EPIC-MARKSY-
+    0001). Never serialized through any API response -- see
+    api/schemas/integrations_upstox.py, which exposes status derived from
+    this table's timestamps only, never `access_token` itself. Rows are
+    appended, never overwritten (same append-only, revoke-don't-mutate
+    pattern as `AuthSession` above), so token history/provenance survives
+    re-authentication."""
+
+    __tablename__ = "upstox_oauth_tokens"
+    id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
+    access_token: Mapped[str] = mapped_column(String(2048))
+    token_type: Mapped[str] = mapped_column(String(32), default="Bearer")
+    upstox_user_id: Mapped[str | None] = mapped_column(String(128))
+    obtained_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
