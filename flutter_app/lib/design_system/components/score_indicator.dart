@@ -31,11 +31,15 @@ class ScoreIndicator extends StatelessWidget {
     }
   }
 
+  /// Every caller of this indicator (score/confidence/trust) only ever
+  /// renders it for an already-surfaced, positive-population opportunity
+  /// (EPIC-M3.16) — a low value here is a weaker positive signal, never a
+  /// failure/error condition, so `scheme.error`'s alarm red is deliberately
+  /// not used.
   Color _colorFor(BuildContext context) {
     final scheme = MraColorScheme.of(context);
     if (value0to100 >= 70) return scheme.positive;
-    if (value0to100 >= 40) return scheme.warning;
-    return scheme.error;
+    return scheme.warning;
   }
 
   @override

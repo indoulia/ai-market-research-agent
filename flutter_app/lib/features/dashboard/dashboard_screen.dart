@@ -291,7 +291,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fillColor: theme.colorScheme.surfaceContainerHigh,
               contentPadding: const EdgeInsets.symmetric(
                 vertical: 0,
-                horizontal: 12,
+                horizontal: MraSpacing.md,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -626,7 +626,7 @@ class _RecentChangesCard extends StatelessWidget {
           const SizedBox(height: MraSpacing.sm),
           for (final item in shown)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
+              padding: const EdgeInsets.symmetric(vertical: MraSpacing.xs),
               child: Row(
                 children: [
                   Expanded(
