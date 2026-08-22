@@ -69,17 +69,17 @@ def client(session):
         app.dependency_overrides.clear()
 
 
-def _make_prediction(session, *, symbol, as_of, sector="TECH"):
+def _make_prediction(session, *, symbol, as_of, sector="TECH", market_cap=Decimal("50000"), atr_percent=Decimal("0.035")):
     scan = DailyCandidateScan(scan_date=_SCAN_DATE_EPOCH + timedelta(days=next(_scan_counter)), universe_version="DCS-001", eligible_count=1, excluded_count=0)
     session.add(scan)
     session.flush()
-    stock = Stock(symbol=symbol, exchange="NSE", sector=sector, market_cap=Decimal("50000"), is_active=True)
+    stock = Stock(symbol=symbol, exchange="NSE", sector=sector, market_cap=market_cap, is_active=True)
     session.add(stock)
     session.flush()
     candidate = ScanCandidate(
         scan_id=scan.id, stock_id=stock.id, eligible=True, exclusion_reason=None,
         predicted_probability=Decimal("0.72"), confidence=Decimal("0.80"), sma20_distance=Decimal("0.03"),
-        volume_ratio_20d=Decimal("1.10"), atr_percent=Decimal("0.035"), data_quality_passed=True,
+        volume_ratio_20d=Decimal("1.10"), atr_percent=atr_percent, data_quality_passed=True,
         model_version=MODEL_VERSION, feature_version="FV-001",
     )
     session.add(candidate)
@@ -251,3 +251,129 @@ def test_predictions_list_pagination_covers_every_item_once(client, session):
 
     assert len(seen) == 5
     assert len(set(seen)) == 5
+
+
+# EPIC-M3.15: from/to/horizon/sector/marketCap/regime/symbol/setup filters,
+# named as this EPIC's own API Contract "Query" surface and explicitly
+# deferred as a real gap by EPIC-M3.7's Completion Report ("genuinely new
+# multi-dimension simultaneous filtering ... would be substantial new
+# design surface, not a thin alias gap").
+
+
+def test_summary_from_to_overrides_range(client, session):
+    now = datetime.now(timezone.utc)
+    recent = now - timedelta(days=5)
+    _make_prediction(session, symbol="AAA", as_of=recent)
+    # Well outside a 10-day from/to window but would be inside 30d/1y.
+    old = now - timedelta(days=20)
+    _make_prediction(session, symbol="BBB", as_of=old)
+
+    response = client.get(
+        "/api/v1/tracking/summary",
+        params={"from": (now - timedelta(days=10)).isoformat(), "to": now.isoformat()},
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["predictionCount"] == 1
+    assert data["range"] == "custom"
+
+
+def test_summary_from_without_to_rejected(client):
+    response = client.get(
+        "/api/v1/tracking/summary",
+        params={"from": datetime.now(timezone.utc).isoformat()},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
+
+
+def test_summary_horizon_filter_narrows_population(client, session):
+    now = datetime.now(timezone.utc)
+    # atr_percent 0.035 -> 1d horizon, 0.010 -> 5d horizon (app/horizon.py's
+    # fixed, documented ATR%-to-horizon step function) -- genuinely distinct
+    # horizons, not a mutation of an immutable prediction field.
+    p1, _g1, _s1 = _make_prediction(session, symbol="AAA", as_of=now - timedelta(days=1), atr_percent=Decimal("0.035"))
+    p2, _g2, _s2 = _make_prediction(session, symbol="BBB", as_of=now - timedelta(days=1), atr_percent=Decimal("0.010"))
+    assert p1.horizon_days == 1
+    assert p2.horizon_days == 5
+
+    response = client.get("/api/v1/tracking/summary", params={"range": "30d", "horizon": 1})
+    data = response.json()["data"]
+    assert data["predictionCount"] == 1
+
+
+def test_summary_invalid_horizon_rejected(client):
+    response = client.get("/api/v1/tracking/summary", params={"range": "30d", "horizon": 9})
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "MRA_VALIDATION_FAILED"
+
+
+def test_summary_sector_and_symbol_filters(client, session):
+    now = datetime.now(timezone.utc)
+    _make_prediction(session, symbol="AAA", as_of=now - timedelta(days=1), sector="TECH")
+    _make_prediction(session, symbol="BBB", as_of=now - timedelta(days=1), sector="ENERGY")
+
+    sector_response = client.get("/api/v1/tracking/summary", params={"range": "30d", "sector": "ENERGY"})
+    assert sector_response.json()["data"]["predictionCount"] == 1
+
+    symbol_response = client.get("/api/v1/tracking/summary", params={"range": "30d", "symbol": "AAA"})
+    assert symbol_response.json()["data"]["predictionCount"] == 1
+
+    none_response = client.get("/api/v1/tracking/summary", params={"range": "30d", "symbol": "ZZZ"})
+    assert none_response.json()["data"]["predictionCount"] == 0
+
+
+def test_breakdown_market_cap_filter(client, session):
+    now = datetime.now(timezone.utc)
+    p1, _g1, s1 = _make_prediction(session, symbol="AAA", as_of=now)
+    from app.discovery_segmentation import classify_market_cap_bucket
+    real_bucket = classify_market_cap_bucket(s1.market_cap)
+
+    matching = client.get(
+        "/api/v1/tracking/breakdown", params={"dimension": "sector", "marketCap": real_bucket}
+    ).json()["data"]["items"]
+    assert sum(item["predictionCount"] for item in matching) == 1
+
+    other_bucket = "LARGE_CAP" if real_bucket != "LARGE_CAP" else "SMALL_CAP"
+    empty = client.get(
+        "/api/v1/tracking/breakdown", params={"dimension": "sector", "marketCap": other_bucket}
+    ).json()["data"]["items"]
+    assert empty == []
+
+
+def test_predictions_list_symbol_and_horizon_filters(client, session):
+    now = datetime.now(timezone.utc)
+    p1, _g1, _s1 = _make_prediction(session, symbol="AAA", as_of=now, atr_percent=Decimal("0.035"))
+    p2, _g2, _s2 = _make_prediction(session, symbol="BBB", as_of=now, atr_percent=Decimal("0.010"))
+    assert p1.horizon_days == 1
+    assert p2.horizon_days == 5
+
+    by_symbol = client.get(
+        "/api/v1/tracking/predictions", params={"status": "active", "symbol": "AAA"}
+    ).json()["data"]
+    assert [item["symbol"] for item in by_symbol] == ["AAA"]
+
+    by_horizon = client.get(
+        "/api/v1/tracking/predictions", params={"status": "active", "horizon": 5}
+    ).json()["data"]
+    assert [item["symbol"] for item in by_horizon] == ["BBB"]
+
+    none_match = client.get(
+        "/api/v1/tracking/predictions", params={"status": "active", "symbol": "ZZZ"}
+    ).json()["data"]
+    assert none_match == []
+
+
+def test_breakdown_setup_filter_matches_only_unclassified(client, session):
+    now = datetime.now(timezone.utc)
+    _make_prediction(session, symbol="AAA", as_of=now)
+
+    matches = client.get(
+        "/api/v1/tracking/breakdown", params={"dimension": "setup", "setup": "UNCLASSIFIED"}
+    ).json()["data"]["items"]
+    assert len(matches) == 1
+
+    none_match = client.get(
+        "/api/v1/tracking/breakdown", params={"dimension": "setup", "setup": "BREAKOUT"}
+    ).json()["data"]["items"]
+    assert none_match == []

@@ -9,6 +9,7 @@ import 'active_prediction.dart';
 import 'active_prediction_card.dart';
 import 'tracked_prediction.dart';
 import 'tracking_breakdown.dart';
+import 'tracking_filters.dart';
 import 'tracking_repository.dart';
 import 'tracking_summary.dart';
 import 'tracking_timeseries.dart';
@@ -25,6 +26,37 @@ const _dimensions = [
   'regime',
   'setup',
   'stock',
+];
+
+// EPIC-M3.15 — Filters sheet option sets. `horizon`/`marketCap` mirror the
+// real, fixed product/policy values `app/horizon.py` (1/3/5/7-day horizon
+// selection) and `app/discovery_segmentation.py` (market-cap buckets)
+// already use elsewhere (e.g. Opportunity Explorer's own filter sheet).
+// `regime` mirrors `app/market_regime.py`'s real, fixed
+// trend x volatility classification -- not a fabricated taxonomy.
+const _horizonFilterOptions = [
+  MraFilterOption('ALL', 'All horizons'),
+  MraFilterOption('1', '1D'),
+  MraFilterOption('3', '3D'),
+  MraFilterOption('5', '5D'),
+  MraFilterOption('7', '7D'),
+];
+
+const _marketCapFilterOptions = [
+  MraFilterOption('ALL', 'All sizes'),
+  MraFilterOption('LARGE_CAP', 'Large cap'),
+  MraFilterOption('MID_CAP', 'Mid cap'),
+  MraFilterOption('SMALL_CAP', 'Small cap'),
+];
+
+const _regimeFilterOptions = [
+  MraFilterOption('ALL', 'All regimes'),
+  MraFilterOption('BULLISH_HIGH_VOL', 'Bullish · high vol'),
+  MraFilterOption('BULLISH_LOW_VOL', 'Bullish · low vol'),
+  MraFilterOption('NEUTRAL_HIGH_VOL', 'Neutral · high vol'),
+  MraFilterOption('NEUTRAL_LOW_VOL', 'Neutral · low vol'),
+  MraFilterOption('BEARISH_HIGH_VOL', 'Bearish · high vol'),
+  MraFilterOption('BEARISH_LOW_VOL', 'Bearish · low vol'),
 ];
 
 /// EPIC-M3.8 — user-selectable auto-refresh cadence for the "Active
@@ -61,6 +93,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
   String _range = '30d';
   String _secondaryMetric = 'hitRate';
   String _dimension = 'horizon';
+  TrackingFilters _filters = const TrackingFilters();
+  final _sectorController = TextEditingController();
+  final _symbolController = TextEditingController();
 
   TrackingSummary? _summary;
   TrackingTimeseries? _trustSeries;
@@ -75,6 +110,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
   ApiException? _activeError;
   String _refreshLabel = 'Off';
   Timer? _refreshTimer;
+  Timer? _filterDebounce;
   DateTime? _activeFetchedAt;
 
   bool _secondaryLoading = false;
@@ -93,6 +129,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _filterDebounce?.cancel();
+    _sectorController.dispose();
+    _symbolController.dispose();
     super.dispose();
   }
 
@@ -164,19 +203,21 @@ class _TrackingScreenState extends State<TrackingScreen> {
     setState(() => _state = _LoadState.loading);
     try {
       final results = await Future.wait([
-        _repository.fetchSummary(range: _range),
+        _repository.fetchSummary(range: _range, filters: _filters),
         _repository.fetchTimeseries(
           metric: 'trust',
           range: _range,
           bucket: _bucket,
+          filters: _filters,
         ),
         _repository.fetchTimeseries(
           metric: _secondaryMetric,
           range: _range,
           bucket: _bucket,
+          filters: _filters,
         ),
-        _repository.fetchBreakdown(dimension: _dimension),
-        _repository.fetchPredictions(status: 'closed'),
+        _repository.fetchBreakdown(dimension: _dimension, filters: _filters),
+        _repository.fetchPredictions(status: 'closed', filters: _filters),
       ]);
       final page = results[4] as TrackedPredictionsPage;
       setState(() {
@@ -197,9 +238,45 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   void _onRangeChanged(String range) {
-    if (range == _range) return;
-    setState(() => _range = range);
+    if (range == _range && _filters.from == null) return;
+    setState(() {
+      _range = range;
+      // A quick-range chip always means "not a custom date range" -- clear
+      // any from/to a prior "Custom range" picker call left set.
+      if (_filters.from != null || _filters.to != null) {
+        _filters = _filters.copyWith(clearRange: true);
+      }
+    });
     _load();
+  }
+
+  Future<void> _pickCustomDateRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: now,
+      initialDateRange: (_filters.from != null && _filters.to != null)
+          ? DateTimeRange(start: _filters.from!, end: _filters.to!)
+          : null,
+    );
+    if (picked == null) return;
+    setState(() {
+      _filters = _filters.copyWith(from: picked.start, to: picked.end);
+    });
+    _load();
+  }
+
+  void _onFiltersChanged() {
+    _load();
+  }
+
+  void _debouncedFiltersChanged() {
+    _filterDebounce?.cancel();
+    _filterDebounce = Timer(
+      const Duration(milliseconds: 350),
+      _onFiltersChanged,
+    );
   }
 
   Future<void> _onSecondaryMetricChanged(String metric) async {
@@ -213,6 +290,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
         metric: metric,
         range: _range,
         bucket: _bucket,
+        filters: _filters,
       );
       setState(() {
         _secondarySeries = series;
@@ -232,7 +310,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
       _breakdownLoading = true;
     });
     try {
-      final breakdown = await _repository.fetchBreakdown(dimension: dimension);
+      final breakdown = await _repository.fetchBreakdown(
+        dimension: dimension,
+        filters: _filters,
+      );
       setState(() {
         _breakdown = breakdown;
         _breakdownLoading = false;
@@ -249,6 +330,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
       final page = await _repository.fetchPredictions(
         status: 'closed',
         cursor: _predictionsCursor,
+        filters: _filters,
       );
       setState(() {
         _predictions = [..._predictions, ...page.items];
@@ -306,6 +388,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
               const SizedBox(height: MraSpacing.sm),
               _buildRangeSelector(),
+              const SizedBox(height: MraSpacing.sm),
+              _buildFiltersRow(context),
               const SizedBox(height: MraSpacing.lg),
               if (summary.smallSample) ...[
                 MraChip(
@@ -329,6 +413,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
               _buildActiveSection(context),
               const SizedBox(height: MraSpacing.xl),
               TrackingTrendCard(
+                chartKey: const Key('trustTrendChart'),
                 title: 'Trust Score trend',
                 tooltip:
                     'Average latest Trust Score across genuine predictions '
@@ -352,6 +437,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
               _secondaryLoading
                   ? const MraCard(child: SkeletonCard())
                   : TrackingTrendCard(
+                      chartKey: const Key('secondaryTrendChart'),
                       title: _secondaryMetricLabel(_secondaryMetric),
                       tooltip: _secondaryMetricTooltip(_secondaryMetric),
                       series: _secondarySeries!,
@@ -381,20 +467,180 @@ class _TrackingScreenState extends State<TrackingScreen> {
   }
 
   Widget _buildRangeSelector() {
+    // A custom from/to window (set via the Filters sheet's date-range
+    // picker) takes precedence over the quick-range chips (AC/UX Rule:
+    // "filters and date range"); none of the quick chips show selected in
+    // that state since the effective window isn't any of them.
+    final hasCustomRange = _filters.from != null && _filters.to != null;
     return Semantics(
       container: true,
       label: 'Date range selector',
       child: Wrap(
         spacing: MraSpacing.sm,
-        children: _ranges
-            .map(
-              (r) => ChoiceChip(
-                label: Text(_rangeLabel(r)),
-                selected: r == _range,
-                onSelected: (_) => _onRangeChanged(r),
-              ),
-            )
-            .toList(),
+        children: [
+          ..._ranges.map(
+            (r) => ChoiceChip(
+              label: Text(_rangeLabel(r)),
+              selected: !hasCustomRange && r == _range,
+              onSelected: (_) => _onRangeChanged(r),
+            ),
+          ),
+          ChoiceChip(
+            label: Text(
+              hasCustomRange
+                  ? '${_fmtDate(_filters.from!)} – ${_fmtDate(_filters.to!)}'
+                  : 'Custom…',
+            ),
+            avatar: const Icon(Icons.date_range, size: 16),
+            selected: hasCustomRange,
+            onSelected: (_) => _pickCustomDateRange(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFiltersRow(BuildContext context) {
+    return Row(
+      children: [
+        OutlinedButton.icon(
+          onPressed: () => _openFiltersSheet(context),
+          icon: const Icon(Icons.filter_list),
+          label: Text(
+            _filters.activeCount == 0
+                ? 'Filters'
+                : 'Filters (${_filters.activeCount})',
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _openFiltersSheet(BuildContext context) {
+    _sectorController.text = _filters.sector ?? '';
+    _symbolController.text = _filters.symbol ?? '';
+    showMraBottomSheet(
+      context: context,
+      title: 'Filters',
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final labelStyle = Theme.of(sheetContext).textTheme.labelMedium;
+          void apply(TrackingFilters Function() update) {
+            setState(() => _filters = update());
+            setSheetState(() {});
+            _onFiltersChanged();
+          }
+
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Horizon', style: labelStyle),
+                const SizedBox(height: MraSpacing.xs),
+                MraFilterBar(
+                  key: const Key('trackingHorizonFilter'),
+                  options: _horizonFilterOptions,
+                  selectedIds: {_filters.horizon?.toString() ?? 'ALL'},
+                  onToggle: (id) => apply(
+                    () => _filters.copyWith(
+                      horizon: id == 'ALL' ? null : int.parse(id),
+                      clearHorizon: id == 'ALL',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: MraSpacing.md),
+                Text('Market cap', style: labelStyle),
+                const SizedBox(height: MraSpacing.xs),
+                MraFilterBar(
+                  key: const Key('trackingMarketCapFilter'),
+                  options: _marketCapFilterOptions,
+                  selectedIds: {_filters.marketCap ?? 'ALL'},
+                  onToggle: (id) => apply(
+                    () => _filters.copyWith(
+                      marketCap: id == 'ALL' ? null : id,
+                      clearMarketCap: id == 'ALL',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: MraSpacing.md),
+                Text('Regime', style: labelStyle),
+                const SizedBox(height: MraSpacing.xs),
+                MraFilterBar(
+                  key: const Key('trackingRegimeFilter'),
+                  options: _regimeFilterOptions,
+                  selectedIds: {_filters.regime ?? 'ALL'},
+                  onToggle: (id) => apply(
+                    () => _filters.copyWith(
+                      regime: id == 'ALL' ? null : id,
+                      clearRegime: id == 'ALL',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: MraSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _sectorController,
+                        decoration: const InputDecoration(
+                          labelText: 'Sector',
+                          isDense: true,
+                        ),
+                        onSubmitted: (_) => _onFiltersChanged(),
+                        onChanged: (value) {
+                          setSheetState(() {});
+                          setState(() {
+                            final trimmed = value.trim();
+                            _filters = _filters.copyWith(
+                              sector: trimmed.isEmpty ? null : trimmed,
+                              clearSector: trimmed.isEmpty,
+                            );
+                          });
+                          _debouncedFiltersChanged();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: MraSpacing.md),
+                    Expanded(
+                      child: TextField(
+                        controller: _symbolController,
+                        decoration: const InputDecoration(
+                          labelText: 'Symbol',
+                          isDense: true,
+                        ),
+                        onSubmitted: (_) => _onFiltersChanged(),
+                        onChanged: (value) {
+                          setSheetState(() {});
+                          setState(() {
+                            final trimmed = value.trim();
+                            _filters = _filters.copyWith(
+                              symbol: trimmed.isEmpty ? null : trimmed,
+                              clearSymbol: trimmed.isEmpty,
+                            );
+                          });
+                          _debouncedFiltersChanged();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: MraSpacing.md),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      _sectorController.clear();
+                      _symbolController.clear();
+                      apply(() => const TrackingFilters());
+                    },
+                    child: const Text('Clear all filters'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -726,6 +972,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
   static String _fmtPctValue(double v) => '${(v * 100).toStringAsFixed(1)}%';
 
   static String _fmtPpValue(double v) => '${(v * 100).toStringAsFixed(1)}pp';
+
+  static String _fmtDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   static String _rangeLabel(String r) => switch (r) {
     '7d' => '7 days',
