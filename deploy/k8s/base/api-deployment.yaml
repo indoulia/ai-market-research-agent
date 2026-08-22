@@ -43,6 +43,24 @@ spec:
                   name: market-agent-secrets
                   key: UPSTOX_INSTRUMENTS_URL
                   optional: true
+            - name: UPSTOX_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_CLIENT_ID
+                  optional: true
+            - name: UPSTOX_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_CLIENT_SECRET
+                  optional: true
+            - name: UPSTOX_REDIRECT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: market-agent-secrets
+                  key: UPSTOX_REDIRECT_URI
+                  optional: true
             - name: APP_ENV
               valueFrom:
                 secretKeyRef:
