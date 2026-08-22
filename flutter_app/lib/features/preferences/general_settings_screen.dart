@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api_exception.dart';
 import '../../core/auth/auth_controller.dart';
 import '../../design_system/design_system.dart';
+import '../integrations/upstox_connection_card.dart';
 import 'preferences.dart';
 import 'preferences_repository.dart';
 import 'theme_mode_selector.dart';
@@ -94,6 +95,10 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
             if (widget.authController != null) ...[
               const SizedBox(height: MraSpacing.xxl),
               _buildAccountSection(context, widget.authController!),
+              const SizedBox(height: MraSpacing.xxl),
+              Text('Integrations', style: theme.textTheme.labelLarge),
+              const SizedBox(height: MraSpacing.sm),
+              const UpstoxConnectionCard(),
             ],
             const SizedBox(height: MraSpacing.xxl),
             Text('About', style: theme.textTheme.labelLarge),

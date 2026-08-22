@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mra_app/core/auth/auth_controller.dart';
 import 'package:mra_app/design_system/theme/mra_theme.dart';
+import 'package:mra_app/features/integrations/upstox_connection_card.dart';
 import 'package:mra_app/features/preferences/general_settings_screen.dart';
 import 'package:mra_app/features/preferences/preferences.dart';
 import 'package:mra_app/features/preferences/preferences_repository.dart';
@@ -128,6 +130,45 @@ void main() {
 
     expect(repo.current.displayPreferences.themeMode, AppThemeMode.dark);
   });
+
+  testWidgets(
+    'the Integrations section (Upstox card) only renders with a real session',
+    (tester) async {
+      final repo = _FakePreferencesRepository(Preferences.empty);
+      await tester.pumpWidget(
+        _wrapWithGallery(
+          Scaffold(body: GeneralSettingsScreen(repository: repo)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Integrations'), findsNothing);
+      expect(find.byType(UpstoxConnectionCard), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'a signed-in session shows the Integrations section with the Upstox card',
+    (tester) async {
+      final repo = _FakePreferencesRepository(Preferences.empty);
+      final authController = AuthController()
+        ..status = AuthStatus.authenticated;
+      await tester.pumpWidget(
+        _wrapWithGallery(
+          Scaffold(
+            body: GeneralSettingsScreen(
+              repository: repo,
+              authController: authController,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Integrations'), findsOneWidget);
+      expect(find.byType(UpstoxConnectionCard), findsOneWidget);
+    },
+  );
 
   testWidgets('tapping the gallery link navigates there', (tester) async {
     final repo = _FakePreferencesRepository(Preferences.empty);
