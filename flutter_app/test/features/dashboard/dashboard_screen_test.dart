@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mra_app/core/api_exception.dart';
+import 'package:mra_app/design_system/components/mra_search_field.dart';
 import 'package:mra_app/design_system/theme/mra_theme.dart';
 import 'package:mra_app/features/dashboard/dashboard_repository.dart';
 import 'package:mra_app/features/dashboard/dashboard_screen.dart';
@@ -148,6 +149,37 @@ void main() {
     expect(find.textContaining('RISK_ON'), findsOneWidget);
     expect(find.textContaining('Trust:'), findsOneWidget);
   });
+
+  testWidgets(
+    'sector filter reuses the shared MraSearchField and refetches on submit',
+    (tester) async {
+      var fetchCount = 0;
+      final repo = _FakeDashboardRepository(() async {
+        fetchCount++;
+        return _snapshotOf(_snapshotJson());
+      });
+      await tester.pumpWidget(
+        _wrap(DashboardScreen(dashboardRepository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      // A hand-rolled duplicate TextField would satisfy the hint-text
+      // check but not this type check -- this is what would have failed
+      // before switching dashboard_screen.dart to the shared component.
+      final sectorField = find.widgetWithText(
+        MraSearchField,
+        'Filter by sector',
+      );
+      expect(sectorField, findsOneWidget);
+      expect(fetchCount, 1);
+
+      await tester.enterText(sectorField, 'Energy');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(fetchCount, 2);
+    },
+  );
 
   testWidgets('renders the important-events strip when events are present', (
     tester,

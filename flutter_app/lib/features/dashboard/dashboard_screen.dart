@@ -269,36 +269,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           const SizedBox(height: MraSpacing.sm),
-          TextField(
+          MraSearchField(
+            hintText: 'Filter by sector',
+            prefixIcon: Icons.filter_alt_outlined,
             controller: _sectorController,
-            textInputAction: TextInputAction.search,
-            style: theme.textTheme.bodyMedium,
-            decoration: InputDecoration(
-              hintText: 'Filter by sector',
-              prefixIcon: const Icon(Icons.filter_alt_outlined, size: 20),
-              suffixIcon: (_sector == null)
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      tooltip: 'Clear sector filter',
-                      onPressed: () {
-                        _sectorController.clear();
-                        setState(() => _sector = null);
-                        _onFiltersChanged();
-                      },
-                    ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHigh,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: MraSpacing.md,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              isDense: true,
-            ),
+            onClear: _sector == null
+                ? null
+                : () {
+                    _sectorController.clear();
+                    setState(() => _sector = null);
+                    _onFiltersChanged();
+                  },
             onSubmitted: (value) {
               setState(
                 () => _sector = value.trim().isEmpty ? null : value.trim(),

@@ -21,6 +21,17 @@ void main() {
     expect(light.error, isNot(equals(dark.error)));
   });
 
+  test('primary/onPrimary are pinned to the literal Marksy brand tokens, '
+      'not a Material-derived tonal approximation', () {
+    final light = MraTheme.light();
+    final dark = MraTheme.dark();
+
+    expect(light.colorScheme.primary, MraColors.brandPrimary);
+    expect(light.colorScheme.onPrimary, MraColors.neutral0);
+    expect(dark.colorScheme.primary, MraColors.brandPrimaryLight);
+    expect(dark.colorScheme.onPrimary, MraColors.brandDeepNavy);
+  });
+
   test('MraMotion.durationFor returns zero under reduced motion', () {
     expect(
       MraMotion.durationFor(MraMotion.standard, reduceMotion: true),
