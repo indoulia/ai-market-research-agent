@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mra_app/core/api_client.dart';
+import 'package:mra_app/features/tracking/tracking_filters.dart';
 import 'package:mra_app/features/tracking/tracking_repository.dart';
 
 class _FakeHttpClient extends http.BaseClient {
@@ -174,4 +175,100 @@ void main() {
       expect(http_.lastRequest?.url.queryParameters['cursor'], 'xyz');
     },
   );
+
+  // EPIC-M3.15: the from/to/horizon/sector/marketCap/regime/symbol/setup
+  // filter surface this EPIC's API Contract names is forwarded as query
+  // params on every fetch method.
+  group('EPIC-M3.15 filters', () {
+    final emptySummaryBody = {
+      'data': {
+        'range': 'custom',
+        'predictionCount': 0,
+        'closedCount': 0,
+        'targetHitRate': null,
+        'stopLossRate': null,
+        'horizonExpiryRate': null,
+        'avgRealizedReturn': null,
+        'avgPredictedReturn': null,
+        'calibrationScore': null,
+        'trustScore': null,
+        'trustDelta': null,
+        'modelVersion': null,
+        'benchmarkReturn': null,
+        'relativeReturn': null,
+        'smallSample': false,
+      },
+      'meta': {'requestId': 'r5', 'timestamp': '2026-08-21T09:00:00Z'},
+    };
+
+    test('fetchSummary forwards every filter as a query param', () async {
+      final http_ = _FakeHttpClient(statusCode: 200, body: emptySummaryBody);
+      final repository = TrackingRepository(
+        client: ApiClient(httpClient: http_),
+      );
+
+      await repository.fetchSummary(
+        range: '30d',
+        filters: TrackingFilters(
+          from: DateTime.utc(2026, 8, 1),
+          to: DateTime.utc(2026, 8, 10),
+          horizon: 5,
+          sector: 'TECH',
+          marketCap: 'LARGE_CAP',
+          regime: 'BULLISH_LOW_VOL',
+          symbol: 'AAA',
+        ),
+      );
+
+      final query = http_.lastRequest!.url.queryParameters;
+      expect(query['from'], DateTime.utc(2026, 8, 1).toIso8601String());
+      expect(query['to'], DateTime.utc(2026, 8, 10).toIso8601String());
+      expect(query['horizon'], '5');
+      expect(query['sector'], 'TECH');
+      expect(query['marketCap'], 'LARGE_CAP');
+      expect(query['regime'], 'BULLISH_LOW_VOL');
+      expect(query['symbol'], 'AAA');
+    });
+
+    test('fetchSummary omits filter query params when unset', () async {
+      final http_ = _FakeHttpClient(statusCode: 200, body: emptySummaryBody);
+      final repository = TrackingRepository(
+        client: ApiClient(httpClient: http_),
+      );
+
+      await repository.fetchSummary(range: '30d');
+
+      final query = http_.lastRequest!.url.queryParameters;
+      expect(query.containsKey('horizon'), false);
+      expect(query.containsKey('sector'), false);
+      expect(query.containsKey('symbol'), false);
+    });
+
+    test('fetchPredictions forwards symbol/horizon filters', () async {
+      final http_ = _FakeHttpClient(
+        statusCode: 200,
+        body: {
+          'data': [],
+          'meta': {
+            'requestId': 'r6',
+            'timestamp': '2026-08-21T09:00:00Z',
+            'pageSize': 10,
+            'nextCursor': null,
+          },
+        },
+      );
+      final repository = TrackingRepository(
+        client: ApiClient(httpClient: http_),
+      );
+
+      await repository.fetchPredictions(
+        status: 'active',
+        filters: const TrackingFilters(symbol: 'AAA', horizon: 3),
+      );
+
+      final query = http_.lastRequest!.url.queryParameters;
+      expect(query['symbol'], 'AAA');
+      expect(query['horizon'], '3');
+    });
+  });
 }

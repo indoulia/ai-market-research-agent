@@ -167,3 +167,20 @@ def test_breakdown_by_stock_dimension(client, session):
         assert len(items) == 1
         assert items[0]["key"] == "AAA"
         assert items[0]["closedCount"] == 1
+
+
+def test_performance_summary_symbol_filter_matches_tracking(client, session):
+    """EPIC-M3.15: the `from`/`to`/`horizon`/`sector`/`marketCap`/`regime`/
+    `symbol`/`setup` filter surface this EPIC's API Contract names works
+    identically through the `/performance/*` alias as through `/tracking/*`
+    -- same underlying `make_filters`/service call, so no logic to
+    duplicate-test, just the alias wiring."""
+    now = datetime.now(timezone.utc)
+    _make_prediction(session, symbol="AAA", as_of=now - timedelta(days=1))
+    _make_prediction(session, symbol="BBB", as_of=now - timedelta(days=1))
+
+    tracking_response = client.get("/api/v1/tracking/summary", params={"range": "30d", "symbol": "AAA"})
+    performance_response = client.get("/api/v1/performance/summary", params={"range": "30d", "symbol": "AAA"})
+    assert performance_response.status_code == 200
+    assert performance_response.json()["data"] == tracking_response.json()["data"]
+    assert performance_response.json()["data"]["predictionCount"] == 1

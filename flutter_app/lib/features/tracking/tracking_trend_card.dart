@@ -10,12 +10,24 @@ import 'tracking_timeseries.dart';
 /// "use tooltips for statistical terms"), and the total evaluated sample
 /// count across buckets (UX Rule: "show sample size alongside rates") —
 /// none of which the bare sparkline provides on its own.
+///
+/// EPIC-M3.15 — the sparkline is rendered in [SparklineChart]'s
+/// `interactive` mode: tapping or dragging over the line reveals the exact
+/// value and bucket date at that point (UI Scope: "compact charts with
+/// exact values available on interaction"), addressing the real, named gap
+/// EPIC-M1.148's own Completion Report left open ("No interactive
+/// per-point tooltips on the trend charts themselves").
 class TrackingTrendCard extends StatelessWidget {
   final String title;
   final String tooltip;
   final TrackingTimeseries series;
   final String Function(double) formatValue;
   final Color? color;
+
+  /// Key applied to the interactive [SparklineChart] itself (not this
+  /// card) so tests/automation can target one specific chart instance
+  /// without depending on its rendered Semantics label.
+  final Key? chartKey;
 
   const TrackingTrendCard({
     super.key,
@@ -24,6 +36,7 @@ class TrackingTrendCard extends StatelessWidget {
     required this.series,
     required this.formatValue,
     this.color,
+    this.chartKey,
   });
 
   @override
@@ -79,9 +92,17 @@ class TrackingTrendCard extends StatelessWidget {
             )
           else ...[
             SparklineChart(
+              key: chartKey,
               values: evaluable.map((p) => p.value!).toList(),
               color: color,
               height: 48,
+              interactive: true,
+              pointLabels: evaluable
+                  .map(
+                    (p) =>
+                        '${formatValue(p.value!)} · ${_fmtBucketDate(p.bucketStart)} (n=${p.sampleCount})',
+                  )
+                  .toList(),
             ),
             const SizedBox(height: MraSpacing.xs),
             Row(
@@ -104,4 +125,7 @@ class TrackingTrendCard extends StatelessWidget {
       ),
     );
   }
+
+  static String _fmtBucketDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 }

@@ -34,6 +34,17 @@ here requires a real ``RecommendationGeneration`` link (the same
 provenance-link pattern M1.97/M1.98 established), so a revised
 prediction's *original* is what's counted, matching how M1.135/137
 identify recommendations.
+
+EPIC-M3.15 adds the ``from``/``to``/``horizon``/``sector``/``marketCap``/
+``regime``/``symbol``/``setup`` filter surface its own API Contract names
+-- genuinely new (EPIC-M3.7 explicitly deferred "multi-dimension
+simultaneous filtering" as a named follow-up gap). All four endpoints
+accept the same optional [TrackingFilters]; ``summary``/``timeseries``
+still require a resolved time window (either ``range`` or an explicit
+``from``/``to`` pair), while ``breakdown``/``predictions`` keep their
+pre-existing "whole history unless windowed" default when no ``from``/
+``to`` is given, so passing no filters at all reproduces the exact
+pre-M3.15 query and result set.
 """
 
 from __future__ import annotations
@@ -79,12 +90,70 @@ from ..schemas.tracking import (
 )
 
 RANGE_DAYS = {"7d": 7, "30d": 30, "90d": 90, "1y": 365}
+MIN_HORIZON_DAYS = 1
+MAX_HORIZON_DAYS = 7  # product constraint: 1-7 trading-day horizon only
+
+
+@dataclass(frozen=True)
+class TrackingFilters:
+    """EPIC-M3.15 — optional narrowing filters shared by all four
+    `/tracking/*` (and `/performance/*`) endpoints. Every field defaults to
+    `None` (no filter), so `TrackingFilters()` reproduces the exact
+    pre-M3.15 unfiltered result set."""
+
+    horizon: int | None = None
+    sector: str | None = None
+    market_cap: str | None = None
+    regime: str | None = None
+    symbol: str | None = None
+    setup: str | None = None
+
+    def is_empty(self) -> bool:
+        return not any(
+            [self.horizon, self.sector, self.market_cap, self.regime, self.symbol, self.setup]
+        )
+
+
+def make_filters(
+    *,
+    horizon: int | None = None,
+    sector: str | None = None,
+    market_cap: str | None = None,
+    regime: str | None = None,
+    symbol: str | None = None,
+    setup: str | None = None,
+) -> TrackingFilters:
+    if horizon is not None and not (MIN_HORIZON_DAYS <= horizon <= MAX_HORIZON_DAYS):
+        raise ValidationError(
+            f"horizon must be between {MIN_HORIZON_DAYS} and {MAX_HORIZON_DAYS}, got {horizon!r}",
+            field_errors={"horizon": f"must be between {MIN_HORIZON_DAYS} and {MAX_HORIZON_DAYS}"},
+        )
+    return TrackingFilters(horizon=horizon, sector=sector, market_cap=market_cap, regime=regime, symbol=symbol, setup=setup)
 
 
 def _validate_range(range_key: str) -> int:
     if range_key not in RANGE_DAYS:
         raise ValidationError(f"range must be one of {tuple(RANGE_DAYS)}, got {range_key!r}", field_errors={"range": f"must be one of {tuple(RANGE_DAYS)}"})
     return RANGE_DAYS[range_key]
+
+
+def _resolve_window(
+    range_key: str | None, from_: datetime | None, to_: datetime | None
+) -> tuple[datetime, datetime]:
+    """EPIC-M3.15: an explicit `from`/`to` pair overrides `range` when
+    given. Both must be supplied together -- a single-sided bound is
+    ambiguous (open-ended windows aren't part of this contract)."""
+    if from_ is not None or to_ is not None:
+        if from_ is None or to_ is None:
+            raise ValidationError("from and to must be provided together", field_errors={"from": "required when to is set", "to": "required when from is set"})
+        since = _as_aware_utc(from_)
+        until = _as_aware_utc(to_)
+        if since >= until:
+            raise ValidationError("from must be before to", field_errors={"from": "must be before to"})
+        return since, until
+    days = _validate_range(range_key or "30d")
+    now = datetime.now(timezone.utc)
+    return now - timedelta(days=days), now
 
 
 def _as_aware_utc(value: datetime) -> datetime:
@@ -151,26 +220,102 @@ def _calibration_errors_for(session: Session, prediction_ids: list[int]) -> list
     ]
 
 
-def _genuine_prediction_ids_in_window(session: Session, since: datetime, until: datetime) -> list[int]:
-    """Only predictions with a real `RecommendationGeneration` link --
-    the provenance-link pattern M1.97/98 established to exclude
-    hand-picked/backfilled/test-only rows."""
-    return list(
-        session.scalars(
-            select(Prediction.id)
-            .join(RecommendationGeneration, RecommendationGeneration.prediction_id == Prediction.id)
-            .where(Prediction.as_of_timestamp >= since, Prediction.as_of_timestamp < until)
-        ).all()
+def _filtered_rows(
+    session: Session,
+    filters: TrackingFilters,
+    since: datetime | None = None,
+    until: datetime | None = None,
+) -> list:
+    """EPIC-M3.15: (Prediction, Stock, scan_candidate_id) rows for every
+    genuine prediction (real `RecommendationGeneration` link -- the
+    provenance-link pattern M1.97/98 established), narrowed by whatever
+    SQL-expressible filters are given. `marketCap`/`regime`/`setup` aren't
+    plain columns, so they're applied afterwards by `_apply_python_filters`
+    against these same rows -- same two-pass approach `get_breakdown`
+    already used pre-M3.15 for `marketCap`/`regime`."""
+    stmt = (
+        select(Prediction, Stock, RecommendationGeneration.scan_candidate_id)
+        .join(RecommendationGeneration, RecommendationGeneration.prediction_id == Prediction.id)
+        .join(Stock, Stock.id == Prediction.stock_id)
     )
+    if since is not None:
+        stmt = stmt.where(Prediction.as_of_timestamp >= since, Prediction.as_of_timestamp < until)
+    if filters.horizon is not None:
+        stmt = stmt.where(Prediction.horizon_days == filters.horizon)
+    if filters.sector is not None:
+        stmt = stmt.where(Stock.sector == filters.sector)
+    if filters.symbol is not None:
+        stmt = stmt.where(Stock.symbol == filters.symbol)
+    return session.execute(stmt).all()
 
 
-def get_summary(session: Session, range_key: str) -> TrackingSummary:
-    days = _validate_range(range_key)
-    now = datetime.now(timezone.utc)
-    since = now - timedelta(days=days)
-    prev_since = since - timedelta(days=days)
+def _regime_lookup(session: Session, rows: list) -> tuple[dict[int, int], dict[int, str]]:
+    candidate_ids = [scan_candidate_id for _p, _s, scan_candidate_id in rows if scan_candidate_id is not None]
+    scan_ids_by_candidate: dict[int, int] = {}
+    if candidate_ids:
+        scan_ids_by_candidate = dict(
+            session.execute(select(ScanCandidate.id, ScanCandidate.scan_id).where(ScanCandidate.id.in_(candidate_ids))).all()
+        )
+    regime_by_scan: dict[int, str] = {}
+    scan_ids = list(set(scan_ids_by_candidate.values()))
+    if scan_ids:
+        regime_by_scan = dict(
+            session.execute(select(MarketRegime.scan_id, MarketRegime.regime).where(MarketRegime.scan_id.in_(scan_ids))).all()
+        )
+    return scan_ids_by_candidate, regime_by_scan
 
-    prediction_ids = _genuine_prediction_ids_in_window(session, since, now)
+
+def _apply_python_filters(
+    rows: list,
+    filters: TrackingFilters,
+    scan_ids_by_candidate: dict[int, int],
+    regime_by_scan: dict[int, str],
+) -> list:
+    if filters.market_cap is None and filters.regime is None and filters.setup is None:
+        return rows
+    out = []
+    for prediction, stock, scan_candidate_id in rows:
+        if filters.market_cap is not None and classify_market_cap_bucket(stock.market_cap) != filters.market_cap:
+            continue
+        if filters.regime is not None:
+            scan_id = scan_ids_by_candidate.get(scan_candidate_id) if scan_candidate_id is not None else None
+            regime_key = regime_by_scan.get(scan_id, "UNKNOWN") if scan_id is not None else "UNKNOWN"
+            if regime_key != filters.regime:
+                continue
+        if filters.setup is not None and filters.setup != BUCKET_UNCLASSIFIED:
+            # No strategy/pattern-type classification module exists, so
+            # every genuine prediction is honestly "UNCLASSIFIED" -- any
+            # other requested `setup` value matches nothing.
+            continue
+        out.append((prediction, stock, scan_candidate_id))
+    return out
+
+
+def _filtered_prediction_ids(
+    session: Session, since: datetime, until: datetime, filters: TrackingFilters
+) -> list[int]:
+    rows = _filtered_rows(session, filters, since, until)
+    scan_ids_by_candidate, regime_by_scan = (
+        _regime_lookup(session, rows) if filters.regime is not None else ({}, {})
+    )
+    matched = _apply_python_filters(rows, filters, scan_ids_by_candidate, regime_by_scan)
+    return [prediction.id for prediction, _stock, _scan_candidate_id in matched]
+
+
+def get_summary(
+    session: Session,
+    range_key: str,
+    *,
+    from_: datetime | None = None,
+    to_: datetime | None = None,
+    filters: TrackingFilters | None = None,
+) -> TrackingSummary:
+    filters = filters or TrackingFilters()
+    since, until = _resolve_window(range_key, from_, to_)
+    window = until - since
+    prev_since = since - window
+
+    prediction_ids = _filtered_prediction_ids(session, since, until, filters)
     predictions = (
         list(session.scalars(select(Prediction).where(Prediction.id.in_(prediction_ids))).all())
         if prediction_ids else []
@@ -194,7 +339,7 @@ def get_summary(session: Session, range_key: str) -> TrackingSummary:
     calibration_score = _avg(_calibration_errors_for(session, prediction_ids))
 
     trust_score = _avg(_latest_trust_scores(session, prediction_ids))
-    prev_prediction_ids = _genuine_prediction_ids_in_window(session, prev_since, since)
+    prev_prediction_ids = _filtered_prediction_ids(session, prev_since, since, filters)
     prev_trust_score = _avg(_latest_trust_scores(session, prev_prediction_ids))
     trust_delta = (trust_score - prev_trust_score) if (trust_score is not None and prev_trust_score is not None) else None
 
@@ -206,8 +351,13 @@ def get_summary(session: Session, range_key: str) -> TrackingSummary:
     else:
         model_version = MODEL_VERSION_MIXED
 
+    # EPIC-M3.15: an explicit from/to window has no single named "range" --
+    # reported honestly as "custom" rather than echoing back a `range_key`
+    # that wasn't actually what determined the window.
+    reported_range = range_key if (from_ is None and to_ is None) else "custom"
+
     return TrackingSummary(
-        range=range_key,
+        range=reported_range,
         predictionCount=len(prediction_ids),
         closedCount=closed_count,
         targetHitRate=target_hit_rate,
@@ -225,16 +375,24 @@ def get_summary(session: Session, range_key: str) -> TrackingSummary:
     )
 
 
-def get_timeseries(session: Session, metric: str, range_key: str, bucket: str) -> TimeseriesResponse:
+def get_timeseries(
+    session: Session,
+    metric: str,
+    range_key: str,
+    bucket: str,
+    *,
+    from_: datetime | None = None,
+    to_: datetime | None = None,
+    filters: TrackingFilters | None = None,
+) -> TimeseriesResponse:
+    filters = filters or TrackingFilters()
     if metric not in VALID_TIMESERIES_METRICS:
         raise ValidationError(f"metric must be one of {VALID_TIMESERIES_METRICS}", field_errors={"metric": f"must be one of {VALID_TIMESERIES_METRICS}"})
     if bucket not in VALID_BUCKETS:
         raise ValidationError(f"bucket must be one of {VALID_BUCKETS}", field_errors={"bucket": f"must be one of {VALID_BUCKETS}"})
-    days = _validate_range(range_key)
-    now = datetime.now(timezone.utc)
-    since = now - timedelta(days=days)
+    since, until = _resolve_window(range_key, from_, to_)
 
-    prediction_ids = _genuine_prediction_ids_in_window(session, since, now)
+    prediction_ids = _filtered_prediction_ids(session, since, until, filters)
     predictions = (
         list(session.scalars(select(Prediction).where(Prediction.id.in_(prediction_ids))).all())
         if prediction_ids else []
@@ -262,17 +420,42 @@ def get_timeseries(session: Session, metric: str, range_key: str, bucket: str) -
             values = _calibration_errors_for(session, bucket_prediction_ids)
         points.append(TimeseriesPoint(bucketStart=start, value=_avg(values), sampleCount=len(values)))
 
-    return TimeseriesResponse(metric=metric, range=range_key, bucket=bucket, points=points)
+    reported_range = range_key if (from_ is None and to_ is None) else "custom"
+    return TimeseriesResponse(metric=metric, range=reported_range, bucket=bucket, points=points)
 
 
-def get_breakdown(session: Session, dimension: str) -> BreakdownResponse:
+def get_breakdown(
+    session: Session,
+    dimension: str,
+    *,
+    from_: datetime | None = None,
+    to_: datetime | None = None,
+    filters: TrackingFilters | None = None,
+) -> BreakdownResponse:
+    filters = filters or TrackingFilters()
     if dimension not in VALID_BREAKDOWN_DIMENSIONS:
         raise ValidationError(f"dimension must be one of {VALID_BREAKDOWN_DIMENSIONS}", field_errors={"dimension": f"must be one of {VALID_BREAKDOWN_DIMENSIONS}"})
 
+    # EPIC-M3.15: no time window by default (unchanged pre-M3.15 behavior --
+    # whole immutable history), unless an explicit from/to is given.
+    since = until = None
+    if from_ is not None or to_ is not None:
+        since, until = _resolve_window(None, from_, to_)
+
+    rows = _filtered_rows(session, filters, since, until)
+    scan_ids_by_candidate, regime_by_scan = (
+        _regime_lookup(session, rows) if (dimension == "regime" or filters.regime is not None) else ({}, {})
+    )
+    rows = _apply_python_filters(rows, filters, scan_ids_by_candidate, regime_by_scan)
+
     if dimension == "setup":
         # No strategy/pattern-type classification module exists yet --
-        # an honest single bucket rather than a fabricated taxonomy.
-        all_ids = list(session.scalars(select(RecommendationGeneration.prediction_id).where(RecommendationGeneration.prediction_id.is_not(None))).all())
+        # an honest single bucket rather than a fabricated taxonomy. No
+        # bucket at all (empty items) when filters leave nothing to
+        # report, matching every other dimension's empty-result shape.
+        all_ids = [prediction.id for prediction, _stock, _scid in rows]
+        if not all_ids:
+            return BreakdownResponse(dimension=dimension, items=[])
         outcomes = _outcomes_for(session, all_ids)
         item = BreakdownItem(
             key=BUCKET_UNCLASSIFIED,
@@ -283,27 +466,6 @@ def get_breakdown(session: Session, dimension: str) -> BreakdownResponse:
             smallSample=len(outcomes) < MIN_SAMPLE_SIZE_FOR_COMPARISON,
         )
         return BreakdownResponse(dimension=dimension, items=[item])
-
-    stmt = (
-        select(Prediction, Stock, RecommendationGeneration.scan_candidate_id)
-        .join(RecommendationGeneration, RecommendationGeneration.prediction_id == Prediction.id)
-        .join(Stock, Stock.id == Prediction.stock_id)
-    )
-    rows = session.execute(stmt).all()
-
-    scan_ids_by_candidate: dict[int, int] = {}
-    if dimension == "regime":
-        candidate_ids = [row[2] for row in rows]
-        if candidate_ids:
-            scan_ids_by_candidate = dict(
-                session.execute(select(ScanCandidate.id, ScanCandidate.scan_id).where(ScanCandidate.id.in_(candidate_ids))).all()
-            )
-    regime_by_scan: dict[int, str] = {}
-    if dimension == "regime" and scan_ids_by_candidate:
-        scan_ids = list(set(scan_ids_by_candidate.values()))
-        regime_by_scan = dict(
-            session.execute(select(MarketRegime.scan_id, MarketRegime.regime).where(MarketRegime.scan_id.in_(scan_ids))).all()
-        )
 
     buckets: dict[str, list[Prediction]] = {}
     for prediction, stock, scan_candidate_id in rows:
@@ -343,9 +505,39 @@ class TrackedPredictionsPage:
     next_cursor: str | None
 
 
-def list_tracked_predictions(session: Session, status: str, *, cursor: str | None, page_size: int = DEFAULT_PAGE_SIZE) -> TrackedPredictionsPage:
+def list_tracked_predictions(
+    session: Session,
+    status: str,
+    *,
+    cursor: str | None,
+    page_size: int = DEFAULT_PAGE_SIZE,
+    from_: datetime | None = None,
+    to_: datetime | None = None,
+    filters: TrackingFilters | None = None,
+) -> TrackedPredictionsPage:
+    filters = filters or TrackingFilters()
     if status not in VALID_PREDICTION_STATUSES:
         raise ValidationError(f"status must be one of {VALID_PREDICTION_STATUSES}", field_errors={"status": f"must be one of {VALID_PREDICTION_STATUSES}"})
+
+    since = until = None
+    if from_ is not None or to_ is not None:
+        since, until = _resolve_window(None, from_, to_)
+
+    # EPIC-M3.15: `marketCap`/`regime`/`setup` aren't plain columns, so
+    # constrain the paginated query with an `IN` clause over a
+    # pre-computed eligible-id set rather than post-filtering fetched
+    # pages -- post-filtering after `LIMIT` would silently under-fill or
+    # break keyset pagination's "every item exactly once" guarantee.
+    eligible_ids: set[int] | None = None
+    if since is not None or not filters.is_empty():
+        rows = _filtered_rows(session, filters, since, until)
+        scan_ids_by_candidate, regime_by_scan = (
+            _regime_lookup(session, rows) if filters.regime is not None else ({}, {})
+        )
+        matched = _apply_python_filters(rows, filters, scan_ids_by_candidate, regime_by_scan)
+        eligible_ids = {prediction.id for prediction, _stock, _scid in matched}
+        if not eligible_ids:
+            return TrackedPredictionsPage(items=[], next_cursor=None)
 
     stmt = (
         select(Prediction, Stock.symbol, RecommendationGeneration.id, PredictionOutcome)
@@ -357,6 +549,8 @@ def list_tracked_predictions(session: Session, status: str, *, cursor: str | Non
         stmt = stmt.where(PredictionOutcome.id.is_not(None))
     else:
         stmt = stmt.where(PredictionOutcome.id.is_(None))
+    if eligible_ids is not None:
+        stmt = stmt.where(Prediction.id.in_(eligible_ids))
 
     sort_expr = Prediction.as_of_timestamp
     id_col = RecommendationGeneration.id

@@ -5,6 +5,7 @@ import 'package:mra_app/design_system/design_system.dart';
 import 'package:mra_app/features/tracking/active_prediction.dart';
 import 'package:mra_app/features/tracking/tracked_prediction.dart';
 import 'package:mra_app/features/tracking/tracking_breakdown.dart';
+import 'package:mra_app/features/tracking/tracking_filters.dart';
 import 'package:mra_app/features/tracking/tracking_repository.dart';
 import 'package:mra_app/features/tracking/tracking_screen.dart';
 import 'package:mra_app/features/tracking/tracking_summary.dart';
@@ -14,6 +15,8 @@ class _FakeTrackingRepository extends TrackingRepository {
   final List<String> summaryRangeCalls = [];
   final List<String> timeseriesMetricCalls = [];
   final List<String> breakdownDimensionCalls = [];
+  final List<TrackingFilters> summaryFilterCalls = [];
+  final List<TrackingFilters> predictionsFilterCalls = [];
 
   TrackingSummary Function(String range) summaryFor;
   TrackingBreakdown Function(String dimension) breakdownFor;
@@ -32,8 +35,12 @@ class _FakeTrackingRepository extends TrackingRepository {
            ((_) => const ActivePredictionsPage(items: [], nextCursor: null));
 
   @override
-  Future<TrackingSummary> fetchSummary({required String range}) async {
+  Future<TrackingSummary> fetchSummary({
+    required String range,
+    TrackingFilters filters = const TrackingFilters(),
+  }) async {
     summaryRangeCalls.add(range);
+    summaryFilterCalls.add(filters);
     return summaryFor(range);
   }
 
@@ -42,13 +49,17 @@ class _FakeTrackingRepository extends TrackingRepository {
     required String metric,
     required String range,
     required String bucket,
+    TrackingFilters filters = const TrackingFilters(),
   }) async {
     timeseriesMetricCalls.add(metric);
     return _timeseries(metric);
   }
 
   @override
-  Future<TrackingBreakdown> fetchBreakdown({required String dimension}) async {
+  Future<TrackingBreakdown> fetchBreakdown({
+    required String dimension,
+    TrackingFilters filters = const TrackingFilters(),
+  }) async {
     breakdownDimensionCalls.add(dimension);
     return breakdownFor(dimension);
   }
@@ -58,7 +69,11 @@ class _FakeTrackingRepository extends TrackingRepository {
     required String status,
     String? cursor,
     int pageSize = 10,
-  }) async => predictionsFor(cursor);
+    TrackingFilters filters = const TrackingFilters(),
+  }) async {
+    predictionsFilterCalls.add(filters);
+    return predictionsFor(cursor);
+  }
 
   @override
   Future<ActivePredictionsPage> fetchActivePredictions({
@@ -188,6 +203,17 @@ Widget _wrap(Widget child) {
     home: Scaffold(body: child),
   );
 }
+
+Finder _chip(String filterBarKey, String label) => find.descendant(
+  of: find.byKey(Key(filterBarKey)),
+  matching: find.text(label),
+);
+
+// The button's label grows to "Filters (N)" once a filter is active, so
+// tests that need to reopen the sheet regardless of the active count find
+// it by its icon instead of an exact label match.
+Finder _filtersButton() =>
+    find.widgetWithIcon(OutlinedButton, Icons.filter_list);
 
 void main() {
   testWidgets(
@@ -530,6 +556,126 @@ void main() {
       // fails the test if a Timer is still pending at teardown.
       await tester.tap(find.text('Off'));
       await tester.pump();
+    });
+  });
+
+  // EPIC-M3.15: Filters sheet (horizon/marketCap/regime chips, sector/symbol
+  // text fields, "Clear all filters") and the interactive trend chart.
+  group('EPIC-M3.15 filters', () {
+    testWidgets('Filters button shows the active filter count', (tester) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(_filtersButton(), findsOneWidget);
+
+      await tester.tap(_filtersButton());
+      await tester.pumpAndSettle();
+      await tester.tap(_chip('trackingHorizonFilter', '3D'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(OutlinedButton, 'Filters (1)'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('changing the horizon filter refetches with that horizon', (
+      tester,
+    ) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(_filtersButton());
+      await tester.pumpAndSettle();
+      await tester.tap(_chip('trackingHorizonFilter', '5D'));
+      await tester.pumpAndSettle();
+
+      expect(repo.summaryFilterCalls.last.horizon, 5);
+      expect(repo.predictionsFilterCalls.last.horizon, 5);
+    });
+
+    testWidgets('changing the market cap filter refetches with that bucket', (
+      tester,
+    ) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(_filtersButton());
+      await tester.pumpAndSettle();
+      await tester.tap(_chip('trackingMarketCapFilter', 'Large cap'));
+      await tester.pumpAndSettle();
+
+      expect(repo.summaryFilterCalls.last.marketCap, 'LARGE_CAP');
+    });
+
+    testWidgets('typing a symbol filter refetches with that symbol', (
+      tester,
+    ) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(_filtersButton());
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextField, 'Symbol'), 'AAA');
+      // Symbol/sector text entry is debounced (350ms) rather than refetching
+      // on every keystroke.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      expect(repo.summaryFilterCalls.last.symbol, 'AAA');
+    });
+
+    testWidgets('Clear all filters resets to an empty filter set', (
+      tester,
+    ) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(_filtersButton());
+      await tester.pumpAndSettle();
+      await tester.tap(_chip('trackingHorizonFilter', '5D'));
+      await tester.pumpAndSettle();
+      expect(repo.summaryFilterCalls.last.isEmpty, false);
+
+      // Still inside the same open sheet -- selecting a filter chip doesn't
+      // dismiss it (matches the Opportunity Explorer's own filter sheet
+      // behavior), so "Clear all filters" is reachable without reopening.
+      await tester.tap(find.text('Clear all filters'));
+      await tester.pumpAndSettle();
+
+      expect(repo.summaryFilterCalls.last.isEmpty, true);
+    });
+
+    testWidgets('tapping the trend chart reveals the exact point value', (
+      tester,
+    ) async {
+      final repo = _defaultRepo();
+      await tester.pumpWidget(_wrap(TrackingScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      // No exact-value label shown before any interaction.
+      expect(find.textContaining('n=5)'), findsNothing);
+
+      final trendChart = find.descendant(
+        of: find.byKey(const Key('trustTrendChart')),
+        matching: find.byType(GestureDetector),
+      );
+      await tester.ensureVisible(trendChart);
+      await tester.pumpAndSettle();
+      await tester.tap(trendChart);
+      await tester.pumpAndSettle();
+
+      // `_timeseries` has two points (0.6/2026-08-01/n=5 and
+      // 0.7/2026-08-02/n=6); a tap anywhere on the line reveals whichever
+      // point it lands nearest, so assert the shape of the revealed label
+      // rather than a single exact index (avoids coupling the test to
+      // exactly how the tap-x-to-index rounding resolves).
+      expect(find.textContaining('(n='), findsWidgets);
     });
   });
 }

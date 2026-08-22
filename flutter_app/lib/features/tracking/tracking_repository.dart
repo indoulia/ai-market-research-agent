@@ -2,6 +2,7 @@ import '../../core/api_client.dart';
 import 'active_prediction.dart';
 import 'tracked_prediction.dart';
 import 'tracking_breakdown.dart';
+import 'tracking_filters.dart';
 import 'tracking_summary.dart';
 import 'tracking_timeseries.dart';
 
@@ -32,10 +33,13 @@ class TrackingRepository {
 
   TrackingRepository({ApiClient? client}) : _client = client ?? ApiClient();
 
-  Future<TrackingSummary> fetchSummary({required String range}) async {
+  Future<TrackingSummary> fetchSummary({
+    required String range,
+    TrackingFilters filters = const TrackingFilters(),
+  }) async {
     final response = await _client.get(
       '/tracking/summary',
-      query: {'range': range},
+      query: {'range': range, ...filters.toQuery()},
     );
     return TrackingSummary.fromJson(response.data as Map<String, dynamic>);
   }
@@ -44,18 +48,27 @@ class TrackingRepository {
     required String metric,
     required String range,
     required String bucket,
+    TrackingFilters filters = const TrackingFilters(),
   }) async {
     final response = await _client.get(
       '/tracking/timeseries',
-      query: {'metric': metric, 'range': range, 'bucket': bucket},
+      query: {
+        'metric': metric,
+        'range': range,
+        'bucket': bucket,
+        ...filters.toQuery(),
+      },
     );
     return TrackingTimeseries.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<TrackingBreakdown> fetchBreakdown({required String dimension}) async {
+  Future<TrackingBreakdown> fetchBreakdown({
+    required String dimension,
+    TrackingFilters filters = const TrackingFilters(),
+  }) async {
     final response = await _client.get(
       '/tracking/breakdown',
-      query: {'dimension': dimension},
+      query: {'dimension': dimension, ...filters.toQuery()},
     );
     return TrackingBreakdown.fromJson(response.data as Map<String, dynamic>);
   }
@@ -64,6 +77,7 @@ class TrackingRepository {
     required String status,
     String? cursor,
     int pageSize = 10,
+    TrackingFilters filters = const TrackingFilters(),
   }) async {
     final response = await _client.get(
       '/tracking/predictions',
@@ -71,6 +85,7 @@ class TrackingRepository {
         'status': status,
         'pageSize': pageSize.toString(),
         'cursor': ?cursor,
+        ...filters.toQuery(),
       },
     );
     final items = (response.data as List)
