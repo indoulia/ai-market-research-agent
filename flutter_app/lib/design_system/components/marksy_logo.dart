@@ -12,11 +12,17 @@ import '../tokens/mra_colors.dart';
 class MarksyWordmark extends StatelessWidget {
   final double fontSize;
 
-  const MarksyWordmark({super.key, this.fontSize = 20});
+  /// True when placed on a dark, non-theme-following surface (the navy
+  /// app-bar chrome) rather than the app's own themed surface color.
+  final bool light;
+
+  const MarksyWordmark({super.key, this.fontSize = 20, this.light = false});
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurface = light
+        ? MraColors.neutral0
+        : Theme.of(context).colorScheme.onSurface;
     final baseStyle = TextStyle(
       fontSize: fontSize,
       fontWeight: FontWeight.w800,
@@ -72,13 +78,17 @@ class MarksyIcon extends StatelessWidget {
 class MarksyLogo extends StatelessWidget {
   final double iconSize;
   final double fontSize;
-  final bool lightIcon;
+
+  /// True when placed on the navy app-bar chrome (or any other dark,
+  /// non-theme-following surface) -- swaps both the icon badge and the
+  /// wordmark's "Mark" text for their light-surface-legible variants.
+  final bool light;
 
   const MarksyLogo({
     super.key,
     this.iconSize = 28,
     this.fontSize = 20,
-    this.lightIcon = false,
+    this.light = false,
   });
 
   @override
@@ -86,9 +96,9 @@ class MarksyLogo extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        MarksyIcon(size: iconSize, light: lightIcon),
+        MarksyIcon(size: iconSize, light: light),
         const SizedBox(width: 8),
-        MarksyWordmark(fontSize: fontSize),
+        MarksyWordmark(fontSize: fontSize, light: light),
       ],
     );
   }

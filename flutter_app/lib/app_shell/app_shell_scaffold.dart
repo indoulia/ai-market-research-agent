@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design_system/components/marksy_logo.dart';
+import '../design_system/tokens/mra_colors.dart';
 import '../design_system/tokens/mra_spacing.dart';
 import 'app_destination.dart';
 
@@ -126,7 +127,13 @@ class _ShellAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const MarksyLogo(iconSize: 24, fontSize: 18),
+      // EPIC-173 — the one piece of brand chrome that stays deep-navy on
+      // every screen/theme, matching the approved dashboard reference
+      // (https://claude.ai/code/artifact/dc85a4ea-4aa3-4520-84db-4b657c6a38bd)
+      // rather than following the app's own light/dark ThemeData.
+      backgroundColor: MraColors.brandDeepNavy,
+      foregroundColor: MraColors.neutral0,
+      title: const MarksyLogo(iconSize: 24, fontSize: 18, light: true),
       actions: [
         IconButton(
           tooltip: 'Search',
