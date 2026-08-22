@@ -45,7 +45,9 @@ GoRouter buildAppRouter({
 }) => GoRouter(
   initialLocation: authController == null
       ? '/home'
-      : (initialDeepLink != null && initialDeepLink != '/' && initialDeepLink != '')
+      : (initialDeepLink != null &&
+            initialDeepLink != '/' &&
+            initialDeepLink != '')
       ? '/splash?from=${Uri.encodeComponent(initialDeepLink)}'
       : '/splash',
   refreshListenable: authController,
@@ -66,7 +68,10 @@ GoRouter buildAppRouter({
             // query param instead of re-deriving the target from `loc`
             // (which would just be `/splash` itself and lose it).
             final existingFrom = state.uri.queryParameters['from'];
-            final target = (loc == '/splash' && existingFrom != null && existingFrom.isNotEmpty)
+            final target =
+                (loc == '/splash' &&
+                    existingFrom != null &&
+                    existingFrom.isNotEmpty)
                 ? existingFrom
                 : loc;
             return '/sign-in?from=${Uri.encodeComponent(target)}';

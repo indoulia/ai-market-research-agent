@@ -65,7 +65,8 @@ class _MraAppState extends State<MraApp> {
     // (a bookmarked deep link, a page refresh) — see app_router.dart's
     // `initialDeepLink` doc for why this must be threaded through rather
     // than letting GoRouter's hardcoded `/splash` initialLocation drop it.
-    final initialDeepLink = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    final initialDeepLink =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
     _router = buildAppRouter(
       authController: _authController,
       initialDeepLink: initialDeepLink,
