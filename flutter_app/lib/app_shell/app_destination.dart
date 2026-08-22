@@ -62,7 +62,7 @@ const List<AppDestination> kAppDestinations = [
     label: 'History',
     icon: Icons.history_outlined,
     selectedIcon: Icons.history,
-    ownerEpic: 'EPIC-M3.17 Recommendation History UI',
+    ownerEpic: 'EPIC-172 Recommendation History UI',
   ),
   AppDestination(
     path: '/settings',

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens/mra_colors.dart';
 
-/// EPIC-M3.17 — the Marksy brand mark. The icon is a raster asset (see
+/// EPIC-170 — the Marksy brand mark. The icon is a raster asset (see
 /// docs/branding/marksy/README.md for provenance/limitations); the
 /// "Marksy" wordmark is rendered as real text rather than a baked image so
 /// it scales correctly at any text-scale factor and adapts to the active
@@ -32,7 +32,12 @@ class MarksyWordmark extends StatelessWidget {
           ),
           TextSpan(
             text: 'sy',
-            style: baseStyle.copyWith(color: MraColors.brandTeal),
+            style: baseStyle.copyWith(
+              foreground: Paint()
+                ..shader = const LinearGradient(
+                  colors: [MraColors.brandPrimary, MraColors.brandTeal],
+                ).createShader(Rect.fromLTWH(0, 0, fontSize * 1.2, fontSize)),
+            ),
           ),
         ],
       ),

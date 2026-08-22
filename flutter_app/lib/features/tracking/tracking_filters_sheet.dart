@@ -8,7 +8,7 @@ import 'tracking_filters.dart';
 // selection) and `app/discovery_segmentation.py` (market-cap buckets)
 // already use elsewhere (e.g. Opportunity Explorer's own filter sheet).
 // `regime` mirrors `app/market_regime.py`'s real, fixed trend x volatility
-// classification -- not a fabricated taxonomy. EPIC-M3.17 made these
+// classification -- not a fabricated taxonomy. EPIC-172 made these
 // public (was tracking_screen.dart-private) so the standalone `/history`
 // screen's filter sheet can share the exact same option lists.
 const kTrackingHorizonFilterOptions = [
@@ -36,7 +36,7 @@ const kTrackingRegimeFilterOptions = [
   MraFilterOption('BEARISH_LOW_VOL', 'Bearish · low vol'),
 ];
 
-/// EPIC-M3.17 — the callbacks [buildTrackingFilterSheetBody] needs to mutate
+/// EPIC-172 — the callbacks [buildTrackingFilterSheetBody] needs to mutate
 /// a *host screen's own* [TrackingFilters] state without owning it, so the
 /// same sheet body can back both [TrackingScreen] and the `/history` screen.
 class TrackingFilterSheetActions {
@@ -56,7 +56,7 @@ class TrackingFilterSheetActions {
   });
 }
 
-/// EPIC-M3.17 — extracted from [TrackingScreen]'s `_openFiltersSheet` so the
+/// EPIC-172 — extracted from [TrackingScreen]'s `_openFiltersSheet` so the
 /// `/history` screen (also filtering `/tracking/predictions?status=closed`)
 /// gets the identical horizon/market-cap/regime/sector/symbol filter UI
 /// instead of a second, drift-prone copy. The host screen wraps this in its

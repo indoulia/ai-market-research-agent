@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../design_system/design_system.dart';
 import 'tracked_prediction.dart';
 
-/// EPIC-M3.17 — the closed-predictions table + "Load more" footer, shared
+/// EPIC-172 — the closed-predictions table + "Load more" footer, shared
 /// by [TrackingScreen]'s "Recent closed predictions" section and the
 /// standalone `/history` screen (both list the same
 /// `/tracking/predictions?status=closed` data; only the surrounding page

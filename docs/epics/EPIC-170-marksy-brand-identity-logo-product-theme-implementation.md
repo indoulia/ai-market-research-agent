@@ -1,4 +1,4 @@
-# EPIC-M3.17 — Marksy Brand Identity, Logo & Product Theme Implementation
+# EPIC-170 — Marksy Brand Identity, Logo & Product Theme Implementation
 
 **Status:** IN_PROGRESS
 **Execution Status:** FOUNDATION_COMPLETE — first pass done, dimension-by-dimension component/screen

@@ -1,6 +1,36 @@
-# Market Agent — M1 Historical Prediction Engine
+# Marksy
 
-Frozen scope:
+### AI-Powered Market Intelligence
+
+**Discover. Understand. Predict. Learn.**
+
+Marksy is an AI-powered market intelligence platform designed to transform market data and evidence
+into measurable investment intelligence. Marksy discovers market opportunities, evaluates supporting
+evidence, generates calibrated predictions, tracks recommendation outcomes, measures prediction
+quality, and learns from historical results.
+
+The Marksy philosophy is simple:
+
+> Don't just predict the market.
+> Remember what you predicted, measure what happened, and learn from the evidence.
+
+## Marksy Intelligence Loop
+
+Discover → Understand → Predict → Track → Measure → Learn
+
+Marksy is designed as an intelligence and research platform. It does not represent guaranteed
+investment returns and does not automatically execute trades — see "Out of scope" below.
+
+Brand/visual reference: [`docs/branding/marksy/README.md`](docs/branding/marksy/README.md).
+
+---
+
+## M1 — Historical Prediction Engine
+
+Marksy's prediction engine began as this M1 scaffold; the sections below document that underlying
+engine and its local dev/deploy workflow.
+
+Frozen scope (M1):
 - Historical NSE-oriented dataset
 - Point-in-time feature generation
 - 1/3/5/7 trading-day targets

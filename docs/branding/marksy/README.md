@@ -2,13 +2,44 @@
 
 **Canonical visual reference:** [`marksy-brand-reference.png`](marksy-brand-reference.png)
 (SHA-256 `c7250170668ce59bf4f8de864a0baa4695e372df5fa0b1732ddc5b5f221693ea`, 1536×1024, sourced from the
-approved brand board supplied for EPIC-M3.17 / GitHub issue #300).
+approved brand board supplied for EPIC-170 / GitHub issue #300).
 
 This board is a composite moodboard — multiple logo lockups, icon variants, and a color palette
 stitched into one image — not a set of isolated source files (no vector/PSD/Figma source was
 provided). Everything under `assets/` and `exports/` was cropped out of this single reference image.
 Treat `marksy-brand-reference.png` itself as the source of truth for geometry and color; the files
 below are derived, best-effort extractions for direct use in the app.
+
+## Brand positioning
+
+**Category:** AI-Powered Market Intelligence
+**Tagline:** Discover. Understand. Predict. Learn.
+**One-line description:** Marksy — AI-powered market intelligence that discovers opportunities,
+predicts outcomes, and learns from evidence.
+**Very short description (browser title / compact UI):** Marksy — Market Intelligence
+
+Marksy is an AI-powered market intelligence platform that discovers market opportunities, combines
+market data and evidence, produces calibrated predictions, tracks recommendation outcomes, and
+continuously learns from historical results — not a simple stock screener. Philosophy: *don't just
+predict the market — remember what you predicted, measure what happened, and learn from the
+evidence.* Intelligence loop: Discover → Understand → Predict → Track → Measure → Learn.
+
+**Personality:** intelligent (analytical, not flashy), trustworthy (evidence before hype), modern,
+curious, transparent (explain why a prediction exists), adaptive (learns from outcomes), approachable
+(not an institutional trading terminal).
+
+**Never position Marksy as:** a trading bot, a stock-tip service, a guaranteed-return system, a
+black-box AI, or a broker.
+
+**Logo meaning:** the mark communicates *market data → signal → insight → direction*, not a generic
+"stock goes up" arrow — the candlestick cluster is the market/signal element, the arrow is direction/
+opportunity (not a promise markets always rise).
+
+**Color meaning:** deep navy = trust/intelligence/stability; blue = technology/analysis/information;
+teal/green = opportunity/growth/positive evidence; red = risk/negative outcome/error only. Green must
+never mean "this is Marksy-branded" by default, and red must never be decorative — both stay strictly
+semantic (see `MraColors`' existing `positive`/`error`/market-up/down tokens, which this brand layers
+on top of, not replaces).
 
 ## Logo mark
 
@@ -49,9 +80,10 @@ gradient (see the "Logo Mark Breakdown" panel in the reference board).
 ## Wordmark
 
 Render `Marksy` as real text, not an image: `Mark` in the primary text color, `sy` in a
-`primaryBlue → teal` gradient (`ShaderMask` over a `TextSpan`), matching every wordmark variant shown
-on the reference board. This scales correctly at any text-scale factor/density and adapts to
-light/dark theme automatically, which a baked raster wordmark cannot do.
+`brandPrimary → brandTeal` gradient (a gradient `Paint` shader set as the `TextSpan`'s `foreground`),
+matching every wordmark variant shown on the reference board. This scales correctly at any
+text-scale factor/density and adapts to light/dark theme automatically, which a baked raster
+wordmark cannot do.
 
 ## Color palette (read directly off the reference board's own labeled swatches)
 
