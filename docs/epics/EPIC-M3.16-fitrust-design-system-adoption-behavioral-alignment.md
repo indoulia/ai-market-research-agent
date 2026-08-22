@@ -1,6 +1,6 @@
 # EPIC-M3.16 — FiTrust UI/UX Design-System Adoption & Behavioral Alignment
 
-**Status:** VALIDATING (self-approved per standing delegation — see project memory `project_post_epic_deployment_validation`; implemented, tests passing, PR open)
+**Status:** DONE (self-approved per standing delegation — see project memory `project_post_epic_deployment_validation`; merged via PR #295, commit `4866ce9`)
 **Execution Status:** COMPLETED
 **Track:** UI
 **Priority:** P1
