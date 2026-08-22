@@ -13,6 +13,7 @@ break at runtime. This module makes that drift a CI failure instead
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from app.main import app
@@ -50,7 +51,74 @@ FLUTTER_DEPENDENT_PATHS = [
     "/api/v1/system/providers",
     "/api/v1/system/data-freshness",
     "/api/v1/system/events",
+    # EPIC-M3.14 — the entries below were added by M3.2/M3.3/M3.4/M3.6/M3.8/
+    # M3.9/M3.10 but never appended here, so removing any one of them from
+    # the live schema would silently break the Flutter screen that depends
+    # on it without failing this gate. See
+    # test_flutter_dependent_paths_list_covers_every_repository_call, which
+    # derives the same set straight from `flutter_app/lib/**/*_repository.dart`
+    # so this list cannot drift silently again.
+    "/api/v1/dashboard/snapshot",
+    "/api/v1/recommendations/{recommendationId}/timeline",
+    "/api/v1/opportunities",
+    "/api/v1/discovery/summary",
+    "/api/v1/discovery/candidates",
+    "/api/v1/discovery/history",
+    "/api/v1/learning/summary",
+    "/api/v1/learning/history",
+    "/api/v1/learning/experiments",
+    "/api/v1/feedback/history",
+    "/api/v1/predictions/active",
+    "/api/v1/predictions/active/{predictionId}",
 ]
+
+FLUTTER_APP_LIB = Path(__file__).resolve().parent.parent / "flutter_app" / "lib"
+
+# Matches `_client.get('/path')`, `.post('/path/$id', ...)`, etc. across every
+# Dart repository file. Interpolated segments (`$id`, `$recommendationId`,
+# `$predictionId`) are path parameters, normalized below the same way the
+# OpenAPI schema names them (`{recommendationId}` etc.) is not attempted —
+# instead we normalize *both* sides to a wildcard so the comparison is
+# robust to param-name spelling differences between Dart and the schema.
+_DART_CALL_RE = re.compile(r"\.(?:get|post|put|delete|patch)\('(/[^']+)'")
+_PATH_PARAM_RE = re.compile(r"\$\{?\w+\}?")
+
+
+def _normalize(path: str) -> str:
+    """Collapses any path-parameter segment (Dart `$id` or OpenAPI
+    `{recommendationId}`) to a single `*` wildcard for comparison."""
+    path = _PATH_PARAM_RE.sub("*", path)
+    path = re.sub(r"\{[^}]+\}", "*", path)
+    return path
+
+
+def _flutter_called_paths() -> set[str]:
+    """Every `/api/v1/*` path a Flutter repository calls directly, derived
+    from source rather than hand-maintained, so this can never itself go
+    stale the way `FLUTTER_DEPENDENT_PATHS` silently did."""
+    called: set[str] = set()
+    for dart_file in FLUTTER_APP_LIB.rglob("*.dart"):
+        text = dart_file.read_text(encoding="utf-8")
+        for match in _DART_CALL_RE.finditer(text):
+            called.add("/api/v1" + _normalize(match.group(1)))
+    return called
+
+
+def test_flutter_dependent_paths_list_covers_every_repository_call():
+    """EPIC-M3.14 — guards against the exact drift this module already had:
+    `FLUTTER_DEPENDENT_PATHS` is hand-maintained and fell behind as M3.2
+    onward added `/dashboard/snapshot`, `/opportunities`, `/discovery/*`,
+    `/learning/*`, `/feedback/history` and `/predictions/active*` without
+    anyone re-adding them here. Scans the real Dart source for every call
+    site instead of trusting the list to have kept up with it.
+    """
+    called = _flutter_called_paths()
+    declared = {_normalize(p) for p in FLUTTER_DEPENDENT_PATHS}
+    missing = sorted(called - declared)
+    assert not missing, (
+        "Flutter calls these API paths but FLUTTER_DEPENDENT_PATHS doesn't "
+        f"list them (so losing one from the schema wouldn't fail CI): {missing}"
+    )
 
 
 def test_committed_openapi_contract_matches_live_schema():
