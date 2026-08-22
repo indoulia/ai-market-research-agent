@@ -6,6 +6,7 @@ import '../features/auth/splash_screen.dart';
 import '../features/dashboard/dashboard_screen.dart';
 import '../features/detail/recommendation_detail_screen.dart';
 import '../features/discover/discover_screen.dart';
+import '../features/history/history_screen.dart';
 import '../features/learning/learning_screen.dart';
 import '../features/market/market_screen.dart';
 import '../features/opportunities/opportunity_explorer_screen.dart';
@@ -14,7 +15,6 @@ import '../features/tracking/tracking_screen.dart';
 import '../gallery/gallery_screen.dart';
 import 'app_destination.dart';
 import 'app_shell_scaffold.dart';
-import 'placeholder_screen.dart';
 
 /// EPIC-M1.134 — route table. One [StatefulShellRoute] branch per primary
 /// destination so each keeps independent navigation/scroll state when the
@@ -161,9 +161,15 @@ GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
           routes: [
             GoRoute(
               path: kAppDestinations[5].path,
-              builder: (context, state) => DestinationPlaceholderScreen(
-                destination: kAppDestinations[5],
-              ),
+              builder: (context, state) => const HistoryScreen(),
+              routes: [
+                GoRoute(
+                  path: 'recommendation/:id',
+                  builder: (context, state) => RecommendationDetailScreen(
+                    recommendationId: int.parse(state.pathParameters['id']!),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
