@@ -175,6 +175,9 @@ namespaces (see the note at the bottom of this file for what was deleted/renumbe
 | [EPIC-167](EPIC-167-discovery-scan-execution.md) | Operational Discovery Scan & Baseline Signal Execution | DONE |
 | [EPIC-168](EPIC-168-k8s-ingest-discovery-execution.md) | Kubernetes-Native Ingest & Discovery-Scan Execution | DONE |
 | [EPIC-169](EPIC-169-fitrust-design-system-adoption-behavioral-alignment.md) | FiTrust UI/UX Design-System Adoption & Behavioral Alignment | DONE |
+| [EPIC-MARKSY-0001](EPIC-MARKSY-0001-upstox-oauth-market-data-integration.md) | Upstox OAuth & Market Data Integration | DONE (real-provider validation pending credentials) |
+
+Epics after EPIC-169 are specified as GitHub Issues first (Marksy-namespace era), not authored fresh as docs here — see each issue for the canonical spec; this doc is added per this repo's own completion-report convention.
 
 ## What changed in the 2026-08-22 renumbering
 
