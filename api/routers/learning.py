@@ -17,7 +17,15 @@ from ..deps import get_db
 from ..envelope import success
 from ..schemas.common import SuccessEnvelope
 from ..schemas.learning import LearningExperiment, LearningHistoryEntry, LearningSummary
-from ..services.learning import DEFAULT_HISTORY_LIMIT, MAX_HISTORY_LIMIT, get_learning_history, get_learning_summary, list_learning_experiments
+from ..services.learning import (
+    DEFAULT_EXPERIMENTS_LIMIT,
+    DEFAULT_HISTORY_LIMIT,
+    MAX_EXPERIMENTS_LIMIT,
+    MAX_HISTORY_LIMIT,
+    get_learning_history,
+    get_learning_summary,
+    list_learning_experiments,
+)
 
 router = APIRouter(prefix="/learning", tags=["learning"])
 
@@ -36,5 +44,8 @@ def get_learning_history_endpoint(
 
 
 @router.get("/experiments", response_model=SuccessEnvelope[list[LearningExperiment]])
-def get_learning_experiments_endpoint(db: Session = Depends(get_db)):
-    return success(list_learning_experiments(db))
+def get_learning_experiments_endpoint(
+    db: Session = Depends(get_db),
+    limit: int = Query(default=DEFAULT_EXPERIMENTS_LIMIT, ge=1, le=MAX_EXPERIMENTS_LIMIT),
+):
+    return success(list_learning_experiments(db, limit=limit))

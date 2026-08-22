@@ -58,6 +58,24 @@ void main() {
     expect(repo.current.watchlist, contains('TATASTEEL'));
   });
 
+  testWidgets(
+    'the save status label is a live region (EPIC-M3.13: the only cue an '
+    'autosave succeeded/failed must be announced, not just shown visually)',
+    (tester) async {
+      final handle = tester.ensureSemantics();
+      final repo = _FakePreferencesRepository(current: Preferences.empty);
+      await tester.pumpWidget(_wrap(QuickPreferencesScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('5D'));
+      await tester.pumpAndSettle();
+
+      final semantics = tester.getSemantics(find.text('Saved'));
+      expect(semantics.flagsCollection.isLiveRegion, isTrue);
+      handle.dispose();
+    },
+  );
+
   testWidgets('a failed save shows "Save failed"', (tester) async {
     final repo = _FakePreferencesRepository(
       current: Preferences.empty,

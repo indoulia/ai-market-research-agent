@@ -30,6 +30,19 @@ from app.main import app
 
 MODEL_VERSION = "test-model-1"
 _scan_counter = iter(range(100000))
+# Deliberately decoupled from any test's `as_of` value: two `_make_prediction`
+# calls in the same test with `as_of` timestamps a few hours apart (e.g.
+# `now - timedelta(hours=i)` for a small `i`) can round to *different*
+# calendar days via `.date()` depending solely on what time of day the CI
+# run happens to execute at (a run starting shortly after 00:00 UTC pushes
+# an `as_of` just a few hours earlier back a full day). Combined with the
+# monotonically increasing `_scan_counter` offset, two such calls could
+# land on the exact same `scan_date`, colliding on
+# `uq_scan_date_universe_version` -- reproduced for real once CI happened to
+# run close to midnight UTC. Anchoring to a fixed epoch instead of
+# `as_of.date()` makes every scan's date depend on nothing but the counter,
+# so it is unique regardless of wall-clock time.
+_SCAN_DATE_EPOCH = date(2000, 1, 1)
 
 
 @pytest.fixture
@@ -57,7 +70,7 @@ def client(session):
 
 
 def _make_prediction(session, *, symbol, as_of, sector="TECH"):
-    scan = DailyCandidateScan(scan_date=as_of.date() + timedelta(days=next(_scan_counter)), universe_version="DCS-001", eligible_count=1, excluded_count=0)
+    scan = DailyCandidateScan(scan_date=_SCAN_DATE_EPOCH + timedelta(days=next(_scan_counter)), universe_version="DCS-001", eligible_count=1, excluded_count=0)
     session.add(scan)
     session.flush()
     stock = Stock(symbol=symbol, exchange="NSE", sector=sector, market_cap=Decimal("50000"), is_active=True)

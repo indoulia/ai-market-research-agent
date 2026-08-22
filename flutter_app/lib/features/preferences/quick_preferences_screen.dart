@@ -192,7 +192,7 @@ class _SaveStatusLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return switch (state) {
+    final child = switch (state) {
       _SaveState.idle => const SizedBox.shrink(),
       _SaveState.saving => Text('Saving…', style: theme.textTheme.labelSmall),
       _SaveState.saved => Text(
@@ -208,5 +208,10 @@ class _SaveStatusLabel extends StatelessWidget {
         ),
       ),
     };
+    // EPIC-M3.13 — screen-reader support: this is the only indicator that
+    // an autosave (triggered by every toggle/chip on this form) succeeded
+    // or failed; a screen-reader user gets no other cue, so announce the
+    // change instead of relying on sighted users noticing the text swap.
+    return Semantics(liveRegion: true, child: child);
   }
 }

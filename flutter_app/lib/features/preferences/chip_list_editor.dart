@@ -65,7 +65,11 @@ class _ChipListEditorState extends State<ChipListEditor> {
               ),
             ),
             const SizedBox(width: MraSpacing.sm),
-            IconButton(icon: const Icon(Icons.add), onPressed: _add),
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Add ${widget.label}',
+              onPressed: _add,
+            ),
           ],
         ),
         if (widget.values.isNotEmpty) ...[
@@ -74,7 +78,13 @@ class _ChipListEditorState extends State<ChipListEditor> {
             spacing: MraSpacing.xs,
             runSpacing: MraSpacing.xs,
             children: widget.values
-                .map((v) => Chip(label: Text(v), onDeleted: () => _remove(v)))
+                .map(
+                  (v) => Chip(
+                    label: Text(v),
+                    onDeleted: () => _remove(v),
+                    deleteButtonTooltipMessage: 'Remove $v',
+                  ),
+                )
                 .toList(),
           ),
         ],

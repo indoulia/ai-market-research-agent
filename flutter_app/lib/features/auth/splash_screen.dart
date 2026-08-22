@@ -8,6 +8,16 @@ class SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // EPIC-M3.13 — screen-reader support: an unlabeled spinner announces
+    // nothing at all; a screen reader needs to know MRA is restoring the
+    // session rather than appearing frozen/silent.
+    return Scaffold(
+      body: Center(
+        child: Semantics(
+          label: 'Restoring your session',
+          child: const CircularProgressIndicator(),
+        ),
+      ),
+    );
   }
 }
