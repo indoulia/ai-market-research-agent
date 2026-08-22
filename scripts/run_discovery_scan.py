@@ -25,6 +25,7 @@ from sqlalchemy import func, select
 
 from app.continuous_discovery import run_scheduled_discovery_scan
 from app.db import SessionLocal
+from app.market_calendar import last_trading_day_on_or_before
 from app.market_data.quality import NSE_TIMEZONE
 from app.models import MarketPrice, ScanCandidate, Stock
 from app.recommendation_selection import DEFAULT_DAILY_LIMIT, MIN_SCORE_FOR_SELECTION
@@ -32,6 +33,11 @@ from app.scan import SignalProvider
 from app.settings import settings
 
 PROVIDER_BASELINE = "baseline"
+
+# The exchange every other `app.market_calendar` call site in this repo
+# resolves against (matches `Stock.exchange` and `NSE_TIMEZONE` above) --
+# this is the one and only exchange this codebase currently supports.
+NSE_EXCHANGE = "NSE"
 
 
 class DiscoveryScanConfigurationError(SystemExit):
@@ -83,7 +89,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--scan-date",
         type=date.fromisoformat,
         default=None,
-        help="Trading date to scan, YYYY-MM-DD (default: today in NSE time).",
+        help=(
+            "Trading date to scan, YYYY-MM-DD (default: the most recent actual "
+            "NSE trading day on or before today in NSE time -- never a weekend "
+            "or holiday, so an unspecified cron run never spuriously flags "
+            "fresh data as stale)."
+        ),
     )
     parser.add_argument(
         "--as-of",
@@ -180,11 +191,18 @@ def run(argv: list[str] | None = None) -> dict:
     as_of = args.as_of or datetime.now(timezone.utc)
     if as_of.tzinfo is None:
         as_of = as_of.replace(tzinfo=timezone.utc)
-    scan_date = args.scan_date or as_of.astimezone(NSE_TIMEZONE).date()
 
     signal_provider = _resolve_signal_provider(settings.discovery_signal_provider)
 
     with SessionLocal() as session:
+        # Default resolution must be calendar-aware, not a raw calendar date:
+        # on a weekend or a weekday NSE holiday, today's raw date is never a
+        # trading day, so the latest real (and fully fresh) ingested candle
+        # would always be dated strictly before it, and `app.scan`'s
+        # staleness check would incorrectly exclude every candidate.
+        scan_date = args.scan_date or last_trading_day_on_or_before(
+            session, NSE_EXCHANGE, as_of.astimezone(NSE_TIMEZONE).date()
+        )
         summary = run_scan(
             session,
             scan_date=scan_date,

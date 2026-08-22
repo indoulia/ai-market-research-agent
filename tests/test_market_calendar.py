@@ -8,6 +8,7 @@ from app.db import Base
 from app.market_calendar import (
     MARKET_CALENDAR_VERSION,
     CalendarVersionRedefinitionError,
+    NoTradingDayFoundError,
     OverlappingCalendarVersionError,
     SpecialSessionConflictError,
     UnknownCalendarVersionError,
@@ -18,6 +19,7 @@ from app.market_calendar import (
     get_holiday_dates,
     get_holiday_dates_in_range,
     is_market_open,
+    last_trading_day_on_or_before,
     record_holiday,
     record_special_session,
     record_unexpected_closure,
@@ -194,3 +196,56 @@ def test_record_unexpected_closure_idempotent_and_immutable_log(session):
     first = record_unexpected_closure(session, exchange=EXCHANGE, closure_date=date(2027, 3, 10), reason="exchange outage", recorded_at=PUBLISHED_AT)
     second = record_unexpected_closure(session, exchange=EXCHANGE, closure_date=date(2027, 3, 10), reason="exchange outage", recorded_at=PUBLISHED_AT)
     assert first.id == second.id
+
+
+# ---- last_trading_day_on_or_before (bug fix: default scan-date resolution
+# must never land on a weekend/holiday, or every candidate looks stale) ----
+
+
+def test_last_trading_day_on_or_before_returns_same_day_when_already_trading_day(session):
+    _register_2027(session)
+    # 2027-06-15 is a Tuesday -- an ordinary trading day.
+    assert last_trading_day_on_or_before(session, EXCHANGE, date(2027, 6, 15)) == date(2027, 6, 15)
+
+
+def test_last_trading_day_on_or_before_walks_back_over_a_weekend(session):
+    _register_2027(session)
+    # 2027-06-19 is a Saturday, 2027-06-20 is a Sunday -- both must be
+    # skipped, landing on Friday 2027-06-18.
+    assert last_trading_day_on_or_before(session, EXCHANGE, date(2027, 6, 19)) == date(2027, 6, 18)
+    assert last_trading_day_on_or_before(session, EXCHANGE, date(2027, 6, 20)) == date(2027, 6, 18)
+
+
+def test_last_trading_day_on_or_before_walks_back_over_a_registered_holiday(session):
+    version = _register_2027(session)
+    # 2027-01-26 (Republic Day) is a Tuesday -- a weekday holiday, exactly
+    # the case the original discovery-scan bug report called out.
+    record_holiday(session, calendar_version_id=version.id, holiday_date=date(2027, 1, 26), description="Republic Day")
+
+    assert last_trading_day_on_or_before(session, EXCHANGE, date(2027, 1, 26)) == date(2027, 1, 25)
+
+
+def test_last_trading_day_on_or_before_walks_back_over_holiday_and_weekend_combined(session):
+    version = _register_2027(session)
+    # 2027-11-05 (Fri) Diwali holiday immediately followed by a weekend --
+    # must skip Fri/Sat/Sun and land on Thursday 2027-11-04.
+    record_holiday(session, calendar_version_id=version.id, holiday_date=date(2027, 11, 5), description="Diwali")
+
+    assert last_trading_day_on_or_before(session, EXCHANGE, date(2027, 11, 7)) == date(2027, 11, 4)
+
+
+def test_last_trading_day_on_or_before_raises_when_none_found_in_window(session):
+    version = _register_2027(session)
+    # Every weekday in the lookback window is a registered holiday (weekends
+    # are already non-trading regardless) -> no trading day can be found;
+    # must fail loudly, not loop forever.
+    for offset in range(20):
+        record_holiday(
+            session,
+            calendar_version_id=version.id,
+            holiday_date=date(2027, 6, 1) + timedelta(days=offset),
+            description="synthetic closure",
+        )
+
+    with pytest.raises(NoTradingDayFoundError):
+        last_trading_day_on_or_before(session, EXCHANGE, date(2027, 6, 20), lookback_days=14)

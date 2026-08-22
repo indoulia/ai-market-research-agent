@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db import Base
 from app.discovery import SOURCE_DAILY_UNIVERSE_SCAN
+from app.market_calendar import register_calendar_version
 from app.market_data.quality import NSE_TIMEZONE
 from app.models import DiscoveryRecord, MarketPrice, ScanCandidate, Stock
 from app.baseline_signal import BaselineSignalProvider
@@ -21,6 +22,7 @@ from scripts.run_discovery_scan import (
     _resolve_signal_provider,
     run_scan,
 )
+import scripts.run_discovery_scan as run_discovery_scan_module
 
 SCAN_DATE = date(2026, 8, 20)
 AS_OF = datetime(2026, 8, 20, tzinfo=timezone.utc)
@@ -195,3 +197,61 @@ def test_run_scan_unresolvable_entry_price_fails_loudly(session, monkeypatch):
 
     with pytest.raises(SystemExit):
         run_scan(session, **_run_scan_kwargs())
+
+
+# ---- run(): default scan-date resolution must never land on a
+# weekend/holiday (regression test for the real bug found while validating
+# a live Rancher/k3s deployment: a weekend/holiday cron run with no
+# --scan-date defaulted to today's raw calendar date and every candidate
+# was wrongly excluded as stale_market_data even though the last real
+# session's data was fully fresh) ----
+
+
+class _FrozenDateTime(datetime):
+    """Subclassing (rather than replacing) `datetime` so every other
+    classmethod (`combine`, `fromisoformat`, ...) `scripts.run_discovery_scan`
+    relies on keeps working unchanged -- only `now()` is frozen."""
+
+    _frozen_now: datetime
+
+    @classmethod
+    def now(cls, tz=None):
+        return cls._frozen_now.astimezone(tz) if tz is not None else cls._frozen_now
+
+
+def test_run_defaults_scan_date_to_last_trading_day_when_today_is_a_weekend(monkeypatch):
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    TestSessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+    friday = date(2027, 1, 22)  # last real NSE trading day
+    saturday = date(2027, 1, 23)  # "today" -- no candle can ever exist for it
+
+    setup_session = TestSessionLocal()
+    try:
+        register_calendar_version(
+            setup_session, exchange="NSE", version_label="2027", source="NSE_CIRCULAR_2027",
+            timezone_name="Asia/Kolkata", effective_from=date(2027, 1, 1), effective_to=None,
+            published_at=datetime(2027, 1, 1, tzinfo=timezone.utc),
+        )
+        stock = _make_stock(setup_session)
+        _make_rising_price_history(setup_session, stock.id, last_session=friday)
+        setup_session.commit()
+    finally:
+        setup_session.close()
+
+    frozen = datetime(saturday.year, saturday.month, saturday.day, 12, 0, tzinfo=timezone.utc)
+    _FrozenDateTime._frozen_now = frozen
+
+    monkeypatch.setattr(run_discovery_scan_module, "SessionLocal", TestSessionLocal)
+    monkeypatch.setattr(run_discovery_scan_module, "datetime", _FrozenDateTime)
+
+    summary = run_discovery_scan_module.run([])
+
+    # The bug: without the fix, scan_date defaults to Saturday (a
+    # non-trading day) and this candidate is wrongly excluded as
+    # stale_market_data (Friday's real, fresh candle < Saturday).
+    assert summary["scan_date"] == friday.isoformat()
+    assert summary["candidates_eligible"] == 1
+    assert summary["candidates_excluded_by_reason"] == {}
+    assert summary["status"] == "ok"

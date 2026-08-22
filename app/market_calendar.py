@@ -388,3 +388,43 @@ def classify_operational_window(session: Session, exchange: str, at: datetime) -
 
 def is_market_open(session: Session, exchange: str, at: datetime) -> bool:
     return classify_operational_window(session, exchange, at).market_session == SESSION_MARKET_HOURS
+
+
+class NoTradingDayFoundError(RuntimeError):
+    """Raised when no trading day is found within the bounded lookback
+    window -- fails closed (same posture as `UnknownCalendarVersionError`)
+    rather than looping forever or silently returning a non-trading date."""
+
+
+def last_trading_day_on_or_before(
+    session: Session, exchange: str, as_of: date, *, lookback_days: int = 14
+) -> date:
+    """Walks backward from `as_of` (inclusive), skipping weekends and every
+    registered holiday/unexpected closure for `exchange`, and returns the
+    first real trading day found. This is the calendar-aware counterpart
+    any "default to today" caller needs: without it, a caller that defaults
+    an unspecified scan/report date to a raw calendar date silently lands on
+    a non-trading day whenever "today" is a weekend or a weekday NSE holiday
+    -- and every downstream staleness check that expects the latest ingested
+    session to be `>= that date` then fails, even though the most recent
+    real session's data is fully fresh (the exact discovery-scan bug this
+    function exists to fix: `scripts/run_discovery_scan.py` defaulting
+    `--scan-date` to today's raw date on a weekend/holiday cron run).
+
+    Bounded by `lookback_days` (default 14, comfortably more than any
+    realistic NSE holiday cluster) rather than scanning backward forever;
+    raises `NoTradingDayFoundError` if no trading day is found in that
+    window, since a caller silently getting an arbitrary/wrong date back
+    here would be worse than failing loudly."""
+    window_start = as_of - timedelta(days=lookback_days)
+    holiday_dates = get_holiday_dates_in_range(session, exchange, window_start, as_of + timedelta(days=1))
+
+    current = as_of
+    while current >= window_start:
+        if current.weekday() < 5 and current not in holiday_dates:
+            return current
+        current -= timedelta(days=1)
+
+    raise NoTradingDayFoundError(
+        f"no trading day found for exchange={exchange!r} within {lookback_days} days on or before {as_of.isoformat()}"
+    )
