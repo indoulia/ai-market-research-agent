@@ -1,8 +1,8 @@
-# EPIC-MARKSY-0001 — Upstox OAuth & Market Data Integration
+# EPIC-171 — Upstox OAuth & Market Data Integration
 
-**Status:** DONE (core OAuth flow, S1-S4/S8/S9/S10) — real-provider validation blocked pending Upstox account credentials (see Completion Report)
-**Execution Status:** COMPLETED (core), CONTROLLED REAL-PROVIDER VALIDATION PENDING
-**Source:** GitHub issue #302 — this doc mirrors that issue (the primary spec, per `project_marksy_rebrand_and_upstox_oauth_20260822` memory: new Marksy-namespace epics are specified as GitHub Issues, not authored fresh as `docs/epics/*.md`) plus this repo's completion-report convention.
+**Status:** DONE (core OAuth flow + Flutter connect UI, S1-S4/S8/S9/S10) — real-provider validation blocked pending Upstox account credentials (see Completion Report)
+**Execution Status:** COMPLETED (backend core + UI), CONTROLLED REAL-PROVIDER VALIDATION PENDING
+**Source:** GitHub issue #302 (originally titled "EPIC-MARKSY-0001") — this doc mirrors that issue (the primary spec) plus this repo's completion-report convention, renumbered into the canonical `docs/epics/EPIC-NNN-*.md` sequence per the user's 2026-08-22 standing instruction that every epic doc stay in that one sequence regardless of spec origin.
 **Track:** Backend/API
 **Priority:** HIGH
 **Product:** Marksy — Market Intelligence
@@ -60,6 +60,20 @@ Reused, not rebuilt: `app.market_data.UpstoxClient` (`app/market_data/upstox.py`
 `tests/test_upstox_oauth.py` (17 cases: config validation, state CSRF single-use/expiry, token-exchange success/HTTP-error/malformed-response, daily-cutover vs. real `expires_in` expiry, OAuth-token-priority-over-static-fallback resolution) and `tests/test_api_integrations_upstox.py` (8 contract cases: session gating, not-configured error, callback missing/unknown state, provider `error=` passthrough, full authorize→callback→status flow with a mocked Upstox token response). No real Upstox credentials are used in any test — the token exchange is mocked via `monkeypatch.setattr(httpx, "post", ...)`, following this repo's existing `tests/test_upstox_client.py` pattern.
 
 **Verification:** full suite `pytest -q` → 1498 passed, 9 skipped, zero regressions. `alembic heads` → single head (`0108_upstox_oauth`), no branch conflict. `docs/api/openapi.json` regenerated (`PYTHONPATH=. python scripts/export_openapi.py`) and the contract-freshness test passes.
+
+### Fast-follow (2026-08-22) — Flutter connect UI (PR #308)
+
+The issue's own flow diagram names step one as "Marksy local UI → Login with Upstox", but the
+backend-only work above shipped no screen that ever called `authorize`/`status` — the only way to
+connect was hitting the API directly. Closed via a new `lib/features/integrations/` module: a
+Settings > Integrations "Connect Upstox" card (`UpstoxConnectionCard`) showing live status
+(not-connected / connected + obtained/expires timestamps / expired-needs-reconnect) and a button that
+fetches a fresh `authorizationUrl` and opens it in the system browser (`url_launcher`). Since the
+OAuth exchange completes entirely server-side via Upstox's redirect to `/callback` (a browser-only
+HTML page, never called from the app), there is no way for the app to know the exact moment that
+finishes — a manual refresh action lets the user confirm once they return. 14 new Flutter tests cover
+every status/error state plus launch success/failure; `FLUTTER_DEPENDENT_PATHS`
+(`tests/test_openapi_contract_freshness.py`) updated to track the two new repository call sites.
 
 ### Outstanding — controlled real-provider validation
 

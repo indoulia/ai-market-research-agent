@@ -7,7 +7,7 @@ import 'package:mra_app/features/tracking/tracked_prediction.dart';
 import 'package:mra_app/features/tracking/tracking_filters.dart';
 import 'package:mra_app/features/tracking/tracking_repository.dart';
 
-/// EPIC-M3.17 — a minimal fake covering only [fetchPredictions] since
+/// EPIC-172 — a minimal fake covering only [fetchPredictions] since
 /// [HistoryScreen], unlike [TrackingScreen], never calls the other three
 /// `/tracking/*` endpoints.
 class _FakeTrackingRepository extends TrackingRepository {

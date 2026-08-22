@@ -12,7 +12,7 @@ import '../tracking/tracking_repository.dart';
 
 enum _LoadState { loading, error, loaded }
 
-/// EPIC-M3.17 — the `/history` destination: a focused, full-page list of
+/// EPIC-172 — the `/history` destination: a focused, full-page list of
 /// resolved (closed) recommendations. Reuses EPIC-M1.147/M3.15's real,
 /// already-merged `/tracking/predictions?status=closed` data layer as-is
 /// (`TrackingRepository`, `TrackedPrediction`, `TrackingFilters`) rather
