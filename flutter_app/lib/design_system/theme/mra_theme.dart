@@ -69,6 +69,18 @@ class MraTheme {
         backgroundColor: colorScheme.surface,
         indicatorColor: colorScheme.secondaryContainer,
       ),
+      // EPIC-173 — a thin, surface-tinted scrollbar app-wide instead of the
+      // platform default (chunky/opaque on web+desktop), so it reads as
+      // part of the surface it sits on rather than OS chrome on top of it.
+      scrollbarTheme: ScrollbarThemeData(
+        thickness: const WidgetStatePropertyAll(6),
+        radius: const Radius.circular(8),
+        thumbColor: WidgetStatePropertyAll(
+          colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+        ),
+        trackColor: const WidgetStatePropertyAll(Colors.transparent),
+        trackBorderColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: colorScheme.inverseSurface,
