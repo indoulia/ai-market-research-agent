@@ -70,6 +70,8 @@ FLUTTER_DEPENDENT_PATHS = [
     "/api/v1/feedback/history",
     "/api/v1/predictions/active",
     "/api/v1/predictions/active/{predictionId}",
+    "/api/v1/integrations/upstox/authorize",
+    "/api/v1/integrations/upstox/status",
 ]
 
 FLUTTER_APP_LIB = Path(__file__).resolve().parent.parent / "flutter_app" / "lib"
