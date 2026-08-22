@@ -71,8 +71,10 @@ def _sector_moves(session: Session, latest: datetime, previous: datetime) -> lis
         prev_price = previous_prices[stock_id]
         if prev_price == 0:
             continue
+        sector = sector_by_stock.get(stock_id)
+        if not sector or sector == "UNKNOWN":
+            continue
         change_pct = (latest_prices[stock_id] - prev_price) / prev_price * 100
-        sector = sector_by_stock.get(stock_id) or "UNKNOWN"
         totals.setdefault(sector, []).append(change_pct)
 
     averages = [

@@ -262,6 +262,26 @@ def test_market_summary_with_regime_and_sector_moves(client, session):
     assert data["sectorLaggards"][0]["sector"] == "PHARMA"
 
 
+def test_market_summary_excludes_unknown_sector(client, session):
+    """A stock with no real sector classification (Stock.sector == "UNKNOWN",
+    e.g. the Yahoo ingest fallback provider never sets one) shouldn't produce
+    a meaningless "UNKNOWN" sector-leader/laggard chip -- it should fall back
+    to the same empty state as no sector data at all."""
+    scan = _make_scan(session)
+    stock = _make_stock(session, symbol="AAA", sector="UNKNOWN")
+    session.add_all([
+        MarketPrice(stock_id=stock.id, timestamp=AS_OF, open=Decimal("100"), high=Decimal("100"), low=Decimal("100"), close=Decimal("100"), volume=1000, source="test"),
+        MarketPrice(stock_id=stock.id, timestamp=AS_OF + timedelta(days=1), open=Decimal("100"), high=Decimal("110"), low=Decimal("100"), close=Decimal("110"), volume=1500, source="test"),
+        MarketRegime(scan_id=scan.id, regime="RISK_ON", breadth_positive_ratio=Decimal("0.6500"), average_atr_percent=Decimal("0.028"), eligible_count=10, regime_rule_version="MRG-001"),
+    ])
+    session.commit()
+
+    response = client.get("/api/v1/market/summary")
+    data = response.json()["data"]
+    assert data["sectorLeaders"] == []
+    assert data["sectorLaggards"] == []
+
+
 def test_news_list_and_symbol_filter(client, session):
     stock_a = _make_stock(session, symbol="AAA")
     stock_b = _make_stock(session, symbol="BBB")
