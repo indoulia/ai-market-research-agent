@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mra_app/core/auth/auth_controller.dart';
@@ -13,9 +16,41 @@ import 'package:mra_app/features/auth/sign_in_screen.dart';
 /// visual regression (spacing, alignment, color-token drift) could ship
 /// undetected. These are deliberately scoped to a handful of the most
 /// widely-reused, deterministic layouts (no charts/images/real fonts) to
-/// keep them stable in `flutter test`'s software-rendered, fixed-test-font
-/// environment. See this EPIC's Completion Report for the CI risk this
-/// carries and how it's mitigated.
+/// keep them stable in `flutter test`'s software-rendered environment.
+///
+/// These goldens were generated on Windows; CI (`flutter-ci.yml`) runs the
+/// identical pinned Flutter version on `ubuntu-latest`, and a first CI run
+/// showed small (<=1.82%) pixel diffs on every one of the three goldens —
+/// Skia's software rasterizer is not perfectly byte-identical across host
+/// OSes even with no custom fonts declared (no `fonts:` section exists in
+/// `pubspec.yaml`), evidently down to sub-pixel anti-aliasing/hinting
+/// differences. A byte-exact `LocalFileComparator` would make these
+/// permanently red in CI without any real regression. [_TolerantGoldenFileComparator]
+/// tolerates that specific, observed class of cross-OS noise (a generous
+/// multiple of the largest diff actually seen) while still failing on a
+/// real visual regression, which changes far more than a few percent of
+/// pixels.
+class _TolerantGoldenFileComparator extends LocalFileComparator {
+  _TolerantGoldenFileComparator(super.testFile);
+
+  static const double _maxTolerableDiffPercent = 0.05;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+    if (result.passed || result.diffPercent <= _maxTolerableDiffPercent) {
+      result.dispose();
+      return true;
+    }
+    final error = await generateFailureOutput(result, golden, basedir);
+    result.dispose();
+    throw FlutterError(error);
+  }
+}
+
 class _NeverSignsInAuthRepository extends AuthRepository {
   @override
   Future<AuthSession> signIn(String userId) =>
@@ -30,6 +65,12 @@ Future<void> _setGoldenSurface(WidgetTester tester, Size size) async {
 }
 
 void main() {
+  setUpAll(() {
+    goldenFileComparator = _TolerantGoldenFileComparator(
+      Uri.file('${Directory.current.path}/test/golden/golden_smoke_test.dart'),
+    );
+  });
+
   testWidgets('recommendation card (populated) golden', (tester) async {
     await _setGoldenSurface(tester, const Size(400, 320));
     await tester.pumpWidget(
