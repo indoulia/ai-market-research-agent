@@ -129,6 +129,46 @@ void main() {
     );
   });
 
+  testWidgets('the app-bar search button opens Discover, not a dead button', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final router = buildAppRouter();
+    await tester.pumpWidget(_appWithRouter(router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Search'));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/discover',
+    );
+  });
+
+  testWidgets('the app-bar account button opens Settings, not a dead button', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final router = buildAppRouter();
+    await tester.pumpWidget(_appWithRouter(router));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Account'));
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routerDelegate.currentConfiguration.uri.toString(),
+      '/settings',
+    );
+  });
+
   testWidgets('switching branches and back preserves navigation state', (
     tester,
   ) async {

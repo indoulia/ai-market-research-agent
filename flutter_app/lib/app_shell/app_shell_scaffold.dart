@@ -130,12 +130,15 @@ class _ShellAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           tooltip: 'Search',
           icon: const Icon(Icons.search),
-          onPressed: () {},
+          // No standalone global-search screen exists yet — Discover's
+          // search field is the real "search symbol or company" surface,
+          // so route there rather than leaving this a dead no-op button.
+          onPressed: () => context.go('/discover'),
         ),
         IconButton(
           tooltip: 'Account',
           icon: const Icon(Icons.account_circle_outlined),
-          onPressed: () {},
+          onPressed: () => context.go('/settings'),
         ),
         const SizedBox(width: MraSpacing.sm),
       ],
