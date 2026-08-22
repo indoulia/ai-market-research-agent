@@ -31,8 +31,25 @@ final GoRouter appRouter = buildAppRouter();
 /// so this epic adds auth gating without changing behavior for anything
 /// that doesn't ask for it. Only [main.dart]'s real app passes a real,
 /// restoring [AuthController].
-GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
-  initialLocation: authController != null ? '/splash' : '/home',
+///
+/// [initialDeepLink] is the path the platform/browser actually reports as
+/// the starting route (e.g. a bookmarked `/discover` or a page refresh on
+/// `/tracking`) — [main.dart] reads this via `PlatformDispatcher
+/// .defaultRouteName` before this router exists. Without it, [GoRouter]'s
+/// hardcoded `/splash` [initialLocation] silently discards whatever the
+/// user actually navigated to and every deep link/refresh lands on
+/// `/home` once auth resolves.
+GoRouter buildAppRouter({
+  AuthController? authController,
+  String? initialDeepLink,
+}) => GoRouter(
+  initialLocation: authController == null
+      ? '/home'
+      : (initialDeepLink != null &&
+            initialDeepLink != '/' &&
+            initialDeepLink != '')
+      ? '/splash?from=${Uri.encodeComponent(initialDeepLink)}'
+      : '/splash',
   refreshListenable: authController,
   redirect: authController == null
       ? null
@@ -47,7 +64,17 @@ GoRouter buildAppRouter({AuthController? authController}) => GoRouter(
               status == AuthStatus.sessionExpired;
           if (needsSignIn) {
             if (loc == '/sign-in') return null;
-            return '/sign-in?from=${Uri.encodeComponent(loc)}';
+            // Preserve a deep link already carried on `/splash`'s `from`
+            // query param instead of re-deriving the target from `loc`
+            // (which would just be `/splash` itself and lose it).
+            final existingFrom = state.uri.queryParameters['from'];
+            final target =
+                (loc == '/splash' &&
+                    existingFrom != null &&
+                    existingFrom.isNotEmpty)
+                ? existingFrom
+                : loc;
+            return '/sign-in?from=${Uri.encodeComponent(target)}';
           }
           if (loc == '/splash' || loc == '/sign-in') {
             final from = state.uri.queryParameters['from'];

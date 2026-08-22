@@ -61,7 +61,16 @@ class _MraAppState extends State<MraApp> {
       _authController = AuthController();
       _authController.restore();
     }
-    _router = buildAppRouter(authController: _authController);
+    // The actual path the browser/platform reports as the starting route
+    // (a bookmarked deep link, a page refresh) — see app_router.dart's
+    // `initialDeepLink` doc for why this must be threaded through rather
+    // than letting GoRouter's hardcoded `/splash` initialLocation drop it.
+    final initialDeepLink =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    _router = buildAppRouter(
+      authController: _authController,
+      initialDeepLink: initialDeepLink,
+    );
     _bootstrapRepository =
         widget.bootstrapRepository ?? AppBootstrapRepository();
     _checkCompatibility();
