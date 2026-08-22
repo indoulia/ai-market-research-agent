@@ -178,6 +178,7 @@ namespaces (see the note at the bottom of this file for what was deleted/renumbe
 | [EPIC-170](EPIC-170-marksy-brand-identity-logo-product-theme-implementation.md) | Marksy Brand Identity, Logo & Product Theme Implementation | IN_PROGRESS (foundation complete; full component/screen audit pending) |
 | [EPIC-171](EPIC-171-upstox-oauth-market-data-integration.md) | Upstox OAuth & Market Data Integration | DONE (backend + UI; real-provider validation pending credentials) |
 | [EPIC-172](EPIC-172-recommendation-history-ui.md) | Recommendation History UI (`/history` destination) | DONE |
+| [EPIC-173](EPIC-173-dashboard-upstox-style-restructure.md) | Dashboard Restructure: Upstox-Pro Layout in Marksy Tokens | IN_PROGRESS |
 
 Epics from EPIC-170 onward originate as GitHub Issues in the "Marksy" naming era (see each issue for
 the original spec text), but per the user's 2026-08-22 standing instruction every epic doc still gets
