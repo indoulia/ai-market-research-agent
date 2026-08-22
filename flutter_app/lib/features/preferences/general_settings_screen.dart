@@ -179,25 +179,10 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
       case _LoadState.loading:
         return const MraCard(child: SkeletonCard());
       case _LoadState.error:
-        return MraCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Appearance & refresh preferences unavailable',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: MraSpacing.xs),
-              Text(
-                _error?.message ?? 'Something went wrong.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: MraSpacing.sm),
-              OutlinedButton(onPressed: _load, child: const Text('Retry')),
-            ],
-          ),
+        return MraStateView.error(
+          title: 'Appearance & refresh preferences unavailable',
+          message: _error?.message ?? 'Something went wrong.',
+          onAction: _load,
         );
       case _LoadState.loaded:
         final display = _preferences.displayPreferences;

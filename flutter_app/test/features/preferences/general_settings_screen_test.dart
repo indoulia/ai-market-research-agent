@@ -34,6 +34,22 @@ class _FakePreferencesRepository extends PreferencesRepository {
   }
 }
 
+class _FailOnceRepository extends PreferencesRepository {
+  bool _failed = false;
+
+  @override
+  Future<Preferences> fetch() async {
+    if (!_failed) {
+      _failed = true;
+      throw Exception('boom');
+    }
+    return Preferences.empty;
+  }
+
+  @override
+  Future<Preferences> update(Preferences preferences) async => preferences;
+}
+
 Widget _wrapWithGallery(Widget child) {
   final router = GoRouter(
     routes: [
@@ -68,6 +84,33 @@ void main() {
       expect(find.text('About'), findsOneWidget);
       // Appearance controls depend on the fetch and are not shown yet.
       expect(find.text('Appearance'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'a fetch failure renders the shared MraStateView.error, not a bespoke '
+    'layout, and Retry recovers',
+    (tester) async {
+      await tester.pumpWidget(
+        _wrapWithGallery(
+          Scaffold(
+            body: GeneralSettingsScreen(repository: _FailOnceRepository()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Appearance & refresh preferences unavailable'),
+        findsOneWidget,
+      );
+      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Appearance'), findsOneWidget);
     },
   );
 
