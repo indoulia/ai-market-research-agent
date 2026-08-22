@@ -8,6 +8,18 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     upstox_access_token: str | None = None
     upstox_instruments_url: str = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz"
+    # EPIC-MARKSY-0001: OAuth app registration on Upstox's developer portal.
+    # `upstox_access_token` above stays supported as a manual fallback (e.g.
+    # CI, or a token pasted in before OAuth is wired up); once a real OAuth
+    # exchange has persisted a token via app.upstox_oauth, that stored token
+    # takes priority (see app.upstox_oauth.resolve_access_token).
+    upstox_client_id: str | None = None
+    upstox_client_secret: str | None = None
+    # Must exactly match the redirect URI registered in the Upstox developer
+    # app -- see app/upstox_oauth.py's module docstring for how this
+    # repository's actual callback route/port were determined.
+    upstox_redirect_uri: str | None = None
+    upstox_environment: str = "production"
     # Selects which client scripts/ingest_market_history.py uses ("upstox" or
     # "yahoo") -- lets ops swap providers via env var alone, e.g. as a stopgap
     # while an Upstox account is pending, with no code/script change.

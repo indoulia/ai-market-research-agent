@@ -4053,6 +4053,38 @@
         "title": "SuccessEnvelope[TrackingSummary]",
         "type": "object"
       },
+      "SuccessEnvelope_UpstoxAuthorizeResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UpstoxAuthorizeResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[UpstoxAuthorizeResponse]",
+        "type": "object"
+      },
+      "SuccessEnvelope_UpstoxStatusResponse_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/UpstoxStatusResponse"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/Meta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "SuccessEnvelope[UpstoxStatusResponse]",
+        "type": "object"
+      },
       "SuccessEnvelope_UserContext_": {
         "properties": {
           "data": {
@@ -4705,6 +4737,79 @@
           "smallSample"
         ],
         "title": "TrackingSummary",
+        "type": "object"
+      },
+      "UpstoxAuthorizeResponse": {
+        "properties": {
+          "authorizationUrl": {
+            "title": "Authorizationurl",
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authorizationUrl",
+          "state",
+          "expiresAt"
+        ],
+        "title": "UpstoxAuthorizeResponse",
+        "type": "object"
+      },
+      "UpstoxStatusResponse": {
+        "properties": {
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "expiresAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiresat"
+          },
+          "isExpired": {
+            "title": "Isexpired",
+            "type": "boolean"
+          },
+          "obtainedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obtainedat"
+          }
+        },
+        "required": [
+          "connected",
+          "isExpired",
+          "obtainedAt",
+          "expiresAt",
+          "environment"
+        ],
+        "title": "UpstoxStatusResponse",
         "type": "object"
       },
       "UserContext": {
@@ -6059,6 +6164,104 @@
         "summary": "Get Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/integrations/upstox/authorize": {
+      "get": {
+        "operationId": "get_authorize_api_v1_integrations_upstox_authorize_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_UpstoxAuthorizeResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Authorize",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/api/v1/integrations/upstox/status": {
+      "get": {
+        "operationId": "get_status_endpoint_api_v1_integrations_upstox_status_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessEnvelope_UpstoxStatusResponse_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Status Endpoint",
+        "tags": [
+          "integrations"
         ]
       }
     },
