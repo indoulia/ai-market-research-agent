@@ -58,8 +58,7 @@ class ClosedPredictionsTable extends StatelessWidget {
                 ],
               )
               .toList(),
-          onRowTap: (index) =>
-              context.push(rowRoute(predictions[index].id)),
+          onRowTap: (index) => context.push(rowRoute(predictions[index].id)),
         ),
         const SizedBox(height: MraSpacing.md),
         Center(

@@ -49,7 +49,10 @@ TrackedPredictionsPage _predictionsPage({String? nextCursor, int id = 101}) {
 }
 
 Widget _wrap(Widget child) {
-  return MaterialApp(theme: MraTheme.light(), home: Scaffold(body: child));
+  return MaterialApp(
+    theme: MraTheme.light(),
+    home: Scaffold(body: child),
+  );
 }
 
 Finder _chip(String filterBarKey, String label) => find.descendant(
@@ -64,7 +67,9 @@ void main() {
   testWidgets('renders the closed-predictions table from the real contract', (
     tester,
   ) async {
-    final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+    final repo = _FakeTrackingRepository(
+      predictionsFor: (_) => _predictionsPage(),
+    );
     await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
     await tester.pumpAndSettle();
 
@@ -76,10 +81,8 @@ void main() {
     tester,
   ) async {
     final repo = _FakeTrackingRepository(
-      predictionsFor: (_) => const TrackedPredictionsPage(
-        items: [],
-        nextCursor: null,
-      ),
+      predictionsFor: (_) =>
+          const TrackedPredictionsPage(items: [], nextCursor: null),
     );
     await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
     await tester.pumpAndSettle();
@@ -135,7 +138,9 @@ void main() {
   testWidgets(
     'tapping a closed prediction pushes the recommendation detail route',
     (tester) async {
-      final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+      final repo = _FakeTrackingRepository(
+        predictionsFor: (_) => _predictionsPage(),
+      );
       final router = GoRouter(
         routes: [
           GoRoute(
@@ -168,10 +173,10 @@ void main() {
   );
 
   group('filters', () {
-    testWidgets('Filters button shows the active filter count', (
-      tester,
-    ) async {
-      final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+    testWidgets('Filters button shows the active filter count', (tester) async {
+      final repo = _FakeTrackingRepository(
+        predictionsFor: (_) => _predictionsPage(),
+      );
       await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -191,7 +196,9 @@ void main() {
     testWidgets('changing the horizon filter refetches with that horizon', (
       tester,
     ) async {
-      final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+      final repo = _FakeTrackingRepository(
+        predictionsFor: (_) => _predictionsPage(),
+      );
       await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -206,7 +213,9 @@ void main() {
     testWidgets('changing the regime filter refetches with that regime', (
       tester,
     ) async {
-      final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+      final repo = _FakeTrackingRepository(
+        predictionsFor: (_) => _predictionsPage(),
+      );
       await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -221,7 +230,9 @@ void main() {
     testWidgets('typing a symbol filter refetches with that symbol', (
       tester,
     ) async {
-      final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+      final repo = _FakeTrackingRepository(
+        predictionsFor: (_) => _predictionsPage(),
+      );
       await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -237,7 +248,9 @@ void main() {
     testWidgets('Clear all filters resets to an empty filter set', (
       tester,
     ) async {
-      final repo = _FakeTrackingRepository(predictionsFor: (_) => _predictionsPage());
+      final repo = _FakeTrackingRepository(
+        predictionsFor: (_) => _predictionsPage(),
+      );
       await tester.pumpWidget(_wrap(HistoryScreen(repository: repo)));
       await tester.pumpAndSettle();
 
