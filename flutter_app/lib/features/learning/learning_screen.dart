@@ -112,7 +112,7 @@ class _LearningScreenState extends State<LearningScreen> {
               ),
               const SizedBox(height: MraSpacing.xs),
               Text(
-                'How MRA learns from real outcomes -- read-only. Nothing on '
+                'How Marksy learns from real outcomes -- read-only. Nothing on '
                 'this screen changes production model behavior.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,

@@ -118,7 +118,7 @@ class _SystemHealthScreenState extends State<SystemHealthScreen> {
               ),
               const SizedBox(height: MraSpacing.sm),
               Text(
-                'An operational view of MRA data sources — not investment '
+                'An operational view of Marksy data sources — not investment '
                 'or trading guidance. Degraded or stale data here means the '
                 'information system, not the market, may be the cause of an '
                 'unexpected result.',

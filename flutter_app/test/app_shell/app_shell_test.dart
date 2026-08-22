@@ -104,7 +104,7 @@ void main() {
     await tester.tap(find.text('Design system gallery (QA)'));
     await tester.pumpAndSettle();
 
-    expect(find.text('MRA Design System Gallery'), findsOneWidget);
+    expect(find.text('Marksy Design System Gallery'), findsOneWidget);
   });
 
   testWidgets('Alt+2 keyboard shortcut jumps to the Discover destination', (

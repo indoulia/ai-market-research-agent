@@ -23,7 +23,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MRA Design System Gallery'),
+        title: const Text('Marksy Design System Gallery'),
         actions: [
           IconButton(
             tooltip: 'Toggle skeleton demo',

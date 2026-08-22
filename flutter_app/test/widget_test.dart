@@ -34,7 +34,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('MRA'), findsOneWidget);
+    expect(find.text('Marksy'), findsOneWidget);
     expect(find.text('Home'), findsWidgets);
   });
 

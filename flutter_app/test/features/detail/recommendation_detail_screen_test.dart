@@ -251,7 +251,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Why MRA selected this opportunity'), findsOneWidget);
+    expect(find.text('Why Marksy selected this opportunity'), findsOneWidget);
     expect(find.textContaining('Probability of success'), findsOneWidget);
     // Also appears in the (separate) evidence panel below — intentional
     // duplication, not a rendering bug: this narrative is a synthesized
