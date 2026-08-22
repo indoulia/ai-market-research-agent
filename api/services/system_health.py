@@ -77,10 +77,26 @@ def _freshness(last_success_at: datetime | None, data_type: str, computed_at: da
 
 
 def _provider_activity(session: Session) -> dict[tuple[str, str], dict]:
-    """Per-`(data_type, provider_id)` last successful fetch and average
-    ingestion latency (`requested_at - source_timestamp`, in seconds) --
-    the two provider-response fields M1.93's own `ProviderQualityMetric`
-    doesn't carry."""
+    """Per-`(data_type, provider_id)` last successful fetch and that same
+    fetch's ingestion latency (`requested_at - source_timestamp`, in
+    seconds) -- the two provider-response fields M1.93's own
+    `ProviderQualityMetric` doesn't carry.
+
+    `latencyMs` (bug found during live Rancher/k3s deployment validation)
+    intentionally reflects only the MOST RECENT successful fetch --
+    the same row `last_success_at` is derived from -- rather than an
+    average of `requested_at - source_timestamp` across every row ever
+    recorded. An unbounded average is dominated by one-time historical
+    backfills (e.g. an 8-month candle backfill where every row's
+    `requested_at` is ~now but `source_timestamp` ranges back months),
+    which produced a "latency" of ~44 hours that had nothing to do with
+    the provider's current operational health -- exactly the "market
+    condition vs. information-system degradation" distinction this field
+    exists to support. "How fresh is our latest update" (this) and
+    "what's our success/failure rate over history" (`qualityScore`/
+    `failureRate`, from `compute_provider_quality_report`) are
+    deliberately different metrics with different time horizons; only
+    this point-in-time latency reading is fixed here."""
     rows = session.execute(
         select(
             DataFetchAttempt.data_type,
@@ -93,12 +109,15 @@ def _provider_activity(session: Session) -> dict[tuple[str, str], dict]:
     activity: dict[tuple[str, str], dict] = {}
     for data_type, provider_id, requested_at, source_timestamp in rows:
         key = (data_type, provider_id)
-        bucket = activity.setdefault(key, {"last_success_at": None, "latencies_seconds": []})
+        bucket = activity.setdefault(key, {"last_success_at": None, "last_latency_seconds": None})
         requested_at = _as_aware_utc(requested_at)
         if bucket["last_success_at"] is None or requested_at > bucket["last_success_at"]:
             bucket["last_success_at"] = requested_at
-        if source_timestamp is not None:
-            bucket["latencies_seconds"].append((requested_at - _as_aware_utc(source_timestamp)).total_seconds())
+            bucket["last_latency_seconds"] = (
+                (requested_at - _as_aware_utc(source_timestamp)).total_seconds()
+                if source_timestamp is not None
+                else None
+            )
     return activity
 
 
@@ -111,8 +130,8 @@ def get_provider_status(session: Session, *, computed_at: datetime) -> list[Prov
     for metric in report.by_provider:
         bucket = activity.get((metric.data_type, metric.provider_id), {})
         last_success_at = bucket.get("last_success_at")
-        latencies = bucket.get("latencies_seconds") or []
-        latency_ms = int((sum(latencies) / len(latencies)) * 1000) if latencies else None
+        last_latency_seconds = bucket.get("last_latency_seconds")
+        latency_ms = int(last_latency_seconds * 1000) if last_latency_seconds is not None else None
 
         snapshot = outage_by_data_type.get(metric.data_type)
         fallback_active = bool(snapshot is not None and metric.provider_id in (snapshot.degraded_provider_ids or []))

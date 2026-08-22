@@ -118,6 +118,37 @@ def test_providers_endpoint_marks_unreliable_provider_weak_and_fallback_active(c
     assert item["fallbackActive"] is True
 
 
+def test_providers_endpoint_latency_reflects_most_recent_fetch_not_backfill_average(client, session):
+    # Bug found during live Rancher/k3s deployment validation: an 8-month
+    # historical candle backfill (source_timestamp spread over months, all
+    # requested_at ~= now) plus one genuinely-recent fetch was producing a
+    # ~44-hour averaged latencyMs, because latency was averaged across every
+    # DataFetchAttempt row ever recorded instead of reflecting the most
+    # recent successful fetch (the same row lastSuccessAt is derived from).
+    backfill_requested_at = AS_OF
+    for months_back in range(1, 9):
+        record_fetch_attempt(
+            session, data_type=DATA_TYPE_MARKET, scope_key=f"yahoo-finance-backfill-{months_back}",
+            requested_at=backfill_requested_at, source_timestamp=backfill_requested_at - timedelta(days=30 * months_back),
+            success=True, provider_id="yahoo-finance",
+        )
+
+    recent_requested_at = AS_OF + timedelta(days=1)
+    recent_lag = timedelta(minutes=5)
+    record_fetch_attempt(
+        session, data_type=DATA_TYPE_MARKET, scope_key="yahoo-finance-recent",
+        requested_at=recent_requested_at, source_timestamp=recent_requested_at - recent_lag,
+        success=True, provider_id="yahoo-finance",
+    )
+
+    response = client.get("/api/v1/system/providers")
+    assert response.status_code == 200
+    item = next(i for i in response.json()["data"] if i["providerId"] == "yahoo-finance")
+
+    assert item["latencyMs"] == int(recent_lag.total_seconds() * 1000)
+    assert item["latencyMs"] is not None and item["latencyMs"] < 60 * 60 * 1000  # sanity: nowhere near backfill-skewed hours
+
+
 def test_providers_endpoint_marks_small_sample_insufficient(client, session):
     _record_attempts(session, data_type=DATA_TYPE_NEWS_EVENT, provider_id="finnhub", count=1, success=True)
 
