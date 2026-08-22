@@ -7,12 +7,15 @@ criteria.
 
 from __future__ import annotations
 
+import logging
+
 import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from api.app import register_api
 from api.deps import get_db
 from api.errors import NotFoundError, ValidationError
 from api.exception_handlers import register_exception_handlers
@@ -104,6 +107,67 @@ def test_capabilities_endpoint_matches_bootstrap_capabilities(client):
         "analytics": True,
         "dashboard": True,
     }
+
+
+def test_version_and_capabilities_are_cacheable_with_etag(client):
+    """EPIC-M3.13 — API Scope: "Cache headers/ETags where safe". Both bodies
+    are build-time constants (never DB-derived), so they are exactly the
+    "cacheable, slowly-changing data" EPIC-M3.1's own completion report
+    named as the missing precondition for adding this."""
+    for path in ("/api/v1/version", "/api/v1/capabilities"):
+        first = client.get(path)
+        assert first.status_code == 200
+        assert first.headers["Cache-Control"] == "public, max-age=300"
+        etag = first.headers["ETag"]
+        assert etag
+
+        cached = client.get(path, headers={"If-None-Match": etag})
+        assert cached.status_code == 304
+        assert cached.headers["ETag"] == etag
+        assert cached.content == b""
+
+
+def test_every_api_response_carries_server_timing_header(client):
+    """EPIC-M3.13 — API Scope: "Server timing/correlation metadata".
+    Correlation is X-Request-Id (existing); this is the timing half, a
+    standard client-parseable header rather than only a server-side log."""
+    response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    timing = response.headers["Server-Timing"]
+    assert timing.startswith("total;dur=")
+    duration = float(timing.removeprefix("total;dur="))
+    assert duration >= 0
+
+
+def test_large_api_responses_are_gzip_compressed(monkeypatch):
+    """EPIC-M3.13 — API Scope: "Compression"."""
+    probe_app = FastAPI()
+    register_api(probe_app)
+
+    @probe_app.get("/api/v1/_probe/large")
+    def _probe_large():
+        return {"data": "x" * 2000, "meta": {}}
+
+    probe_client = TestClient(probe_app)
+    response = probe_client.get(
+        "/api/v1/_probe/large", headers={"Accept-Encoding": "gzip"}
+    )
+    assert response.status_code == 200
+    assert response.headers.get("content-encoding") == "gzip"
+    assert response.json()["data"] == "x" * 2000
+
+
+def test_oversized_response_is_logged_for_monitoring(client, monkeypatch, caplog):
+    """EPIC-M3.13 — API Scope: "response-size monitoring". A response this
+    large for one /api/v1 call should surface in ops logs, not ship
+    silently."""
+    import api.middleware as middleware
+
+    monkeypatch.setattr(middleware, "LARGE_RESPONSE_BYTES", 10)
+    with caplog.at_level(logging.WARNING, logger="api.middleware"):
+        response = client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert any("Oversized" in record.message for record in caplog.records)
 
 
 def test_unmatched_route_returns_canonical_error_envelope(client):

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+import time
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -11,6 +14,15 @@ from .errors import ApiError, RateLimitedError
 from .rate_limit import client_key, default_limiter
 from .request_context import REQUEST_ID_HEADER, new_request_id, set_request_id
 from .versioning import API_PREFIX
+
+logger = logging.getLogger(__name__)
+
+# EPIC-M3.13 — API Scope: "response-size monitoring". A response body this
+# large for a single /api/v1 call means a summary/list endpoint is leaking
+# unbounded/historical detail rather than a paginated, bounded payload; log
+# it so it shows up in ops monitoring instead of silently shipping a slow,
+# oversized response to a mobile client.
+LARGE_RESPONSE_BYTES = 250_000
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -42,8 +54,26 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                 response.headers["Retry-After"] = str(exc.retry_after_seconds)
             return response
 
+        start = time.perf_counter()
         response: Response = await call_next(request)
+        duration_ms = (time.perf_counter() - start) * 1000
+
         response.headers[REQUEST_ID_HEADER] = request_id
+        # EPIC-M3.13 — API Scope: "Server timing/correlation metadata".
+        # Correlation is X-Request-Id (above); this is the timing half —
+        # a standard, client-parseable header (not just a server log line)
+        # so a slow /api/v1 call is diagnosable from the response alone.
+        response.headers["Server-Timing"] = f"total;dur={duration_ms:.1f}"
+
+        content_length = response.headers.get("content-length")
+        if content_length is not None and int(content_length) > LARGE_RESPONSE_BYTES:
+            logger.warning(
+                "Oversized /api/v1 response: %s %s returned %s bytes (requestId=%s)",
+                request.method,
+                request.url.path,
+                content_length,
+                request_id,
+            )
         return response
 
 

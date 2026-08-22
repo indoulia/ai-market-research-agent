@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mra_app/core/auth/auth_controller.dart';
@@ -15,6 +17,15 @@ class _FakeAuthRepository extends AuthRepository {
     if (signInError != null) throw signInError!;
     return signInResult!;
   }
+}
+
+class _NeverResolvingAuthRepository extends AuthRepository {
+  // A Completer that's never completed, rather than Future.delayed, so no
+  // real Timer is left pending when the test ends.
+  final Completer<AuthSession> _completer = Completer<AuthSession>();
+
+  @override
+  Future<AuthSession> signIn(String userId) => _completer.future;
 }
 
 AuthSession _session() => AuthSession(
@@ -73,5 +84,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.status, isNot(AuthStatus.authenticated));
+  });
+
+  testWidgets('the submit button keeps an accessible label while submitting '
+      '(EPIC-M3.13: the spinner must not leave it nameless)', (tester) async {
+    final handle = tester.ensureSemantics();
+    final controller = AuthController(
+      repository: _NeverResolvingAuthRepository(),
+    );
+
+    await tester.pumpWidget(_harness(SignInScreen(controller: controller)));
+    expect(find.bySemanticsLabel('Continue'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'analyst-1');
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+
+    // The visible Text('Continue') is now replaced by a spinner, but the
+    // button must still expose a non-empty accessible name.
+    expect(find.text('Continue'), findsNothing);
+    expect(find.bySemanticsLabel('Continue, submitting'), findsOneWidget);
+    handle.dispose();
   });
 }

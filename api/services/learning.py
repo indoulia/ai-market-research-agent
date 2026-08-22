@@ -71,6 +71,13 @@ MAX_RECENT_SIGNALS = 10
 DEFAULT_HISTORY_LIMIT = 50
 MAX_HISTORY_LIMIT = 200
 
+# EPIC-M3.13 — API Scope: "Pagination and bounded payloads". Experiments
+# accumulate over the lifetime of the platform just like history events;
+# this endpoint had no limit at all before this epic. Same bound as
+# history since both are "most recent N" overviews, not full archives.
+DEFAULT_EXPERIMENTS_LIMIT = 50
+MAX_EXPERIMENTS_LIMIT = 200
+
 
 def _latest_champion_challenger(session: Session) -> ShadowChallengerComparisonReport | None:
     return session.scalar(select(ShadowChallengerComparisonReport).order_by(ShadowChallengerComparisonReport.id.desc()).limit(1))
@@ -296,13 +303,16 @@ def _experiment_status(session: Session, experiment: Experiment) -> str:
     return _status_from_verdicts(latest_verdicts)
 
 
-def list_learning_experiments(session: Session) -> list[LearningExperiment]:
+def list_learning_experiments(session: Session, *, limit: int = DEFAULT_EXPERIMENTS_LIMIT) -> list[LearningExperiment]:
     """Never runs `run_experiment_arm`/`compare_experiment` (both mutating,
     result-persisting operations) as a side effect of this read-only GET --
     only already-persisted `ExperimentResult` rows are reported. An
     experiment with arms but no results yet is `PENDING`, not fabricated as
     `READY`/`INSUFFICIENT_SAMPLE`."""
-    experiments = tuple(session.scalars(select(Experiment).order_by(Experiment.id.desc())).all())
+    limit = max(1, min(limit, MAX_EXPERIMENTS_LIMIT))
+    experiments = tuple(
+        session.scalars(select(Experiment).order_by(Experiment.id.desc()).limit(limit)).all()
+    )
 
     out: list[LearningExperiment] = []
     for experiment in experiments:

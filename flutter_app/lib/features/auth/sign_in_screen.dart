@@ -95,20 +95,32 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                 ],
                 const SizedBox(height: MraSpacing.lg),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _submitting ? null : _submit,
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Continue'),
+                // EPIC-M3.13 — the loading spinner replaces the "Continue"
+                // Text child while submitting; without this Semantics
+                // wrapper a screen reader would announce a nameless button
+                // during that window (icons/visuals must never replace
+                // necessary text without an accessible label).
+                Semantics(
+                  button: true,
+                  enabled: !_submitting,
+                  label: _submitting ? 'Continue, submitting' : 'Continue',
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ExcludeSemantics(
+                      child: FilledButton(
+                        onPressed: _submitting ? null : _submit,
+                        child: _submitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Continue'),
+                      ),
+                    ),
                   ),
                 ),
               ],

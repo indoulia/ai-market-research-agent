@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.settings import settings
 
@@ -49,5 +50,9 @@ def register_api(app: FastAPI) -> None:
         allow_headers=["*"],
     )
     app.add_middleware(RequestContextMiddleware)
+    # EPIC-M3.13 — API Scope: "Compression". Added last (outermost in
+    # Starlette's stack) so it compresses the fully-formed response,
+    # headers included, from every layer below it.
+    app.add_middleware(GZipMiddleware, minimum_size=500)
     register_exception_handlers(app)
     app.include_router(api_router)

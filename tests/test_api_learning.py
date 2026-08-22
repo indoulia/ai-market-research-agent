@@ -301,6 +301,24 @@ def test_experiments_endpoint_classifies_status_and_picks_best_ready_arm(session
     assert len(ready["arms"]) == 2
 
 
+def test_experiments_endpoint_respects_limit_and_returns_newest_first(session, client):
+    """EPIC-M3.13 — API Scope: "Pagination and bounded payloads". Before this
+    epic, `/learning/experiments` had no limit at all (unlike its sibling
+    `/learning/history`), so it would grow unbounded over the platform's
+    lifetime."""
+    for i in range(3):
+        _make_experiment(session, name=f"experiment-{i}")
+    session.commit()
+
+    resp = client.get("/api/v1/learning/experiments")
+    assert resp.status_code == 200
+    names = [e["name"] for e in resp.json()["data"]]
+    assert names == ["experiment-2", "experiment-1", "experiment-0"]
+
+    limited = client.get("/api/v1/learning/experiments", params={"limit": 2})
+    assert [e["name"] for e in limited.json()["data"]] == ["experiment-2", "experiment-1"]
+
+
 def _make_scan(session, scan_date):
     scan = DailyCandidateScan(scan_date=scan_date, universe_version="DCS-001", eligible_count=1, excluded_count=0)
     session.add(scan)
