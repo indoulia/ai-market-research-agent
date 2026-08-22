@@ -51,11 +51,21 @@ void main() {
               MraChip(label: 'Warning', tone: MraChipTone.warning),
               MraChip(label: 'Error', tone: MraChipTone.error),
               MraChip(label: 'Info', tone: MraChipTone.info),
+              MraChip(label: 'Market up', tone: MraChipTone.marketUp),
+              MraChip(label: 'Market down', tone: MraChipTone.marketDown),
             ],
           ),
         ),
       );
-      for (final label in ['Neutral', 'Positive', 'Warning', 'Error', 'Info']) {
+      for (final label in [
+        'Neutral',
+        'Positive',
+        'Warning',
+        'Error',
+        'Info',
+        'Market up',
+        'Market down',
+      ]) {
         expect(find.text(label), findsOneWidget);
       }
     });
@@ -101,6 +111,22 @@ void main() {
       );
       expect(find.text('100'), findsOneWidget);
     });
+
+    testWidgets(
+      'a low value never uses the error/alarm color (already-positive population)',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(const ScoreIndicator(kind: MraScoreKind.trust, value0to100: 5)),
+        );
+        final indicator = tester.widget<CircularProgressIndicator>(
+          find.byType(CircularProgressIndicator),
+        );
+        final resolvedColor =
+            (indicator.valueColor as AlwaysStoppedAnimation<Color>).value;
+        expect(resolvedColor, isNot(MraColors.error));
+        expect(resolvedColor, MraColors.warning);
+      },
+    );
   });
 
   group('TargetSlBadge', () {

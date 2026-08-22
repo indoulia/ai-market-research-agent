@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../tokens/mra_colors.dart';
 
-enum MraChipTone { neutral, positive, warning, error, info }
+enum MraChipTone {
+  neutral,
+  positive,
+  warning,
+  error,
+  info,
+  marketUp,
+  marketDown,
+}
 
 /// EPIC-M1.133 — shared chip/tag component. Tone conveys meaning via both
 /// color and an optional leading icon, never color alone.
@@ -34,6 +42,10 @@ class MraChip extends StatelessWidget {
         return _ToneColors(scheme.errorContainer, scheme.error);
       case MraChipTone.info:
         return _ToneColors(scheme.infoContainer, scheme.info);
+      case MraChipTone.marketUp:
+        return _ToneColors(scheme.marketUpContainer, scheme.marketUp);
+      case MraChipTone.marketDown:
+        return _ToneColors(scheme.marketDownContainer, scheme.marketDown);
       case MraChipTone.neutral:
         return _ToneColors(
           theme.colorScheme.surfaceContainerHigh,

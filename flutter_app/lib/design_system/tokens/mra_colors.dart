@@ -46,6 +46,12 @@ class MraColors {
   static const Color marketUp = Color(0xFF0F7A5C);
   static const Color marketDown = Color(0xFF9A3A2E);
   static const Color marketFlat = Color(0xFF6B7280);
+
+  // Market-state chip containers (EPIC-M3.16) — distinct tints from
+  // positiveContainer/errorContainer so a market up/down chip never reads
+  // as a generic success/failure signal.
+  static const Color marketUpContainer = Color(0xFFD8F3E9);
+  static const Color marketDownContainer = Color(0xFFF4E1DD);
 }
 
 /// Resolves semantic colors against the active [Brightness] so components
@@ -72,6 +78,8 @@ class MraColorScheme {
   Color get marketUp => MraColors.marketUp;
   Color get marketDown => MraColors.marketDown;
   Color get marketFlat => MraColors.marketFlat;
+  Color get marketUpContainer => MraColors.marketUpContainer;
+  Color get marketDownContainer => MraColors.marketDownContainer;
 
   static MraColorScheme of(BuildContext context) =>
       MraColorScheme(Theme.of(context).brightness);

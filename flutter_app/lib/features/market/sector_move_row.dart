@@ -15,7 +15,7 @@ class SectorMoveChip extends StatelessWidget {
     return MraChip(
       label:
           '${move.sector} ${isUp ? '+' : ''}${move.averageChangePct.toStringAsFixed(1)}%',
-      tone: isUp ? MraChipTone.positive : MraChipTone.error,
+      tone: isUp ? MraChipTone.marketUp : MraChipTone.marketDown,
       icon: isUp ? Icons.trending_up : Icons.trending_down,
     );
   }

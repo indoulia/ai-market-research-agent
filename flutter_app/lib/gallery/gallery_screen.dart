@@ -156,6 +156,16 @@ class _GalleryScreenState extends State<GalleryScreen> {
                         tone: MraChipTone.info,
                         icon: Icons.info,
                       ),
+                      MraChip(
+                        label: 'Market up',
+                        tone: MraChipTone.marketUp,
+                        icon: Icons.trending_up,
+                      ),
+                      MraChip(
+                        label: 'Market down',
+                        tone: MraChipTone.marketDown,
+                        icon: Icons.trending_down,
+                      ),
                     ],
                   ),
                   const SizedBox(height: MraSpacing.xxl),
