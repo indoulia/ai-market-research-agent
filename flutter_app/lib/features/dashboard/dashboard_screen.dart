@@ -393,7 +393,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : (_canLoadMore
-                          ? TextButton(
+                          ? OutlinedButton(
                               onPressed: _loadMore,
                               child: const Text('Load more opportunities'),
                             )
@@ -622,7 +622,7 @@ class _RecentChangesCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Recently changed', style: theme.textTheme.titleSmall),
+          Text('Recently changed', style: theme.textTheme.titleMedium),
           const SizedBox(height: MraSpacing.sm),
           for (final item in shown)
             Padding(

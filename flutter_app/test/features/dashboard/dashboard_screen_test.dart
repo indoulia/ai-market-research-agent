@@ -204,6 +204,14 @@ void main() {
 
     expect(find.text('Recently changed'), findsOneWidget);
     expect(find.textContaining('WIPRO'), findsWidgets);
+
+    // EPIC-M3.16 follow-up: this compact card header uses the same
+    // titleMedium role as the equivalent "Sector leaders"/"Sector
+    // laggards" headers on the market screen and the tracking trend
+    // card, not a smaller one-off scale step.
+    final theme = Theme.of(tester.element(find.text('Recently changed')));
+    final headerText = tester.widget<Text>(find.text('Recently changed'));
+    expect(headerText.style, theme.textTheme.titleMedium);
   });
 
   testWidgets('shows a small-sample badge when trust sample is small', (
@@ -356,6 +364,16 @@ void main() {
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
       await tester.pumpAndSettle();
       expect(find.text('Load more opportunities'), findsOneWidget);
+      // EPIC-M3.16 follow-up: "Load more" is an OutlinedButton everywhere
+      // else it appears (tracking, feedback history, system health) — this
+      // screen previously used a TextButton for the identical action.
+      expect(
+        find.ancestor(
+          of: find.text('Load more opportunities'),
+          matching: find.byType(OutlinedButton),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.text('Load more opportunities'));
       await tester.pumpAndSettle();
 

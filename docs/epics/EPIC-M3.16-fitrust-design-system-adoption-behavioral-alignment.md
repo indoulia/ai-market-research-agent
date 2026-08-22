@@ -223,3 +223,103 @@ tokens (`marketUpContainer`/`marketDownContainer`) required because no
 market-state chip background existed yet. No rebrand, no new visual
 language, no new product feature. Marking this EPIC `VALIDATING` pending
 PR merge.
+
+## Follow-up (2026-08-22) — fonts, buttons, flow deep audit
+
+The first pass above under-scoped the user's actual intent: "Main
+purpose of this epic was to use theme fonts, designes, flow, buttons,
+widgets etc." — a dimension-by-dimension re-audit dedicated specifically
+to typography, buttons, and navigation/interaction flow (folded too
+narrowly into "token adoption" and "feedback consistency" the first
+time). This follow-up read `mra_typography.dart`/`mra_theme.dart` fully,
+then compared call sites *across screens* for each of the four
+categories side by side, rather than checking one screen at a time in
+isolation.
+
+### Findings
+
+1. **Typography — card-header type-scale mismatch.**
+   `flutter_app/lib/features/dashboard/dashboard_screen.dart`'s
+   `_RecentChangesCard` header used `theme.textTheme.titleSmall`, while
+   the functionally identical "compact card header above a short item
+   list" role uses `titleMedium` everywhere else it appears
+   (`market_overview_screen.dart`'s "Sector leaders"/"Sector laggards",
+   `tracking_trend_card.dart`). Fixed: now `titleMedium`.
+2. **Buttons — retry action used a different button type per screen.**
+   The shared `MraStateView.error` (`state_views.dart`) renders its
+   retry action as a `FilledButton`, but
+   `general_settings_screen.dart`'s display-preferences error case
+   hand-rolled its own error layout with an `OutlinedButton` for the
+   identical "Retry" action instead of using `MraStateView.error` at
+   all — a widget-reuse gap and a button-type gap at once. Fixed: the
+   hand-rolled `Column` (two `Text`s + `OutlinedButton`) is now
+   `MraStateView.error(title: ..., message: ..., onAction: _load)`,
+   matching every other screen with an error state
+   (market_overview/learning/discover/tracking/feedback_history/
+   quick_preferences/dashboard/system_health/recommendation_detail/
+   opportunity_explorer/news_events all already used it — this was the
+   sole hand-rolled exception).
+3. **Buttons — "Load more" used three different treatments for the
+   same interaction.** `dashboard_screen.dart` used `TextButton`;
+   `feedback_history_screen.dart`, `system_health_screen.dart`, and
+   `tracking_screen.dart` (two sites) all use `OutlinedButton` for the
+   literal same "Load more" action. Fixed: `dashboard_screen.dart` now
+   uses `OutlinedButton`, matching the majority (4 existing sites).
+4. **Flow — genuinely consistent, verified by cross-screen comparison,
+   no fix needed.** Every "view recommendation detail" tap across 5+
+   screens uses `context.push` to a route; every filter/sort selection
+   uses `showMraBottomSheet`; zero `showDialog(` call sites exist
+   anywhere in the app, and no destructive/irreversible action exists
+   in this product's scope that would need one (sign-out ends a
+   session, not data; filters/chips are reversible).
+
+### Deliberately not done (rationale)
+
+- **"Load more" vs. silent scroll-triggered auto-load** — three screens
+  (`opportunity_explorer_screen.dart`, `discover_screen.dart`,
+  `news_events_screen.dart`) auto-load on scroll with no visible button
+  at all, a genuinely different pagination UX from the explicit-button
+  screens above. Unifying these two paradigms into one is a real
+  product/UX decision (which pattern should win, for which list
+  lengths), not a token-consistency fix — named here as a real,
+  deliberately out-of-scope gap for a future EPIC to decide, not
+  silently changed.
+- **No global `ElevatedButtonThemeData`/`OutlinedButtonThemeData`
+  added to `mra_theme.dart`** — every button in the app already runs on
+  Material 3's own consistent defaults (verified: no screen passes an
+  inline `ButtonStyle`/`styleFrom` override), so there was no actual
+  divergent styling to centralize; the two real gaps above were about
+  *which* button type/component was chosen per action-class, not about
+  missing shared styling.
+
+### Tests (TDD)
+
+- `flutter_app/test/features/dashboard/dashboard_screen_test.dart` —
+  extended `'renders the recently-changed widget'` to assert the header
+  `Text`'s style equals `theme.textTheme.titleMedium`; extended the
+  "Load more opportunities" test to assert the button is an
+  `OutlinedButton` ancestor, not just that the label text exists.
+- `flutter_app/test/features/preferences/general_settings_screen_test.dart`
+  (new test) — a `_FailOnceRepository` drives the error path; asserts
+  `FilledButton` (via `MraStateView.error`) renders with the "Retry"
+  label and that tapping it recovers to the loaded state.
+
+**Validation run:**
+```
+cd flutter_app && flutter analyze
+# No issues found!
+
+cd flutter_app && dart format --output=none --set-exit-if-changed lib test
+# clean after formatting the 1 changed test file
+
+cd flutter_app && flutter test
+# 216 tests passed, All tests passed! (was 215 after the first M3.16 pass)
+```
+
+### Conclusion
+
+3 additional genuine gaps found and fixed across typography and button
+consistency; flow was audited cross-screen and found genuinely
+consistent. One real gap (load-more button vs. auto-load-on-scroll
+paradigm split) is named as deliberately out of this EPIC's safe-to-fix
+scope, not silently ignored. Re-confirming `DONE` after this follow-up.
