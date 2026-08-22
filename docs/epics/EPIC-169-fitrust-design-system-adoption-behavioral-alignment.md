@@ -323,3 +323,110 @@ consistency; flow was audited cross-screen and found genuinely
 consistent. One real gap (load-more button vs. auto-load-on-scroll
 paradigm split) is named as deliberately out of this EPIC's safe-to-fix
 scope, not silently ignored. Re-confirming `DONE` after this follow-up.
+
+## Follow-up (2026-08-22) — brand color fidelity & a missed reuse gap
+
+User feedback after EPIC-170 (Marksy brand identity) shipped: the app
+still didn't look aligned with this EPIC's own FiTrust precedent —
+"buttons, big filters... not fully aligned." Audit method this time:
+live-screenshotted the actual Rancher-deployed build
+(`http://market-agent.test/`, pod created after EPIC-170's merge) via a
+headless-Chromium Playwright script rather than reading code in
+isolation, since the prior two passes' code-only review had already
+covered token/typography/button-type consistency and this complaint was
+about something neither pass had checked — how the app actually renders.
+
+### Findings
+
+1. **Buttons/links/selected-nav render a muted color, not the real
+   Marksy blue.** Screenshotting the sign-in screen showed the
+   "Continue" `FilledButton` as a grayish slate-blue, not
+   `MraColors.brandPrimary` (`#2563EB`) visible in the logo right next
+   to it. Root cause: `mra_theme.dart`'s `ColorScheme.fromSeed(seedColor:
+   MraColors.brandPrimary)` — Material 3's tonal-palette algorithm
+   derives `colorScheme.primary` at a fixed tone from the seed's hue,
+   which visibly diverges from the literal hex it started from. EPIC-170
+   itself claimed brandPrimary "cascad[es] through `ColorScheme.fromSeed`
+   to `colorScheme.primary`" — true mechanically, false visually. Compounding
+   this: EPIC-170 also added `brandPrimaryLight`/`brandDeepNavy`/
+   `brandHighlight` tokens "for direct use" that were never actually
+   wired anywhere (verified: zero non-declaration references before this
+   fix) — dead tokens, and no dark-theme-appropriate primary existed at
+   all. Fixed in `mra_theme.dart`: keep `ColorScheme.fromSeed` for every
+   other role (secondary/tertiary/surfaces stay in Material's tonal
+   harmony), but pin `primary`/`onPrimary` explicitly — light theme to
+   `brandPrimary`/`neutral0`, dark theme to the previously-dead
+   `brandPrimaryLight`/`brandDeepNavy` (now actually used). Confirmed
+   visually by rebuilding `flutter build web` and re-screenshotting: the
+   button now matches the logo exactly.
+2. **Dashboard's sector filter duplicates `MraSearchField` instead of
+   reusing it** (`dashboard_screen.dart`'s `_buildHeader`). This EPIC's
+   own first pass (finding 3, above) already fixed two magic-number
+   spacing values in this exact `TextField` without noticing the whole
+   widget hand-copies `design_system/components/mra_search_field.dart`
+   — the identical filled/isDense/borderRadius-12/surfaceContainerHigh
+   shared component `discover_screen.dart` already uses one screen over
+   for its own search field. A genuine component-reuse gap missed twice.
+   Fixed: extended `MraSearchField` with optional `prefixIcon` (default
+   `Icons.search`, so Discover's call site is unaffected) and
+   `onSubmitted`, then switched `dashboard_screen.dart` to it, removing
+   ~30 duplicated lines.
+
+### Deliberately not done (rationale)
+
+- **Did not override `primaryContainer`/`secondary`/`tertiary`.** Only
+  `primary`/`onPrimary` were the reported/observed problem (buttons,
+  links, selected-nav icon); widening the override to roles no one
+  flagged risks a contrast regression nobody asked for.
+- **Did not resize `MraSearchField`/the Dashboard or Discover search
+  bar.** The live screenshots show both as full-width, ~48px filled
+  boxes above the compact chip filter rows — visually prominent by
+  design (search bars are conventionally full-width), and Discover's
+  identical-styled field is the *reference* pattern, not a bug. The
+  actual, verified gap was Dashboard silently duplicating that pattern
+  instead of importing it, not its size.
+- **Did not change the app shell header or navigation rail/bottom nav.**
+  Live-screenshotted Home, Discover and Tracking side by side: the top
+  bar (logo + search + account icons) and left nav rail render
+  consistently across every destination with correct selection state on
+  every screen checked. No genuine header/nav gap was found to fix —
+  named here so this isn't silently skipped without having looked.
+
+### Tests (TDD)
+
+- `flutter_app/test/design_system/theme_test.dart` — new test asserts
+  `MraTheme.light().colorScheme.primary == MraColors.brandPrimary` (and
+  `onPrimary`), and the dark-theme equivalents against
+  `brandPrimaryLight`/`brandDeepNavy` — would fail against the pre-fix
+  seed-derived tone.
+- `flutter_app/test/features/dashboard/dashboard_screen_test.dart` — new
+  test asserts the sector field is found via
+  `find.widgetWithType(MraSearchField, ...)` (would fail against the
+  pre-fix hand-rolled `TextField`, which is a different runtime type),
+  and that submitting text triggers a refetch.
+
+**Validation run:**
+```
+cd flutter_app && flutter analyze
+# No issues found!
+
+cd flutter_app && dart format --output=none --set-exit-if-changed lib test
+# 156 files; ran clean after formatting the 2 new/changed test files
+
+cd flutter_app && flutter test
+# 242 tests passed, All tests passed! (was 240 before this follow-up — 2 new tests)
+```
+
+Visual verification: `flutter build web --release`, served locally,
+Playwright screenshot confirmed the sign-in "Continue" button now
+renders `#2563EB` (matching the logo) instead of the pre-fix muted tone.
+
+### Conclusion
+
+2 genuine gaps found and fixed: a brand-color fidelity bug traced to
+Material's tonal-derivation algorithm (not previously checkable without
+an actual rendered screenshot, which neither of this EPIC's prior
+passes took), and a component-reuse gap this EPIC's own first pass had
+partially touched but not fully caught. Header and navigation were
+specifically checked via live screenshots across three destinations and
+found consistent — not a silently-skipped claim. Re-confirming `DONE`.

@@ -13,10 +13,25 @@ class MraTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(
+    final seeded = ColorScheme.fromSeed(
       seedColor: MraColors.brandPrimary,
       brightness: brightness,
     );
+    // ColorScheme.fromSeed's tonal-palette algorithm picks a fixed-tone
+    // primary from the seed's hue, which visibly diverges from the literal
+    // Marksy brand blue it started from (EPIC-M3.17's reference swatch) --
+    // pin primary/onPrimary to the actual brand tokens so every button,
+    // selected-nav icon and link reads as real Marksy blue rather than a
+    // muted Material approximation; everything else stays seed-derived.
+    final colorScheme = brightness == Brightness.light
+        ? seeded.copyWith(
+            primary: MraColors.brandPrimary,
+            onPrimary: MraColors.neutral0,
+          )
+        : seeded.copyWith(
+            primary: MraColors.brandPrimaryLight,
+            onPrimary: MraColors.brandDeepNavy,
+          );
     final onSurface = colorScheme.onSurface;
 
     return ThemeData(

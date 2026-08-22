@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 
 /// EPIC-M1.133 — shared search entry field for global/screen-level search.
+/// EPIC-171 follow-up — [prefixIcon]/[onSubmitted] let this cover
+/// submit-to-filter fields (e.g. Dashboard's sector filter) too, so those
+/// screens reuse this instead of hand-rolling an identically-styled TextField.
 class MraSearchField extends StatelessWidget {
   final String hintText;
   final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
   final VoidCallback? onClear;
   final TextEditingController? controller;
+  final IconData prefixIcon;
 
   const MraSearchField({
     super.key,
     this.hintText = 'Search',
     this.onChanged,
+    this.onSubmitted,
     this.onClear,
     this.controller,
+    this.prefixIcon = Icons.search,
   });
 
   @override
@@ -21,11 +28,12 @@ class MraSearchField extends StatelessWidget {
     return TextField(
       controller: controller,
       onChanged: onChanged,
+      onSubmitted: onSubmitted,
       textInputAction: TextInputAction.search,
       style: theme.textTheme.bodyMedium,
       decoration: InputDecoration(
         hintText: hintText,
-        prefixIcon: const Icon(Icons.search, size: 20),
+        prefixIcon: Icon(prefixIcon, size: 20),
         suffixIcon: onClear == null
             ? null
             : IconButton(
