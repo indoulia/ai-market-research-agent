@@ -134,6 +134,63 @@ void main() {
     );
   });
 
+  testWidgets(
+    'a cold-start deep link (e.g. a bookmark or page refresh on /discover) '
+    'survives auth restore instead of collapsing to /home',
+    (tester) async {
+      final repository = _FakeAuthRepository()..signInResult = _session();
+      final controller = AuthController(repository: repository);
+      await controller.signIn('analyst-1');
+      // Simulates main.dart passing PlatformDispatcher.defaultRouteName —
+      // the actual URL the browser reports on cold start/refresh — through
+      // to buildAppRouter, rather than the hardcoded '/splash' silently
+      // discarding it.
+      final router = buildAppRouter(
+        authController: controller,
+        initialDeepLink: '/discover',
+      );
+
+      await tester.pumpWidget(_appWithRouter(router));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/discover',
+      );
+    },
+  );
+
+  testWidgets(
+    'a cold-start deep link while unauthenticated redirects to sign-in and '
+    'back to that same deep link after signing in',
+    (tester) async {
+      final repository = _FakeAuthRepository()..signInResult = _session();
+      final controller = AuthController(repository: repository);
+      await controller.restore();
+      final router = buildAppRouter(
+        authController: controller,
+        initialDeepLink: '/tracking',
+      );
+
+      await tester.pumpWidget(_appWithRouter(router));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/sign-in?from=%2Ftracking',
+      );
+
+      await tester.enterText(find.byType(TextField), 'analyst-1');
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      expect(
+        router.routerDelegate.currentConfiguration.uri.toString(),
+        '/tracking',
+      );
+    },
+  );
+
   testWidgets('signing out from Settings returns to sign-in', (tester) async {
     final repository = _FakeAuthRepository()..signInResult = _session();
     final controller = AuthController(repository: repository);
