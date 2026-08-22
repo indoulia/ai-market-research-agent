@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/api_exception.dart';
 import '../../design_system/design_system.dart';
+import '../tracking/tracked_prediction.dart';
+import '../tracking/tracking_repository.dart';
+import '../tracking/tracking_summary.dart';
 import 'dashboard_repository.dart';
 import 'dashboard_snapshot.dart';
 import 'recommendation.dart';
@@ -40,8 +43,14 @@ class _OpportunityRow {
 class DashboardScreen extends StatefulWidget {
   final DashboardRepository? dashboardRepository;
   final RecommendationsRepository? repository;
+  final TrackingRepository? trackingRepository;
 
-  const DashboardScreen({super.key, this.dashboardRepository, this.repository});
+  const DashboardScreen({
+    super.key,
+    this.dashboardRepository,
+    this.repository,
+    this.trackingRepository,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -50,6 +59,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   late final DashboardRepository _dashboardRepository;
   late final RecommendationsRepository _repository;
+  late final TrackingRepository _trackingRepository;
   final TextEditingController _sectorController = TextEditingController();
 
   static const int _limit = 12;
@@ -62,6 +72,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _loadingMore = false;
   ApiException? _error;
 
+  // EPIC-173 Performance card — fetched independently of the snapshot so a
+  // tracking-service hiccup never blocks the rest of the dashboard; null
+  // means "not available yet", not "zero".
+  TrackingSummary? _trackingSummary;
+  List<TrackedPrediction> _closedCalls = const [];
+
   int? _selectedHorizon;
   String _market = 'ALL';
   String _sizeBucket = 'ALL';
@@ -72,7 +88,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _dashboardRepository = widget.dashboardRepository ?? DashboardRepository();
     _repository = widget.repository ?? RecommendationsRepository();
+    _trackingRepository = widget.trackingRepository ?? TrackingRepository();
     _load();
+    _loadPerformance();
+  }
+
+  /// EPIC-173 — best-effort; the Performance card degrades to trust-only
+  /// (already carried by [_snapshot]) if either fetch fails, rather than
+  /// surfacing a second full-screen error state for a secondary widget.
+  Future<void> _loadPerformance() async {
+    try {
+      final summary = await _trackingRepository.fetchSummary(range: '30d');
+      if (mounted) setState(() => _trackingSummary = summary);
+    } catch (_) {
+      // Left null -- _PerformanceCard renders trust-only.
+    }
+    try {
+      final page = await _trackingRepository.fetchPredictions(
+        status: 'closed',
+        pageSize: 5,
+      );
+      if (mounted) setState(() => _closedCalls = page.items);
+    } catch (_) {
+      // Left empty -- the Activity card's "Closed calls" tab shows its
+      // own empty state rather than fabricating rows.
+    }
   }
 
   @override
@@ -175,20 +215,91 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final windowClass = MraBreakpoints.classify(constraints.maxWidth);
-        return RefreshIndicator(
+        // EPIC-173 — the "watch" rail sits beside the grid at the same
+        // width AppShellScaffold extends its own NavigationRail, and folds
+        // below the grid otherwise.
+        final showSideRail =
+            windowClass == MraWindowClass.expanded ||
+            windowClass == MraWindowClass.large;
+
+        final mainColumn = RefreshIndicator(
           onRefresh: _load,
           child: CustomScrollView(
             slivers: [
-              SliverToBoxAdapter(child: _buildHeader(context)),
+              SliverToBoxAdapter(child: _buildHeader(context, windowClass)),
               ..._buildBody(context, windowClass),
+              if (!showSideRail)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      MraSpacing.lg,
+                      0,
+                      MraSpacing.lg,
+                      MraSpacing.lg,
+                    ),
+                    child: _buildSideRail(context),
+                  ),
+                ),
             ],
           ),
+        );
+
+        if (!showSideRail) return mainColumn;
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: mainColumn),
+            SizedBox(
+              width: 320,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  0,
+                  MraSpacing.lg,
+                  MraSpacing.lg,
+                  MraSpacing.lg,
+                ),
+                child: SingleChildScrollView(child: _buildSideRail(context)),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  /// EPIC-173 — Performance / Activity / Important events / Coming soon,
+  /// in that order. Renders nothing until the snapshot has loaded once
+  /// (matches the rest of the screen's honest-empty-state convention
+  /// rather than showing rail skeletons for secondary content).
+  Widget _buildSideRail(BuildContext context) {
+    final snapshot = _snapshot;
+    if (snapshot == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PerformanceCard(
+          trustSummary: snapshot.trustSummary,
+          tracking: _trackingSummary,
+        ),
+        const SizedBox(height: MraSpacing.md),
+        _ActivityCard(
+          recentChanges: snapshot.recentChanges,
+          closedCalls: _closedCalls,
+        ),
+        if (snapshot.importantEvents.isNotEmpty) ...[
+          const SizedBox(height: MraSpacing.md),
+          _ImportantEventsCard(events: snapshot.importantEvents),
+        ],
+        const SizedBox(height: MraSpacing.md),
+        const _ComingSoonCard(),
+      ],
+    );
+  }
+
+  bool _howItWorksDismissed = false;
+
+  Widget _buildHeader(BuildContext context, MraWindowClass windowClass) {
     final theme = Theme.of(context);
     final snapshot = _snapshot;
 
@@ -230,43 +341,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (snapshot != null) ...[
             const SizedBox(height: MraSpacing.md),
             _MarketStatusRow(snapshot: snapshot),
+          ],
+          if (!_howItWorksDismissed) ...[
             const SizedBox(height: MraSpacing.md),
-            _TrustSummaryCard(summary: snapshot.trustSummary),
-            if (snapshot.importantEvents.isNotEmpty) ...[
-              const SizedBox(height: MraSpacing.md),
-              _EventsStrip(events: snapshot.importantEvents),
-            ],
-            if (snapshot.recentChanges.isNotEmpty) ...[
-              const SizedBox(height: MraSpacing.md),
-              _RecentChangesCard(items: snapshot.recentChanges),
-            ],
+            _HowMarksyWorksStrip(
+              onDismiss: () => setState(() => _howItWorksDismissed = true),
+            ),
           ],
           const SizedBox(height: MraSpacing.lg),
-          HorizonSelector(
-            horizonsDays: const [1, 3, 5, 7],
-            selectedDays: _selectedHorizon ?? 3,
-            onChanged: (days) {
-              setState(() => _selectedHorizon = days);
-              _onFiltersChanged();
-            },
-          ),
-          const SizedBox(height: MraSpacing.sm),
-          MraFilterBar(
-            options: _marketOptions,
-            selectedIds: {_market},
-            onToggle: (id) {
-              setState(() => _market = id);
-              _onFiltersChanged();
-            },
-          ),
-          const SizedBox(height: MraSpacing.sm),
-          MraFilterBar(
-            options: _bucketOptions,
-            selectedIds: {_sizeBucket},
-            onToggle: (id) {
-              setState(() => _sizeBucket = id);
-              _onFiltersChanged();
-            },
+          _buildToolbar(context),
+        ],
+      ),
+    );
+  }
+
+  /// EPIC-173 — the horizon/market/size filters and sector search collapse
+  /// into one wrapped toolbar (was four separate full-width rows). Same
+  /// widgets and state as before, layout only.
+  Widget _buildToolbar(BuildContext context) {
+    return MraCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: MraSpacing.md,
+        vertical: MraSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: MraSpacing.md,
+            runSpacing: MraSpacing.sm,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              HorizonSelector(
+                horizonsDays: const [1, 3, 5, 7],
+                selectedDays: _selectedHorizon ?? 3,
+                onChanged: (days) {
+                  setState(() => _selectedHorizon = days);
+                  _onFiltersChanged();
+                },
+              ),
+              MraFilterBar(
+                options: _marketOptions,
+                selectedIds: {_market},
+                onToggle: (id) {
+                  setState(() => _market = id);
+                  _onFiltersChanged();
+                },
+              ),
+              MraFilterBar(
+                options: _bucketOptions,
+                selectedIds: {_sizeBucket},
+                onToggle: (id) {
+                  setState(() => _sizeBucket = id);
+                  _onFiltersChanged();
+                },
+              ),
+            ],
           ),
           const SizedBox(height: MraSpacing.sm),
           MraSearchField(
@@ -339,29 +469,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
           MraWindowClass.medium => 2,
           _ => 3,
         };
+        // EPIC-173 — compact width renders a dense single-line row instead
+        // of the full card (ring/sparkline/score-row), so roughly twice as
+        // many opportunities fit per scroll on a phone.
+        final opportunitiesSliver = windowClass == MraWindowClass.compact
+            ? SliverToBoxAdapter(
+                child: MraCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < rows.length; i++) ...[
+                        if (i > 0) const Divider(height: 1),
+                        _CompactOpportunityRow(
+                          data: rows[i].card,
+                          onTap: () => context.push(
+                            '/home/recommendation/${rows[i].id}',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              )
+            : SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  mainAxisSpacing: MraSpacing.md,
+                  crossAxisSpacing: MraSpacing.md,
+                  mainAxisExtent: 340,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => _buildCard(context, rows[index]),
+                  childCount: rows.length,
+                ),
+              );
         return [
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
-            sliver: columns == 1
-                ? SliverList.separated(
-                    itemCount: rows.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: MraSpacing.md),
-                    itemBuilder: (context, index) =>
-                        _buildCard(context, rows[index]),
-                  )
-                : SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisSpacing: MraSpacing.md,
-                      crossAxisSpacing: MraSpacing.md,
-                      mainAxisExtent: 340,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildCard(context, rows[index]),
-                      childCount: rows.length,
-                    ),
-                  ),
+            sliver: opportunitiesSliver,
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -486,76 +631,334 @@ class _MarketStatusRow extends StatelessWidget {
   }
 }
 
-/// EPIC-M3.2's trust/performance summary widget -- a compact projection of
-/// M1.147's tracking summary via the snapshot's `trustSummary`.
-class _TrustSummaryCard extends StatelessWidget {
-  final DashboardTrustSummary summary;
-  const _TrustSummaryCard({required this.summary});
+/// EPIC-173 — dismissible "how Marksy works" strip: score → target/SL →
+/// tracked outcome. Dismissal is session-only for Phase 1 (a preferences
+/// flag to persist it is a documented fast-follow, not a data source this
+/// screen invents on its own).
+class _HowMarksyWorksStrip extends StatelessWidget {
+  final VoidCallback onDismiss;
+  const _HowMarksyWorksStrip({required this.onDismiss});
+
+  static const _steps = [
+    (
+      icon: Icons.query_stats,
+      title: 'Score every stock',
+      subtitle: 'Evidence-based, not tips',
+    ),
+    (
+      icon: Icons.flag_outlined,
+      title: 'Get target & stop-loss',
+      subtitle: 'Every call is a clear plan',
+    ),
+    (
+      icon: Icons.fact_check_outlined,
+      title: 'Track the outcome',
+      subtitle: 'Trust% reflects real closed calls',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final trust = summary.trustScore;
-    final delta = summary.trustDelta;
+    final scheme = MraColorScheme.of(context);
     return MraCard(
       padding: const EdgeInsets.symmetric(
-        horizontal: MraSpacing.lg,
-        vertical: MraSpacing.md,
+        horizontal: MraSpacing.md,
+        vertical: MraSpacing.sm,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.verified_outlined,
-            size: 18,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: MraSpacing.sm),
           Expanded(
-            child: Text(
-              trust == null
-                  ? 'Trust: not enough evaluated history yet'
-                  : 'Trust: ${(trust * 100).round()}%'
-                        '${delta == null ? '' : (delta >= 0 ? ' (+${(delta * 100).toStringAsFixed(1)})' : ' (${(delta * 100).toStringAsFixed(1)})')}',
-              style: theme.textTheme.bodyMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Wrap(
+              spacing: MraSpacing.lg,
+              runSpacing: MraSpacing.sm,
+              children: [
+                for (final step in _steps)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(step.icon, size: 18, color: scheme.info),
+                        const SizedBox(width: MraSpacing.xs),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                step.title,
+                                style: theme.textTheme.labelMedium,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                step.subtitle,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (summary.smallSample)
-            const MraChip(label: 'Small sample', tone: MraChipTone.warning),
+          IconButton(
+            tooltip: 'Dismiss',
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: onDismiss,
+          ),
         ],
       ),
     );
   }
 }
 
-/// Important events/news strip -- a compact horizontal row so it never
-/// dominates the screen (AC).
-class _EventsStrip extends StatelessWidget {
-  final List<DashboardEvent> events;
-  const _EventsStrip({required this.events});
+/// EPIC-173 — merges the snapshot's `trustSummary` with the tracking
+/// service's hit-rate. [tracking] is null until its own fetch resolves (or
+/// forever, if it fails) -- the card degrades to trust-only rather than
+/// blocking on or fabricating a hit-rate.
+class _PerformanceCard extends StatelessWidget {
+  final DashboardTrustSummary trustSummary;
+  final TrackingSummary? tracking;
+
+  const _PerformanceCard({required this.trustSummary, required this.tracking});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SizedBox(
-      height: 64,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: events.length,
-        separatorBuilder: (_, _) => const SizedBox(width: MraSpacing.sm),
-        itemBuilder: (context, index) {
-          final event = events[index];
-          return SizedBox(
-            width: 220,
-            child: MraCard(
-              padding: const EdgeInsets.symmetric(
-                horizontal: MraSpacing.md,
-                vertical: MraSpacing.sm,
+    final scheme = MraColorScheme.of(context);
+    final trust = trustSummary.trustScore;
+    final delta = trustSummary.trustDelta;
+    final hitRate = tracking?.targetHitRate;
+
+    return MraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.verified_outlined,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
+              const SizedBox(width: MraSpacing.xs),
+              Text('Performance', style: theme.textTheme.labelMedium),
+            ],
+          ),
+          const SizedBox(height: MraSpacing.sm),
+          Text(
+            trust == null ? '—' : '${(trust * 100).round()}%',
+            style: MraTypography.numeric(
+              theme.textTheme.headlineSmall!,
+              weight: FontWeight.w700,
+            ),
+          ),
+          Text(
+            trust == null
+                ? 'Trust score · not enough evaluated history yet'
+                : 'Trust score'
+                      '${delta == null ? '' : (delta >= 0 ? ' · +${(delta * 100).toStringAsFixed(1)}' : ' · ${(delta * 100).toStringAsFixed(1)}')} vs last 30 days',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (trustSummary.smallSample) ...[
+            const SizedBox(height: MraSpacing.xs),
+            const MraChip(label: 'Small sample', tone: MraChipTone.warning),
+          ],
+          if (hitRate != null) ...[
+            const SizedBox(height: MraSpacing.md),
+            Text(
+              '${(hitRate * 100).round()}% hit target · '
+              'last 30 closed calls',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: MraSpacing.xs),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(MraRadii.sm),
+              child: LinearProgressIndicator(
+                value: hitRate.clamp(0, 1).toDouble(),
+                minHeight: 6,
+                backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                valueColor: AlwaysStoppedAnimation<Color>(scheme.positive),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// EPIC-173 — "Recently changed" (open recommendations, from the snapshot)
+/// and "Closed calls" (past outcomes, from `TrackingRepository`) share one
+/// card via [MraTabBar] instead of two stacked cards.
+class _ActivityCard extends StatefulWidget {
+  final List<DashboardOpportunity> recentChanges;
+  final List<TrackedPrediction> closedCalls;
+
+  const _ActivityCard({required this.recentChanges, required this.closedCalls});
+
+  @override
+  State<_ActivityCard> createState() => _ActivityCardState();
+}
+
+class _ActivityCardState extends State<_ActivityCard>
+    with SingleTickerProviderStateMixin {
+  late final TabController _controller = TabController(length: 2, vsync: this);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return MraCard(
+      padding: const EdgeInsets.symmetric(vertical: MraSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MraTabBar(
+            labels: const ['Recently changed', 'Closed calls'],
+            controller: _controller,
+          ),
+          SizedBox(
+            height: 168,
+            child: TabBarView(
+              controller: _controller,
+              children: [_recentChangesList(theme), _closedCallsList(theme)],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recentChangesList(ThemeData theme) {
+    if (widget.recentChanges.isEmpty) {
+      return Center(
+        child: Text(
+          'No recent changes',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+    final shown = widget.recentChanges.take(5).toList();
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
+      itemCount: shown.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final item = shown[index];
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: MraSpacing.xs),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${item.symbol} · ${item.status}',
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                _DashboardScreenState._relativeLabel(item.updatedAt),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _closedCallsList(ThemeData theme) {
+    if (widget.closedCalls.isEmpty) {
+      return Center(
+        child: Text(
+          'No closed calls in this window',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
+      itemCount: widget.closedCalls.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final call = widget.closedCalls[index];
+        final outcome = call.outcome;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: MraSpacing.xs),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  call.symbol,
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (outcome != null)
+                MraChip(
+                  label: outcome,
+                  tone: outcome.toUpperCase().contains('TARGET')
+                      ? MraChipTone.positive
+                      : MraChipTone.neutral,
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Important events/news -- reflowed as a vertical list for the watch
+/// rail (was a horizontal scroller in the old single-column header).
+class _ImportantEventsCard extends StatelessWidget {
+  final List<DashboardEvent> events;
+  const _ImportantEventsCard({required this.events});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final shown = events.take(4).toList();
+    return MraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Important events', style: theme.textTheme.labelMedium),
+          const SizedBox(height: MraSpacing.sm),
+          for (final event in shown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: MraSpacing.xs),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
@@ -575,59 +978,206 @@ class _EventsStrip extends StatelessWidget {
                 ],
               ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
 }
 
-/// Recently-changed-recommendations widget -- the same open, positive-only
-/// feed the opportunities grid shows, ordered by recency of update rather
-/// than score (see `api/services/dashboard.py`'s own doc comment on why
-/// there is no separate lifecycle-history source for this).
-class _RecentChangesCard extends StatelessWidget {
-  final List<DashboardOpportunity> items;
-  const _RecentChangesCard({required this.items});
+/// EPIC-173 — IPO and NFO share one "coming soon" card via tabs. No IPO/NFO
+/// data source exists anywhere in this codebase; this is a static, honest
+/// placeholder (same posture as `AppDestination.ownerEpic`'s unbuilt-screen
+/// pattern), not a preview of real data.
+class _ComingSoonCard extends StatefulWidget {
+  const _ComingSoonCard();
+
+  @override
+  State<_ComingSoonCard> createState() => _ComingSoonCardState();
+}
+
+class _ComingSoonCardState extends State<_ComingSoonCard>
+    with SingleTickerProviderStateMixin {
+  late final TabController _controller = TabController(length: 2, vsync: this);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final shown = items.take(5).toList();
     return MraCard(
-      padding: const EdgeInsets.symmetric(
-        horizontal: MraSpacing.lg,
-        vertical: MraSpacing.md,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: MraSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Recently changed', style: theme.textTheme.titleMedium),
-          const SizedBox(height: MraSpacing.sm),
-          for (final item in shown)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: MraSpacing.xs),
-              child: Row(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: MraSpacing.lg),
+            child: Row(
+              children: [
+                const MraChip(label: 'Coming soon', tone: MraChipTone.info),
+                const Spacer(),
+              ],
+            ),
+          ),
+          MraTabBar(labels: const ['IPO', 'NFO'], controller: _controller),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: MraSpacing.lg,
+              vertical: MraSpacing.sm,
+            ),
+            child: SizedBox(
+              height: 64,
+              child: TabBarView(
+                controller: _controller,
                 children: [
-                  Expanded(
-                    child: Text(
-                      '${item.symbol} · ${item.status}',
-                      style: theme.textTheme.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    'Open/upcoming mainboard & SME IPOs, GMP trend and '
+                    'subscription status.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   Text(
-                    _DashboardScreenState._relativeLabel(item.updatedAt),
-                    style: theme.textTheme.labelSmall?.copyWith(
+                    'New Fund Offer launch window, category and AMC, framed '
+                    'with the same Trust context as a stock call.',
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// EPIC-173 — dense single-line opportunity row for `MraWindowClass.compact`
+/// screens: shrunk score ring, no sparkline, target/SL collapsed to one
+/// line, so roughly twice as many opportunities are visible per scroll.
+class _CompactOpportunityRow extends StatelessWidget {
+  final RecommendationCardData data;
+  final VoidCallback onTap;
+
+  const _CompactOpportunityRow({required this.data, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = MraColorScheme.of(context);
+    final changePercent = data.changePercent;
+    final isUp = (changePercent ?? 0) >= 0;
+    final changeColor = isUp ? scheme.marketUp : scheme.marketDown;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: MraSpacing.md,
+          vertical: MraSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 30,
+              height: 30,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox.expand(
+                    child: CircularProgressIndicator(
+                      value: data.score.clamp(0, 100).toDouble() / 100,
+                      strokeWidth: 3,
+                      backgroundColor: theme.colorScheme.surfaceContainerHigh,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        data.score >= 70 ? scheme.positive : scheme.warning,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    data.score.round().toString(),
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: MraSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          data.symbol,
+                          style: theme.textTheme.labelLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (data.companyName != null) ...[
+                        const SizedBox(width: MraSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            data.companyName!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Text(
+                    '${data.horizonDays}D · Target ${data.targetPrice.toStringAsFixed(2)}'
+                    ' · SL ${data.stopLossPrice.toStringAsFixed(2)}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: MraSpacing.sm),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    data.currentPrice?.toStringAsFixed(2) ?? '—',
+                    style: MraTypography.numeric(theme.textTheme.labelLarge!),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (changePercent != null)
+                    Text(
+                      '${isUp ? '▲' : '▼'}${changePercent.abs().toStringAsFixed(2)}%',
+                      style: MraTypography.numeric(
+                        theme.textTheme.labelSmall!.copyWith(
+                          color: changeColor,
+                        ),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

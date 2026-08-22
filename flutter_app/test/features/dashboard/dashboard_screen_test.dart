@@ -3,12 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mra_app/core/api_exception.dart';
 import 'package:mra_app/design_system/components/mra_search_field.dart';
+import 'package:mra_app/design_system/components/recommendation_card.dart';
 import 'package:mra_app/design_system/theme/mra_theme.dart';
 import 'package:mra_app/features/dashboard/dashboard_repository.dart';
 import 'package:mra_app/features/dashboard/dashboard_screen.dart';
 import 'package:mra_app/features/dashboard/dashboard_snapshot.dart';
 import 'package:mra_app/features/dashboard/recommendation.dart';
 import 'package:mra_app/features/dashboard/recommendations_repository.dart';
+import 'package:mra_app/features/tracking/tracked_prediction.dart';
+import 'package:mra_app/features/tracking/tracking_filters.dart';
+import 'package:mra_app/features/tracking/tracking_repository.dart';
+import 'package:mra_app/features/tracking/tracking_summary.dart';
 
 Map<String, dynamic> _opportunity({
   int id = 1,
@@ -100,6 +105,55 @@ class _FakeRecommendationsRepository extends RecommendationsRepository {
   }) => onFetch();
 }
 
+Map<String, dynamic> _closedPredictionJson({
+  int id = 1,
+  String symbol = 'HCLTECH',
+  String? outcome = 'TARGET_HIT',
+}) {
+  return {
+    'id': id,
+    'symbol': symbol,
+    'status': 'CLOSED',
+    'asOf': '2026-08-21T09:00:00Z',
+    'horizonDays': 5,
+    'predictedReturn': '4.2',
+    'realizedReturn': '4.9',
+    'outcome': outcome,
+    'modelVersion': 'test-model-1',
+  };
+}
+
+/// EPIC-173 — a quiet stand-in for [TrackingRepository] so tests never hit
+/// the real network (the default no-arg behavior throws, exercising the
+/// Performance card's graceful-degradation path by default).
+class _FakeTrackingRepository extends TrackingRepository {
+  final Future<TrackingSummary> Function() onSummary;
+  final Future<TrackedPredictionsPage> Function() onPredictions;
+
+  _FakeTrackingRepository({
+    Future<TrackingSummary> Function()? onSummary,
+    Future<TrackedPredictionsPage> Function()? onPredictions,
+  }) : onSummary = onSummary ?? (() async => throw Exception('unavailable')),
+       onPredictions =
+           onPredictions ??
+           (() async =>
+               const TrackedPredictionsPage(items: [], nextCursor: null));
+
+  @override
+  Future<TrackingSummary> fetchSummary({
+    required String range,
+    TrackingFilters filters = const TrackingFilters(),
+  }) => onSummary();
+
+  @override
+  Future<TrackedPredictionsPage> fetchPredictions({
+    required String status,
+    String? cursor,
+    int pageSize = 10,
+    TrackingFilters filters = const TrackingFilters(),
+  }) => onPredictions();
+}
+
 Widget _wrap(Widget child) {
   return MaterialApp(
     theme: MraTheme.light(),
@@ -120,7 +174,14 @@ void main() {
         () => _snapshotOf(_snapshotJson()),
       ),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
     await tester.pump();
 
     expect(find.text('TATASTEEL'), findsNothing);
@@ -141,13 +202,26 @@ void main() {
         ),
       ),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('TATASTEEL'), findsOneWidget);
     expect(find.text('INFY'), findsOneWidget);
     expect(find.textContaining('RISK_ON'), findsOneWidget);
-    expect(find.textContaining('Trust:'), findsOneWidget);
+
+    // EPIC-173: the Performance card (Trust summary) now sits in the watch
+    // rail below the grid at this (medium) width -- scroll to see it.
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Trust score'), findsOneWidget);
+    expect(find.text('70%'), findsOneWidget);
   });
 
   testWidgets(
@@ -159,7 +233,12 @@ void main() {
         return _snapshotOf(_snapshotJson());
       });
       await tester.pumpWidget(
-        _wrap(DashboardScreen(dashboardRepository: repo)),
+        _wrap(
+          DashboardScreen(
+            dashboardRepository: repo,
+            trackingRepository: _FakeTrackingRepository(),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -200,9 +279,19 @@ void main() {
         ),
       ),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
+    // EPIC-173: important events are now a vertical card in the watch rail.
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
     expect(
       find.textContaining('Quarterly results beat estimates'),
       findsOneWidget,
@@ -215,14 +304,22 @@ void main() {
     final repo = _FakeDashboardRepository(
       () async => _snapshotOf(_snapshotJson(events: const [])),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
     await tester.pumpAndSettle();
 
     expect(find.text('Recently changed'), findsOneWidget);
-    // The market/size quick-filter bars are themselves horizontal
-    // `ListView`s, so only their fixed count (2) should be present -- a
-    // third would mean the events strip rendered despite an empty list.
-    expect(find.byType(ListView), findsNWidgets(2));
+    // EPIC-173: an empty `importantEvents` list means the events card
+    // itself is omitted from the watch rail entirely.
+    expect(find.text('Important events'), findsNothing);
   });
 
   testWidgets('renders the recently-changed widget', (tester) async {
@@ -231,20 +328,62 @@ void main() {
         _snapshotJson(recentChanges: [_opportunity(id: 9, symbol: 'WIPRO')]),
       ),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
     await tester.pumpAndSettle();
 
+    // EPIC-173: "Recently changed" is now the Activity card's default tab.
     expect(find.text('Recently changed'), findsOneWidget);
     expect(find.textContaining('WIPRO'), findsWidgets);
-
-    // EPIC-M3.16 follow-up: this compact card header uses the same
-    // titleMedium role as the equivalent "Sector leaders"/"Sector
-    // laggards" headers on the market screen and the tracking trend
-    // card, not a smaller one-off scale step.
-    final theme = Theme.of(tester.element(find.text('Recently changed')));
-    final headerText = tester.widget<Text>(find.text('Recently changed'));
-    expect(headerText.style, theme.textTheme.titleMedium);
   });
+
+  testWidgets(
+    'Activity card switches between recently-changed and closed calls',
+    (tester) async {
+      final repo = _FakeDashboardRepository(
+        () async => _snapshotOf(
+          _snapshotJson(recentChanges: [_opportunity(id: 9, symbol: 'WIPRO')]),
+        ),
+      );
+      final tracking = _FakeTrackingRepository(
+        onPredictions: () async => TrackedPredictionsPage(
+          items: [
+            TrackedPrediction.fromJson(
+              _closedPredictionJson(symbol: 'HCLTECH'),
+            ),
+          ],
+          nextCursor: null,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(
+          DashboardScreen(
+            dashboardRepository: repo,
+            trackingRepository: tracking,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('WIPRO'), findsWidgets);
+      expect(find.textContaining('HCLTECH'), findsNothing);
+
+      await tester.tap(find.text('Closed calls'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('HCLTECH'), findsOneWidget);
+    },
+  );
 
   testWidgets('shows a small-sample badge when trust sample is small', (
     tester,
@@ -252,11 +391,118 @@ void main() {
     final repo = _FakeDashboardRepository(
       () async => _snapshotOf(_snapshotJson(smallSample: true)),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
     await tester.pumpAndSettle();
 
     expect(find.text('Small sample'), findsOneWidget);
   });
+
+  testWidgets(
+    'Performance card degrades to trust-only when tracking summary fails',
+    (tester) async {
+      final repo = _FakeDashboardRepository(
+        () async => _snapshotOf(_snapshotJson()),
+      );
+      await tester.pumpWidget(
+        _wrap(
+          DashboardScreen(
+            dashboardRepository: repo,
+            trackingRepository: _FakeTrackingRepository(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('70%'), findsOneWidget);
+      expect(find.textContaining('hit target'), findsNothing);
+    },
+  );
+
+  testWidgets('the how-Marksy-works strip can be dismissed', (tester) async {
+    final repo = _FakeDashboardRepository(
+      () async => _snapshotOf(_snapshotJson()),
+    );
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Score every stock'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Dismiss'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Score every stock'), findsNothing);
+  });
+
+  testWidgets('the coming-soon card switches between IPO and NFO', (
+    tester,
+  ) async {
+    final repo = _FakeDashboardRepository(
+      () async => _snapshotOf(_snapshotJson()),
+    );
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('mainboard'), findsOneWidget);
+
+    await tester.tap(find.text('NFO'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('New Fund Offer'), findsOneWidget);
+  });
+
+  testWidgets(
+    'compact width renders the dense opportunity row, not the full card',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final repo = _FakeDashboardRepository(
+        () async => _snapshotOf(_snapshotJson()),
+      );
+      await tester.pumpWidget(
+        _wrap(
+          DashboardScreen(
+            dashboardRepository: repo,
+            trackingRepository: _FakeTrackingRepository(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('TATASTEEL'), findsOneWidget);
+      // The full desktop/tablet card renders a sparkline; the compact row
+      // deliberately drops it to fit roughly twice as many rows per screen.
+      expect(find.byType(RecommendationCard), findsNothing);
+    },
+  );
 
   testWidgets('shows an error state with retry on fetch failure', (
     tester,
@@ -269,7 +515,14 @@ void main() {
       }
       return _snapshotOf(_snapshotJson());
     });
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Something went wrong'), findsOneWidget);
@@ -289,7 +542,14 @@ void main() {
         _snapshotJson(topOpportunities: const [], recentChanges: const []),
       ),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(
@@ -306,7 +566,14 @@ void main() {
         _snapshotJson(topOpportunities: [_opportunity(trustScore: null)]),
       ),
     );
-    await tester.pumpWidget(_wrap(DashboardScreen(dashboardRepository: repo)));
+    await tester.pumpWidget(
+      _wrap(
+        DashboardScreen(
+          dashboardRepository: repo,
+          trackingRepository: _FakeTrackingRepository(),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('N/A'), findsOneWidget);
@@ -323,8 +590,12 @@ void main() {
       routes: [
         GoRoute(
           path: '/home',
-          builder: (context, state) =>
-              Scaffold(body: DashboardScreen(dashboardRepository: repo)),
+          builder: (context, state) => Scaffold(
+            body: DashboardScreen(
+              dashboardRepository: repo,
+              trackingRepository: _FakeTrackingRepository(),
+            ),
+          ),
           routes: [
             GoRoute(
               path: 'recommendation/:id',
@@ -382,6 +653,7 @@ void main() {
           DashboardScreen(
             dashboardRepository: dashboardRepo,
             repository: recRepo,
+            trackingRepository: _FakeTrackingRepository(),
           ),
         ),
       );
@@ -431,7 +703,12 @@ void main() {
             size: Size(360, 800),
             textScaler: TextScaler.linear(2.0),
           ),
-          child: _wrap(DashboardScreen(dashboardRepository: repo)),
+          child: _wrap(
+            DashboardScreen(
+              dashboardRepository: repo,
+              trackingRepository: _FakeTrackingRepository(),
+            ),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -455,7 +732,12 @@ void main() {
         ),
       );
       await tester.pumpWidget(
-        _wrap(DashboardScreen(dashboardRepository: repo)),
+        _wrap(
+          DashboardScreen(
+            dashboardRepository: repo,
+            trackingRepository: _FakeTrackingRepository(),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
