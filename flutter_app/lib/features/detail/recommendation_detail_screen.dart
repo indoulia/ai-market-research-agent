@@ -323,7 +323,7 @@ class _MetricGrid extends StatelessWidget {
   }
 }
 
-/// EPIC-M3.4 — "Why MRA selected this opportunity": a short, synthesized
+/// EPIC-M3.4 — "Why Marksy selected this opportunity": a short, synthesized
 /// narrative distinct from the raw evidence panel, composed entirely from
 /// fields the detail endpoint already returns (score/probability/
 /// confidence/evidenceStrength/fundamental/technical/market/provider
@@ -353,7 +353,7 @@ class _WhySelectedSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Why MRA selected this opportunity',
+            'Why Marksy selected this opportunity',
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: MraSpacing.sm),

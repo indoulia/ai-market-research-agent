@@ -8,9 +8,14 @@ import 'package:flutter/material.dart';
 class MraColors {
   const MraColors._();
 
-  // Brand / neutral scale.
-  static const Color brandPrimary = Color(0xFF1B3A63);
-  static const Color brandPrimaryLight = Color(0xFF3E6BA6);
+  // Brand / neutral scale — EPIC-M3.17 Marksy palette (hex values read
+  // directly off the approved brand reference board's own labeled
+  // swatches, see docs/branding/marksy/README.md).
+  static const Color brandPrimary = Color(0xFF2563EB); // Blue — Intelligence
+  static const Color brandPrimaryLight = Color(0xFF60A5FA);
+  static const Color brandDeepNavy = Color(0xFF0A1E3A); // Trust & Stability
+  static const Color brandTeal = Color(0xFF10B981); // Growth
+  static const Color brandHighlight = Color(0xFF22D3EE); // Opportunity
 
   static const Color neutral0 = Color(0xFFFFFFFF);
   static const Color neutral50 = Color(0xFFF6F7F9);

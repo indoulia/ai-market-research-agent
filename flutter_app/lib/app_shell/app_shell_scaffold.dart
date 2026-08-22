@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../design_system/components/marksy_logo.dart';
 import '../design_system/tokens/mra_spacing.dart';
 import 'app_destination.dart';
 
@@ -125,7 +126,7 @@ class _ShellAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('MRA'),
+      title: const MarksyLogo(iconSize: 24, fontSize: 18),
       actions: [
         IconButton(
           tooltip: 'Search',

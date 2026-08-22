@@ -58,10 +58,12 @@ class _SignInScreenState extends State<SignInScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const MarksyLogo(iconSize: 32, fontSize: 24),
+                const SizedBox(height: MraSpacing.lg),
                 Text('Sign in', style: theme.textTheme.headlineSmall),
                 const SizedBox(height: MraSpacing.xs),
                 Text(
-                  'MRA — Market Research Agent',
+                  'Marksy — Market Intelligence',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

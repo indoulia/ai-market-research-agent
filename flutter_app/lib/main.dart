@@ -103,7 +103,7 @@ class _MraAppState extends State<MraApp> {
   Widget build(BuildContext context) {
     if (_compatibility == _CompatibilityState.incompatible) {
       return MaterialApp(
-        title: 'MRA',
+        title: 'Marksy',
         debugShowCheckedModeBanner: false,
         theme: MraTheme.light(),
         darkTheme: MraTheme.dark(),
@@ -113,7 +113,7 @@ class _MraAppState extends State<MraApp> {
       );
     }
     return MaterialApp.router(
-      title: 'MRA',
+      title: 'Marksy',
       debugShowCheckedModeBanner: false,
       theme: MraTheme.light(),
       darkTheme: MraTheme.dark(),

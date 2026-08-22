@@ -103,7 +103,7 @@ class _GeneralSettingsScreenState extends State<GeneralSettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'MRA — Market Research Agent',
+                    'Marksy — Market Intelligence',
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: MraSpacing.xs),
